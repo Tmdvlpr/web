@@ -90,9 +90,9 @@ async def list_active_bookings(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> list[BookingOut]:
-    """Return current user's bookings happening or starting within the next 24 hours."""
+    """Return current user's bookings happening or starting within the next 30 days."""
     now = datetime.now(timezone.utc)
-    window_end = now + timedelta(hours=24)
+    window_end = now + timedelta(days=30)
     result = await db.execute(
         select(Booking)
         .options(selectinload(Booking.user))

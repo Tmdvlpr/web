@@ -1,5 +1,4 @@
-import { AnimatePresence, motion } from "framer-motion";
-import { createPortal } from "react-dom";
+import { AnimatePresence, motion, useDragControls } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { DateTimePicker } from "./DateTimePicker";
 import { InteractiveStripe } from "./InteractiveStripe";
@@ -176,12 +175,14 @@ function GuestInput({
 
 type View = "form" | "confirmDelete";
 
-/* ── Drag particles ── */
-const DRAG_COLORS = ["#7c3aed","#a855f7","#06b6d4","#e11d48","#f59e0b","#22c55e","#3b82f6","#ec4899","#f97316"];
-interface Particle {
-  id: number; x: number; y: number;
-  tx: number; ty: number;
-  color: string; size: number; rotate: number; tall: boolean;
+interface ConfettiPiece {
+  ox: number; oy: number;  // rest/home position (fixed)
+  x: number;  y: number;  // current rendered position
+  phase: number;
+  freq: number;
+  sway: number;
+  size: number;
+  hue: number;
 }
 
 export function BookingModal({
@@ -195,31 +196,164 @@ export function BookingModal({
   const now   = new Date();
   const later = new Date(now.getTime() + 3_600_000);
 
-  const [particles,   setParticles] = useState<Particle[]>([]);
-  const lastSpawnAt = useRef(0);
+  const canvasRef     = useRef<HTMLCanvasElement | null>(null);
+  const cardRef       = useRef<HTMLDivElement | null>(null);
+  const piecesRef     = useRef<ConfettiPiece[]>([]);
+  const rafRef        = useRef<number>(0);
+  const typePulseRef  = useRef<number>(0);
+  const dragControls  = useDragControls();
 
-  const spawnParticles = (px: number, py: number) => {
-    const now = Date.now();
-    if (now - lastSpawnAt.current < 55) return;
-    lastSpawnAt.current = now;
-    const batch: Particle[] = Array.from({ length: 4 }, () => {
-      const angle = Math.random() * Math.PI * 2;
-      const dist  = 70 + Math.random() * 130;
-      return {
-        id: now + Math.random(),
-        x: px, y: py,
-        tx: Math.cos(angle) * dist,
-        ty: Math.sin(angle) * dist + 18,
-        color: DRAG_COLORS[Math.floor(Math.random() * DRAG_COLORS.length)],
-        size: 3 + Math.random() * 5,
-        rotate: Math.random() * 540 - 270,
-        tall: Math.random() < 0.4,
-      };
-    });
-    setParticles(prev => [...prev.slice(-60), ...batch]);
-    const ids = new Set(batch.map(b => b.id));
-    setTimeout(() => setParticles(prev => prev.filter(p => !ids.has(p.id))), 900);
-  };
+  /* ── Google Antigravity — free-floating pieces, card is a physical body ── */
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const canvas = document.createElement("canvas");
+    canvas.style.cssText =
+      "position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:45";
+    document.body.appendChild(canvas);
+    canvasRef.current = canvas;
+
+    const resize = () => {
+      canvas.width  = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    resize();
+    window.addEventListener("resize", resize);
+
+
+    const W0 = window.innerWidth;
+    const H0 = window.innerHeight;
+
+    /* Particles have fixed rest positions; card displaces them outward */
+    piecesRef.current = Array.from({ length: 4500 }, () => ({
+      ox: Math.random() * W0,
+      oy: Math.random() * H0,
+      x:  0, y: 0,
+      phase: Math.random() * Math.PI * 2,
+      freq:  0.10 + Math.random() * 0.20,
+      sway:  14 + Math.random() * 28,
+      size:  0.8 + Math.random() * 2.2,
+      hue:   Math.random() * 360,
+    }));
+    for (const p of piecesRef.current) { p.x = p.ox; p.y = p.oy; }
+
+    /* typing pulse: fires on any input/textarea keydown inside modal */
+    const onType = () => { typePulseRef.current = 1.0; };
+    document.addEventListener("keydown", onType);
+
+    const ctx  = canvas.getContext("2d")!;
+    const BASE_RADIUS = 420;
+    const PUSH        = 130;
+    let t = 0;
+    let prevCx = W0 / 2, prevCy = H0 / 2;
+
+    const loop = () => {
+      t += 0.016;
+      const W = canvas.width, H = canvas.height;
+      ctx.clearRect(0, 0, W, H);
+
+      const el   = cardRef.current;
+      const rect = el?.getBoundingClientRect();
+      const cx   = rect ? rect.left + rect.width  / 2 : W0 / 2;
+      const cy   = rect ? rect.top  + rect.height / 2 : H0 / 2;
+
+      /* card velocity → tactile boost */
+      const cardSpd = Math.sqrt((cx - prevCx) ** 2 + (cy - prevCy) ** 2);
+      prevCx = cx; prevCy = cy;
+
+      /* typing pulse — decays each frame */
+      typePulseRef.current *= 0.88;
+      const pulse = typePulseRef.current;
+
+      const radius    = BASE_RADIUS + pulse * 120;
+      const pushBoost = PUSH + Math.min(cardSpd * 8, 60) + pulse * 70;
+
+      const dark = document.documentElement.getAttribute("data-theme") !== "light";
+
+      for (const p of piecesRef.current) {
+        /* gentle organic sway around rest position */
+        const swayX = p.ox
+          + Math.sin(t * p.freq + p.phase) * p.sway
+          + Math.cos(t * p.freq * 0.7 + p.phase * 1.3) * p.sway * 0.4;
+        const swayY = p.oy
+          + Math.cos(t * p.freq + p.phase + 1.2) * p.sway
+          + Math.sin(t * p.freq * 0.6 + p.phase * 0.8) * p.sway * 0.4;
+
+        /* displacement: card pushes particle away from its rest pos */
+        const dx = swayX - cx, dy = swayY - cy;
+        const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+
+        let targetX = swayX, targetY = swayY, force = 0;
+        if (dist < radius) {
+          const nd  = dist / radius;
+          force     = Math.cos(nd * Math.PI * 0.5);   // smooth 1→0
+          const ang = Math.atan2(dy, dx);
+          targetX   = swayX + Math.cos(ang) * pushBoost * force;
+          targetY   = swayY + Math.sin(ang) * pushBoost * force;
+        }
+
+        /* smooth interpolation — NO spring bounce */
+        const lerp = force > 0 ? 0.18 : 0.06;
+        p.x += (targetX - p.x) * lerp;
+        p.y += (targetY - p.y) * lerp;
+
+        /* visual */
+        /* hue cycles faster in light theme for vivid gradient feel */
+        if (force < 0.01) continue;   // invisible outside displacement zone
+        const hue   = (p.hue + t * (dark ? 8 : 22) * p.freq + Math.sin(t * 0.5 + p.phase) * 45) % 360;
+        const sat   = dark ? 90 + force * 10 : 95 + force * 5;
+        const lit   = dark ? 55 + force * 35 : 45 + force * 25;
+        const alpha = dark ? 0.15 + force * 0.85 : 0.20 + force * 0.80;
+        const len   = p.size * (22 + force * 35);
+        const thick = p.size * (0.35 + force * 0.3);
+        const ang   = Math.atan2(dy, dx);
+
+        const rotAngle = force > 0.02 ? ang : p.phase;
+        /* two independent control points → S-curve / deep arc */
+        const c1y = Math.sin(t * 2.2 + p.phase)        * len * 0.65;
+        const c2y = Math.sin(t * 1.7 + p.phase + 1.4)  * len * 0.70;
+        const color = `hsl(${hue},${sat}%,${lit}%)`;
+
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(rotAngle);
+        ctx.lineCap = "round";
+
+        /* main hair — cubic S-curve */
+        ctx.globalAlpha = alpha;
+        ctx.strokeStyle = color;
+        ctx.lineWidth   = thick;
+        ctx.beginPath();
+        ctx.moveTo(-len / 2, 0);
+        ctx.bezierCurveTo(-len / 6, c1y, len / 6, c2y, len / 2, c2y * 0.5);
+        ctx.stroke();
+
+        /* wispy sub-strand */
+        const side  = Math.sin(p.phase * 3.3) > 0 ? 1 : -1;
+        const sc1y  = Math.sin(t * 2.5 + p.phase * 1.5) * len * 0.55 * side;
+        const sc2y  = Math.sin(t * 1.4 + p.phase * 0.8) * len * 0.60 * side;
+        ctx.globalAlpha = alpha * 0.35;
+        ctx.lineWidth   = thick * 0.30;
+        ctx.beginPath();
+        ctx.moveTo(-len * 0.3, 0);
+        ctx.bezierCurveTo(-len * 0.05, sc1y, len * 0.2, sc2y, len / 2, sc2y * 0.6);
+        ctx.stroke();
+
+        ctx.restore();
+      }
+      ctx.globalAlpha = 1;
+
+      rafRef.current = requestAnimationFrame(loop);
+    };
+    rafRef.current = requestAnimationFrame(loop);
+
+    return () => {
+      cancelAnimationFrame(rafRef.current);
+      window.removeEventListener("resize", resize);
+      document.removeEventListener("keydown", onType);
+      canvas.remove();
+    };
+  }, [isOpen]);
 
   const [view,        setView]      = useState<View>("form");
   const [title,       setTitle]     = useState("");
@@ -328,12 +462,18 @@ export function BookingModal({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 24 }}
               transition={{ type: "spring", damping: 22, stiffness: 340 }}
+              ref={cardRef}
               drag
+              dragControls={dragControls}
+              dragListener={false}
               dragMomentum={false}
-              dragElastic={0.08}
-              whileDrag={{ scale: 1.02 }}
-              onDragStart={(_, info) => spawnParticles(info.point.x, info.point.y)}
-              onDrag={(_, info) => spawnParticles(info.point.x, info.point.y)}
+              dragElastic={0.06}
+              whileDrag={{
+                scale: 1.018,
+                boxShadow: "0 0 0 1px rgba(148,163,255,0.4), 0 12px 80px rgba(100,120,255,0.3), 0 0 120px rgba(168,139,250,0.12)",
+              }}
+              onDragStart={() => {}}
+              onDragEnd={() => {}}
               onClick={e => e.stopPropagation()}
               className="w-full max-w-md rounded-2xl relative pointer-events-auto"
               style={{
@@ -349,9 +489,10 @@ export function BookingModal({
 
               <InteractiveStripe />
 
-              {/* Header — drag handle */}
+              {/* Header — drag handle (only this area initiates drag) */}
               <div className="flex items-center justify-between px-6 pt-4 pb-3"
-                style={{ borderBottom: "1px solid var(--border)", cursor: "grab" }}>
+                style={{ borderBottom: "1px solid var(--border)", cursor: "grab", touchAction: "none" }}
+                onPointerDown={(e) => dragControls.start(e)}>
                 <div>
                   <h2 className="font-bold text-base" style={{ color: "var(--text)" }}>
                     {view === "confirmDelete" ? "Удалить бронирование?" :
@@ -623,32 +764,7 @@ export function BookingModal({
             </motion.div>
           </div>
 
-          {/* Drag particles portal */}
-          {createPortal(
-            <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 99999 }}>
-              <AnimatePresence>
-                {particles.map(p => (
-                  <motion.div
-                    key={p.id}
-                    initial={{ opacity: 1, x: 0, y: 0, rotate: 0, scale: 1 }}
-                    animate={{ opacity: 0, x: p.tx, y: p.ty, rotate: p.rotate, scale: 0 }}
-                    exit={{}}
-                    transition={{ duration: 0.85, ease: [0.2, 0, 0.8, 1] }}
-                    style={{
-                      position: "absolute",
-                      left: p.x, top: p.y,
-                      width: p.size,
-                      height: p.tall ? p.size * 2.2 : p.size,
-                      borderRadius: p.tall ? p.size * 0.4 : p.size,
-                      background: p.color,
-                      transformOrigin: "center",
-                    }}
-                  />
-                ))}
-              </AnimatePresence>
-            </div>,
-            document.body
-          )}
+          {/* canvas confetti is injected directly into document.body via useEffect */}
         </>
       )}
     </AnimatePresence>
