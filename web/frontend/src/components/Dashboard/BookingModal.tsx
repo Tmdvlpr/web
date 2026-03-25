@@ -63,14 +63,13 @@ function GuestInput({
   const inputRef = useRef<HTMLInputElement>(null);
   const wrapRef  = useRef<HTMLDivElement>(null);
 
-  const suggestions = input.length >= 1
-    ? allUsers.filter(u =>
-        u.username &&
-        !guests.includes(u.username) &&
-        (u.username.toLowerCase().includes(input.toLowerCase()) ||
-         u.display_name.toLowerCase().includes(input.toLowerCase()))
-      ).slice(0, 6)
-    : [];
+  const suggestions = allUsers.filter(u =>
+    u.username &&
+    !guests.includes(u.username) &&
+    (input.length === 0 ||
+     u.username.toLowerCase().includes(input.toLowerCase()) ||
+     u.display_name.toLowerCase().includes(input.toLowerCase()))
+  ).slice(0, 6);
 
   const addGuest = (username: string) => {
     const u = username.trim().toLowerCase().replace(/^@/, "");
