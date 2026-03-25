@@ -1,0 +1,33 @@
+import { apiClient } from "./axios";
+import type { BrowserSessionResponse, TokenResponse, User } from "../types";
+
+export const authApi = {
+  register: async (initData: string, first_name: string, last_name: string): Promise<TokenResponse> => {
+    const res = await apiClient.post<TokenResponse>("/api/v1/auth/register", {
+      initData,
+      first_name,
+      last_name,
+    });
+    return res.data;
+  },
+
+  login: async (initData: string): Promise<TokenResponse> => {
+    const res = await apiClient.post<TokenResponse>("/api/v1/auth/login", { initData });
+    return res.data;
+  },
+
+  getMe: async (): Promise<User> => {
+    const res = await apiClient.get<User>("/api/v1/auth/me");
+    return res.data;
+  },
+
+  createBrowserSession: async (): Promise<BrowserSessionResponse> => {
+    const res = await apiClient.post<BrowserSessionResponse>("/api/v1/auth/browser/session");
+    return res.data;
+  },
+
+  consumeSession: async (sessionToken: string): Promise<TokenResponse> => {
+    const res = await apiClient.get<TokenResponse>(`/api/v1/auth/session/${sessionToken}`);
+    return res.data;
+  },
+};

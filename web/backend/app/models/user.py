@@ -1,0 +1,47 @@
+import enum
+from datetime import datetime
+
+from sqlalchemy import BigInteger, Boolean, DateTime, Enum, String, func
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.database import Base
+
+
+class Role(str, enum.Enum):
+    user = "user"
+    admin = "admin"
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    telegram_id: Mapped[int] = mapped_column(BigInteger, unique=True, index=True)
+    # Legacy field — kept for compatibility with tg/ part
+    name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    first_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    last_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    username: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    role: Mapped[Role] = mapped_column(Enum(Role), default=Role.user, server_default="user")
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
+    is_registered: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    bookings: Mapped[list["Booking"]] = relationship(  # noqa: F821
+        "Booking", back_populates="user", cascade="all, delete-orphan"
+    )
+    browser_sessions: Mapped[list["BrowserSession"]] = relationship(  # noqa: F821
+        "BrowserSession", back_populates="user", cascade="all, delete-orphan"
+    )
+
+    @property
+    def display_name(self) -> str:
+        if self.first_name:
+            parts = [self.first_name]
+            if self.last_name:
+                parts.append(self.last_name)
+            return " ".join(parts)
+        return self.name or f"user_{self.id}"
