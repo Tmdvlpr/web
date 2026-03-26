@@ -25,6 +25,7 @@ class User(Base):
     role: Mapped[Role] = mapped_column(Enum(Role), default=Role.user, server_default="user")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
     is_registered: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    feed_token: Mapped[str | None] = mapped_column(String(64), nullable=True, unique=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()

@@ -59,3 +59,18 @@ export interface SlotResponse {
   end: string;
   available: boolean;
 }
+
+export interface AdminStats {
+  total_users: number;
+  total_bookings: number;
+  active_bookings: number;
+}
+
+export interface NotificationRecord {
+  id: string;
+  title: string;
+  body: string;
+  time: number;
+  bookingId: number;
+  reminderMinutes: number;
+}

@@ -1,6 +1,8 @@
 import { apiClient } from "./axios";
 import type { Booking, BookingCreate, BookingUpdate } from "../types";
 
+const API_BASE = (import.meta as { env: Record<string, string> }).env.VITE_API_URL || "http://localhost:8000";
+
 export const bookingsApi = {
   getActive: async (): Promise<Booking[]> => {
     const res = await apiClient.get<Booking[]>("/api/v1/bookings/active");
@@ -40,5 +42,13 @@ export const bookingsApi = {
     a.click();
     document.body.removeChild(a);
     setTimeout(() => URL.revokeObjectURL(url), 1500);
+  },
+
+  getFeedUrl: (feedToken: string): string =>
+    `${API_BASE}/api/v1/bookings/feed/${feedToken}`,
+
+  adminListAll: async (): Promise<Booking[]> => {
+    const res = await apiClient.get<Booking[]>("/api/v1/bookings/admin/all");
+    return res.data;
   },
 };

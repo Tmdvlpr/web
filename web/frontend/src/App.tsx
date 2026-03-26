@@ -9,6 +9,8 @@ import { Calendar } from "./components/Calendar";
 import { InteractiveStripe } from "./components/Common/InteractiveStripe";
 import { ActiveMeetings } from "./components/Dashboard/BookingsList";
 import { BookingModal } from "./components/Dashboard/BookingModal";
+import { NotificationCenter, addNotification, getReminderMinutes } from "./components/Dashboard/NotificationCenter";
+import { AdminPanel } from "./components/Dashboard/AdminPanel";
 import OpenInBrowserButton from "./components/MiniApp/OpenInBrowserButton";
 import { useTheme } from "./contexts/ThemeContext";
 import { useAuth } from "./hooks/useAuth";
@@ -17,7 +19,8 @@ import type { Booking } from "./types";
 
 // ── Web notification reminders ──────────────────────────────────────────────
 function useWebReminders(isAuthenticated: boolean) {
-  const notifiedRef = useRef<Set<number>>(new Set());
+  // notifiedRef: Set of "bookingId-reminderMinutes" strings to avoid double-firing
+  const notifiedRef = useRef<Set<string>>(new Set());
   useEffect(() => {
     if (!isAuthenticated) return;
     if ("Notification" in window && Notification.permission === "default") {
@@ -26,20 +29,31 @@ function useWebReminders(isAuthenticated: boolean) {
     const check = async () => {
       if (Notification.permission !== "granted") return;
       const today = new Date().toISOString().split("T")[0];
+      const reminderMins = getReminderMinutes();
       try {
         const bookings = await bookingsApi.getByDate(today);
         const now = Date.now();
         for (const b of bookings) {
-          const diff = new Date(b.start_time).getTime() - now;
-          if (diff > 0 && diff <= 15 * 60_000 && !notifiedRef.current.has(b.id)) {
-            notifiedRef.current.add(b.id);
-            new Notification("⏰ Встреча через 15 минут", {
-              body: `${b.title} · ${new Date(b.start_time).toLocaleTimeString("ru-RU", {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}`,
-              icon: "/logo.png",
-            });
+          const startMs = new Date(b.start_time).getTime();
+          for (const mins of reminderMins) {
+            const key = `${b.id}-${mins}`;
+            const diff = startMs - now;
+            const threshold = mins * 60_000;
+            if (diff > 0 && diff <= threshold && !notifiedRef.current.has(key)) {
+              notifiedRef.current.add(key);
+              const label = mins < 60 ? `${mins} минут` : `${mins / 60} час`;
+              const title = `⏰ Встреча через ${label}`;
+              const body = `${b.title} · ${new Date(b.start_time).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}`;
+              new Notification(title, { body, icon: "/logo.png" });
+              addNotification({
+                id: key,
+                title,
+                body,
+                time: Date.now(),
+                bookingId: b.id,
+                reminderMinutes: mins,
+              });
+            }
           }
         }
       } catch {
@@ -154,6 +168,8 @@ function Dashboard() {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [activeOpen, setActiveOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [adminOpen, setAdminOpen] = useState(false);
   const [slotStart, setSlotStart] = useState<Date | undefined>();
   const [slotEnd, setSlotEnd] = useState<Date | undefined>();
   const [editBooking, setEditBooking] = useState<Booking | null>(null);
@@ -270,6 +286,28 @@ function Dashboard() {
             </span>
           </motion.button>
 
+          {/* Notification bell */}
+          <motion.button
+            onClick={() => setNotifOpen(true)}
+            whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.93 }}
+            className="w-9 h-9 flex items-center justify-center rounded-xl text-base transition-all"
+            title="Уведомления"
+            style={{ border: "1px solid var(--border)", background: "var(--elevated)", color: "var(--text-sec)" }}>
+            🔔
+          </motion.button>
+
+          {/* Admin panel */}
+          {user?.role === "admin" && (
+            <motion.button
+              onClick={() => setAdminOpen(true)}
+              whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.93 }}
+              className="w-9 h-9 flex items-center justify-center rounded-xl text-base transition-all"
+              title="Администратор"
+              style={{ border: "1px solid var(--border)", background: "var(--elevated)", color: "var(--text-sec)" }}>
+              ⚙️
+            </motion.button>
+          )}
+
           {miniApp && <OpenInBrowserButton />}
 
           <ThemeToggle />
@@ -305,6 +343,18 @@ function Dashboard() {
         onClose={() => setActiveOpen(false)}
         onCardClick={handleCardClick}
       />
+
+      <NotificationCenter
+        isOpen={notifOpen}
+        onClose={() => setNotifOpen(false)}
+      />
+
+      {user?.role === "admin" && (
+        <AdminPanel
+          isOpen={adminOpen}
+          onClose={() => setAdminOpen(false)}
+        />
+      )}
 
       <BookingModal
         isOpen={modalOpen}

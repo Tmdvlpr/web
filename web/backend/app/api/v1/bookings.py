@@ -22,6 +22,77 @@ from app.schemas.booking import BookingCreate, BookingResponse, BookingUpdate
 router = APIRouter(prefix="/bookings", tags=["bookings"])
 
 
+@router.get("/feed/{feed_token}")
+async def public_ical_feed(
+    feed_token: str,
+    db: AsyncSession = Depends(get_db),
+) -> StreamingResponse:
+    from sqlalchemy import select as _select
+    user_result = await db.execute(
+        _select(User).where(User.feed_token == feed_token)
+    )
+    user = user_result.scalar_one_or_none()
+    if not user:
+        from fastapi import HTTPException as _HTTPException
+        raise _HTTPException(404, "Feed not found")
+
+    result = await db.execute(
+        _select(Booking)
+        .options(selectinload(Booking.user))
+        .where(Booking.user_id == user.id)
+        .order_by(Booking.start_time)
+    )
+    bookings = result.scalars().all()
+
+    def fmt_dt(dt: datetime) -> str:
+        return dt.strftime("%Y%m%dT%H%M%SZ")
+
+    lines: list[str] = [
+        "BEGIN:VCALENDAR", "VERSION:2.0",
+        "PRODID:-//CorpMeet//RU", "CALSCALE:GREGORIAN", "METHOD:PUBLISH",
+        "REFRESH-INTERVAL;VALUE=DURATION:PT15M",
+        f"X-PUBLISHED-TTL:PT15M",
+    ]
+    for b in bookings:
+        guests_note = ("\\nГости: " + ", ".join(f"@{g}" for g in b.guests)) if b.guests else ""
+        desc = ((b.description or "").replace("\n", "\\n") + guests_note).strip()
+        lines += [
+            "BEGIN:VEVENT",
+            f"UID:corpmeet-{b.id}@corpmeet",
+            f"DTSTAMP:{fmt_dt(datetime.now(timezone.utc))}",
+            f"DTSTART:{fmt_dt(b.start_time)}",
+            f"DTEND:{fmt_dt(b.end_time)}",
+            f"SUMMARY:{b.title}",
+            f"ORGANIZER;CN={b.user.display_name}:mailto:noreply@corpmeet",
+            *(["DESCRIPTION:" + desc] if desc else []),
+            "END:VEVENT",
+        ]
+    lines.append("END:VCALENDAR")
+    content = "\r\n".join(lines)
+    return StreamingResponse(
+        iter([content.encode("utf-8")]),
+        media_type="text/calendar; charset=utf-8",
+        headers={"Content-Disposition": "inline; filename=corpmeet.ics"},
+    )
+
+
+@router.get("/admin/all", response_model=list[BookingResponse])
+async def admin_list_bookings(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> list[BookingResponse]:
+    if current_user.role != Role.admin:
+        from fastapi import HTTPException as _HTTPException
+        raise _HTTPException(403, "Admin only")
+    result = await db.execute(
+        select(Booking)
+        .options(selectinload(Booking.user))
+        .order_by(Booking.start_time.desc())
+        .limit(200)
+    )
+    return result.scalars().all()
+
+
 def _local(dt: datetime) -> datetime:
     try:
         tz = ZoneInfo(settings.APP_TIMEZONE)

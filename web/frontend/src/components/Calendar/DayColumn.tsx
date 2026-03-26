@@ -1,13 +1,14 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useTheme } from "../../contexts/ThemeContext";
-import type { Booking, User } from "../../types";
+import type { Booking, SlotResponse, User } from "../../types";
 import { BookingCard } from "./BookingCard";
 import { HOUR_HEIGHT_PX, DAY_START_HOUR, DAY_END_HOUR, TOTAL_HOURS } from "./index";
 
 interface DayColumnProps {
   date: Date;
   bookings: Booking[];
+  freeSlots?: SlotResponse[];
   currentUser: User | null;
   onSlotClick: (start: Date, end: Date) => void;
   onCardClick: (booking: Booking) => void;
@@ -26,7 +27,7 @@ function nowPercent(): number {
   return ((hours - DAY_START_HOUR) / TOTAL_HOURS) * 100;
 }
 
-export function DayColumn({ date, bookings, currentUser, onSlotClick, onCardClick, isToday }: DayColumnProps) {
+export function DayColumn({ date, bookings, freeSlots = [], currentUser, onSlotClick, onCardClick, isToday }: DayColumnProps) {
   const { isDark } = useTheme();
   const dayName = date.toLocaleDateString("ru-RU", { weekday: "short" });
   const dayNum  = date.getDate();
@@ -106,6 +107,22 @@ export function DayColumn({ date, bookings, currentUser, onSlotClick, onCardClic
         onMouseMove={!isPast ? handleMouseMove : undefined}
         onMouseLeave={() => setHoverSlot(null)}
       >
+        {/* Free slot highlights */}
+        {!isPast && freeSlots.filter(s => s.available).map((slot, i) => {
+          const startPct = timeToPercent(new Date(slot.start));
+          const endPct = timeToPercent(new Date(slot.end));
+          if (endPct <= startPct) return null;
+          return (
+            <div key={i} className="absolute left-0 right-0 pointer-events-none"
+              style={{
+                top: `${startPct}%`,
+                height: `${endPct - startPct}%`,
+                background: isDark ? "rgba(34,197,94,0.04)" : "rgba(34,197,94,0.05)",
+                borderLeft: "1.5px solid rgba(34,197,94,0.2)",
+              }} />
+          );
+        })}
+
         {/* Hour lines */}
         {Array.from({ length: TOTAL_HOURS + 1 }).map((_, i) => (
           <div key={i} className="absolute left-0 right-0"

@@ -53,6 +53,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             )
             """,
             "CREATE INDEX IF NOT EXISTS idx_browser_sessions_token ON browser_sessions(token)",
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS feed_token VARCHAR(64) UNIQUE",
+            "CREATE UNIQUE INDEX IF NOT EXISTS idx_users_feed_token ON users(feed_token) WHERE feed_token IS NOT NULL",
         ]
         for sql in migrations:
             try:

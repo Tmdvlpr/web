@@ -1,10 +1,13 @@
-from fastapi import APIRouter, Depends, Query
-from sqlalchemy import or_, select
+import secrets
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.dependencies import get_current_user
-from app.models.user import User
+from app.models.booking import Booking
+from app.models.user import Role, User
 from app.schemas.user import UserResponse
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -37,3 +40,51 @@ async def search_users(
             ).order_by(User.first_name).limit(20)
         )
     return result.scalars().all()
+
+
+@router.post("/feed-token", response_model=dict)
+async def get_feed_token(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict:
+    if not current_user.feed_token:
+        current_user.feed_token = secrets.token_urlsafe(32)
+        await db.commit()
+        await db.refresh(current_user)
+    return {"feed_token": current_user.feed_token}
+
+
+# ── Admin endpoints ───────────────────────────────────────────────────────────
+
+@router.get("/admin/users", response_model=list[UserResponse])
+async def admin_list_users(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> list[UserResponse]:
+    if current_user.role != Role.admin:
+        raise HTTPException(403, "Admin only")
+    result = await db.execute(select(User).order_by(User.created_at.desc()))
+    return result.scalars().all()
+
+
+@router.get("/admin/stats")
+async def admin_stats(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict:
+    if current_user.role != Role.admin:
+        raise HTTPException(403, "Admin only")
+    total_users = (await db.execute(select(func.count(User.id)))).scalar_one()
+    total_bookings = (await db.execute(select(func.count(Booking.id)))).scalar_one()
+    from datetime import datetime, timezone
+    now = datetime.now(timezone.utc)
+    active_bookings = (await db.execute(
+        select(func.count(Booking.id)).where(
+            Booking.start_time <= now, Booking.end_time >= now
+        )
+    )).scalar_one()
+    return {
+        "total_users": total_users,
+        "total_bookings": total_bookings,
+        "active_bookings": active_bookings,
+    }

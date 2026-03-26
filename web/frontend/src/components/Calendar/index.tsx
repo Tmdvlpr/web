@@ -2,9 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { useTheme } from "../../contexts/ThemeContext";
-import { useBookings } from "../../hooks/useBookings";
+import { useBookings, useSlots } from "../../hooks/useBookings";
 import { bookingsApi } from "../../api/bookings";
-import type { Booking, User } from "../../types";
+import { Skeleton } from "../Common/Skeleton";
+import type { Booking, SlotResponse, User } from "../../types";
 import { DayColumn } from "./DayColumn";
 
 interface CalendarProps {
@@ -24,7 +25,27 @@ interface DayContainerProps {
 }
 
 function DayContainer({ date, dateStr, currentUser, onSlotClick, onCardClick, isToday, searchQuery }: DayContainerProps) {
-  const { data: bookings = [] } = useBookings(dateStr);
+  const { data: bookings = [], isLoading } = useBookings(dateStr);
+  const { data: slots = [] } = useSlots(dateStr);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col min-w-0" style={{ borderRight: "1px solid var(--border)" }}>
+        <div className="text-center py-2 px-1 sticky top-0 z-10"
+          style={{ background: "var(--bg)", borderBottom: "1px solid var(--border)", height: 48 }}>
+          <Skeleton className="mx-auto w-6 h-3 mt-1 mb-1" />
+          <Skeleton className="mx-auto w-8 h-8 rounded-full" />
+        </div>
+        <div style={{ height: `${TOTAL_HOURS * HOUR_HEIGHT_PX}px`, position: "relative" }}>
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="absolute left-1 right-1 rounded-xl"
+              style={{ top: `${15 + i * 28}%`, height: "22%" }} />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   const filtered = searchQuery
     ? (bookings as Booking[]).filter((b) =>
         b.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -33,7 +54,7 @@ function DayContainer({ date, dateStr, currentUser, onSlotClick, onCardClick, is
       )
     : bookings as Booking[];
   return (
-    <DayColumn date={date} bookings={filtered} currentUser={currentUser}
+    <DayColumn date={date} bookings={filtered} freeSlots={slots as SlotResponse[]} currentUser={currentUser}
       onSlotClick={onSlotClick} onCardClick={onCardClick} isToday={isToday} />
   );
 }

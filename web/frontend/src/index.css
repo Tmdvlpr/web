@@ -33,6 +33,7 @@
   --primary-border:  #ddd6fe;
   --scrollbar-track: #f1f5f9;
   --scrollbar-thumb: #cbd5e1;
+  --skeleton:        rgba(148,163,184,0.14);
 }
 
 /* ── Dark theme ── */
@@ -66,6 +67,7 @@
   --primary-border:  rgba(168,85,247,0.35);
   --scrollbar-track: #0d0d20;
   --scrollbar-thumb: #2d2d4e;
+  --skeleton:        rgba(255,255,255,0.06);
 }
 
 * { box-sizing: border-box; }

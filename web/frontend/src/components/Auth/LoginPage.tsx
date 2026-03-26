@@ -307,7 +307,7 @@ export default function LoginPage() {
                 </div>
                 <div className="flex items-center gap-2.5">
                   <div className="h-px w-10" style={{ background: "linear-gradient(90deg, transparent, rgba(37,99,235,0.35))" }} />
-                  <span style={{ color: "rgba(37,99,235,0.55)", fontSize: 10, letterSpacing: "0.24em" }} className="uppercase font-semibold">CorpMeet</span>
+                  <span style={{ color: "rgba(37,99,235,0.75)", fontSize: 16, letterSpacing: "0.24em" }} className="uppercase font-bold">CorpMeet</span>
                   <div className="h-px w-10" style={{ background: "linear-gradient(90deg, rgba(37,99,235,0.35), transparent)" }} />
                 </div>
               </div>
@@ -316,7 +316,7 @@ export default function LoginPage() {
               <motion.h1 initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
                 className="text-2xl font-bold text-center mb-2"
                 style={{ color: "#0f172a", letterSpacing: "-0.01em" }}>
-                Добро пожаловать
+                Добро пожаловать!
               </motion.h1>
               <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.45 }}
                 className="text-center text-xs font-semibold mb-7"

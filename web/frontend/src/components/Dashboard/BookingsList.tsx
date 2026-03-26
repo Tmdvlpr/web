@@ -1,9 +1,11 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
 import { InteractiveStripe } from "../Common/InteractiveStripe";
+import { MeetingListSkeleton } from "../Common/Skeleton";
 import { useTheme } from "../../contexts/ThemeContext";
 import { bookingsApi } from "../../api/bookings";
+import { usersApi } from "../../api/users";
 import type { Booking } from "../../types";
 
 
@@ -63,27 +65,60 @@ function dayLabel(iso: string) {
 interface DayGroup { label: string; bookings: Booking[] }
 
 function ExportFooter({ isDark }: { isDark: boolean }) {
-  const [loading, setLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [feedCopied, setFeedCopied] = useState(false);
+  const queryClient = useQueryClient();
+
+  const { mutate: getFeed, isPending: feedLoading } = useMutation({
+    mutationFn: usersApi.getFeedToken,
+    onSuccess: (token) => {
+      queryClient.setQueryData(["feedToken"], token);
+      const url = bookingsApi.getFeedUrl(token);
+      navigator.clipboard.writeText(url).then(() => {
+        setFeedCopied(true);
+        setTimeout(() => setFeedCopied(false), 2500);
+      });
+    },
+  });
+
   const handleExport = async () => {
-    setLoading(true);
-    try { await bookingsApi.exportHistory(); } finally { setLoading(false); }
+    setExporting(true);
+    try { await bookingsApi.exportHistory(); } finally { setExporting(false); }
   };
+
   return (
-    <div className="px-4 py-3 flex items-center justify-between gap-3"
-      style={{ borderTop: "1px solid var(--border)" }}>
-      <p className="text-xs" style={{ color: "var(--text-muted)", opacity: 0.5 }}>
-        Обновляется каждые 30 сек
-      </p>
+    <div className="px-4 py-3 space-y-2" style={{ borderTop: "1px solid var(--border)" }}>
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-xs" style={{ color: "var(--text-muted)", opacity: 0.5 }}>
+          Обновляется каждые 30 сек
+        </p>
+        <motion.button
+          onClick={handleExport} disabled={exporting}
+          whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold disabled:opacity-50 transition-all"
+          style={{
+            background: isDark ? "rgba(124,58,237,0.12)" : "#f5f3ff",
+            border: isDark ? "1px solid rgba(124,58,237,0.3)" : "1px solid #ddd6fe",
+            color: "var(--primary)",
+          }}>
+          {exporting ? "⏳" : "📅"} {exporting ? "Загрузка..." : "История .ics"}
+        </motion.button>
+      </div>
       <motion.button
-        onClick={handleExport} disabled={loading}
-        whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold disabled:opacity-50 transition-all"
+        onClick={() => getFeed()}
+        disabled={feedLoading}
+        whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+        className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold disabled:opacity-50 transition-all"
         style={{
-          background: isDark ? "rgba(124,58,237,0.12)" : "#f5f3ff",
-          border: isDark ? "1px solid rgba(124,58,237,0.3)" : "1px solid #ddd6fe",
-          color: "var(--primary)",
+          background: feedCopied
+            ? (isDark ? "rgba(34,197,94,0.12)" : "#f0fdf4")
+            : (isDark ? "rgba(8,145,178,0.1)" : "#ecfeff"),
+          border: feedCopied
+            ? (isDark ? "1px solid rgba(34,197,94,0.3)" : "1px solid #bbf7d0")
+            : (isDark ? "1px solid rgba(8,145,178,0.3)" : "1px solid #a5f3fc"),
+          color: feedCopied ? "#15803d" : "#0891b2",
         }}>
-        {loading ? "⏳" : "📅"} {loading ? "Загрузка..." : "История .ics"}
+        {feedLoading ? "⏳" : feedCopied ? "✅ Ссылка скопирована!" : "🔗 Скопировать ссылку iCal-фида"}
       </motion.button>
     </div>
   );
@@ -139,13 +174,9 @@ export function ActiveMeetings({ isOpen, onClose, onCardClick }: Props) {
                 onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-muted)"; }}>×</button>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
+            <div className="flex-1 overflow-y-auto py-1">
               {isLoading ? (
-                <div className="flex items-center justify-center py-16">
-                  <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                    className="w-8 h-8 rounded-full border-2 border-t-transparent"
-                    style={{ borderColor: "var(--primary)", borderTopColor: "transparent" }} />
-                </div>
+                <MeetingListSkeleton />
               ) : groups.length === 0 ? (
                 <div className="text-center py-16">
                   <div className="text-4xl mb-3">📭</div>

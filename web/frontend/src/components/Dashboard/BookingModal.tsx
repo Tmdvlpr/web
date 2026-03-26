@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { DateTimePicker } from "../Common/DateTimePicker";
 import { InteractiveStripe } from "../Common/InteractiveStripe";
 import { useTheme } from "../../contexts/ThemeContext";
-import { useCreateBooking, useDeleteBooking, useUpdateBooking, useUsers } from "../../hooks/useBookings";
+import { useBookings, useCreateBooking, useDeleteBooking, useUpdateBooking, useUsers } from "../../hooks/useBookings";
 import type { Booking } from "../../types";
 
 interface BookingModalProps {
@@ -365,6 +365,20 @@ export function BookingModal({
   const [recurDays,   setRecurDays] = useState<number[]>([]);
   const [deleteSeries,setDelSeries] = useState(false);
   const [error,       setError]     = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{ title?: string; time?: string; days?: string }>({});
+
+  // Conflict preview: load bookings for the selected date
+  const dateStr = startTime ? startTime.split("T")[0] : undefined;
+  const { data: dayBookings = [] } = useBookings(dateStr);
+  const conflicts = !isEdit
+    ? dayBookings.filter((b) => {
+        const bStart = new Date(b.start_time).getTime();
+        const bEnd   = new Date(b.end_time).getTime();
+        const sStart = new Date(startTime).getTime();
+        const sEnd   = new Date(endTime).getTime();
+        return bStart < sEnd && bEnd > sStart;
+      })
+    : [];
 
   const { mutateAsync: createBooking, isPending: isCreating } = useCreateBooking();
   const { mutateAsync: updateBooking, isPending: isUpdating } = useUpdateBooking();
@@ -397,8 +411,23 @@ export function BookingModal({
   const applyPreset = (mins: number) =>
     setEnd(toLocal(new Date(new Date(startTime).getTime() + mins * 60_000)));
 
+  const validateFields = (): boolean => {
+    const errs: { title?: string; time?: string; days?: string } = {};
+    if (!title.trim()) errs.title = "Название обязательно";
+    const sMs = new Date(startTime).getTime();
+    const eMs = new Date(endTime).getTime();
+    const durMin = (eMs - sMs) / 60_000;
+    if (sMs >= eMs) errs.time = "Конец должен быть позже начала";
+    else if (durMin < 15) errs.time = "Минимум 15 минут";
+    else if (durMin > 480) errs.time = "Максимум 8 часов";
+    if (recurrence === "custom" && recurDays.length === 0) errs.days = "Выберите хотя бы один день";
+    setFieldErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setError(null);
+    if (!validateFields()) return;
     const startISO = new Date(startTime).toISOString();
     const endISO   = new Date(endTime).toISOString();
     try {
@@ -613,12 +642,20 @@ export function BookingModal({
                     <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--text-sec)" }}>
                       Название встречи
                     </label>
-                    <input type="text" required autoFocus value={title} onChange={e => setTitle(e.target.value)}
+                    <input type="text" autoFocus value={title}
+                      onChange={e => { setTitle(e.target.value); if (fieldErrors.title) setFieldErrors(fe => ({ ...fe, title: undefined })); }}
                       placeholder="Планёрка, 1-on-1, Demo..."
                       className="w-full rounded-xl px-3 py-2.5 text-sm outline-none transition-all"
-                      style={{ background: "var(--input-bg)", border: "1.5px solid var(--input-border)", color: "var(--text)" }}
-                      onFocus={e => { e.currentTarget.style.borderColor = "var(--primary)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(124,58,237,0.12)"; }}
-                      onBlur={e => { e.currentTarget.style.borderColor = "var(--input-border)"; e.currentTarget.style.boxShadow = "none"; }} />
+                      style={{
+                        background: "var(--input-bg)",
+                        border: `1.5px solid ${fieldErrors.title ? "#ef4444" : "var(--input-border)"}`,
+                        color: "var(--text)",
+                      }}
+                      onFocus={e => { e.currentTarget.style.borderColor = fieldErrors.title ? "#ef4444" : "var(--primary)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(124,58,237,0.12)"; }}
+                      onBlur={e => { e.currentTarget.style.borderColor = fieldErrors.title ? "#ef4444" : "var(--input-border)"; e.currentTarget.style.boxShadow = "none"; }} />
+                    {fieldErrors.title && (
+                      <p className="text-xs mt-1 font-medium" style={{ color: "#ef4444" }}>{fieldErrors.title}</p>
+                    )}
                   </div>
 
                   {/* Description */}
@@ -639,9 +676,31 @@ export function BookingModal({
                   <GuestInput guests={guests} setGuests={setGuests} />
 
                   {/* Date/time */}
-                  <div className="flex gap-3">
-                    <DateTimePicker label="Начало" value={startTime} onChange={setStart} />
-                    <DateTimePicker label="Конец"  value={endTime}   onChange={setEnd} />
+                  <div>
+                    <div className="flex gap-3">
+                      <DateTimePicker label="Начало" value={startTime}
+                        onChange={v => { setStart(v); setFieldErrors(fe => ({ ...fe, time: undefined })); }} />
+                      <DateTimePicker label="Конец"  value={endTime}
+                        onChange={v => { setEnd(v); setFieldErrors(fe => ({ ...fe, time: undefined })); }} />
+                    </div>
+                    {fieldErrors.time && (
+                      <p className="text-xs mt-1 font-medium" style={{ color: "#ef4444" }}>{fieldErrors.time}</p>
+                    )}
+                    {/* Conflict preview */}
+                    {!isEdit && conflicts.length > 0 && !fieldErrors.time && (
+                      <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
+                        className="mt-2 rounded-xl px-3 py-2.5 space-y-1"
+                        style={{ background: isDark ? "rgba(239,68,68,0.08)" : "#fff1f2", border: "1px solid rgba(239,68,68,0.25)" }}>
+                        <p className="text-xs font-semibold" style={{ color: "#ef4444" }}>
+                          ⚠️ Пересечение с {conflicts.length} встреч{conflicts.length === 1 ? "ей" : "ами"}:
+                        </p>
+                        {conflicts.map(c => (
+                          <p key={c.id} className="text-xs" style={{ color: isDark ? "#fca5a5" : "#dc2626" }}>
+                            • {c.title} ({new Date(c.start_time).toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"})}–{new Date(c.end_time).toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"})})
+                          </p>
+                        ))}
+                      </motion.div>
+                    )}
                   </div>
 
                   {/* Quick duration presets */}
@@ -694,13 +753,15 @@ export function BookingModal({
                       </div>
                       {recurrence === "custom" && (
                         <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}>
-                          <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--text-sec)" }}>Дни недели</label>
+                          <label className="block text-xs font-semibold mb-1.5" style={{ color: fieldErrors.days ? "#ef4444" : "var(--text-sec)" }}>
+                            Дни недели {fieldErrors.days && <span className="font-normal">— {fieldErrors.days}</span>}
+                          </label>
                           <div className="flex gap-1.5">
                             {WEEKDAYS.map(d => {
                               const on = recurDays.includes(d.idx);
                               return (
                                 <button key={d.idx} type="button"
-                                  onClick={() => setRecurDays(days => on ? days.filter(x => x !== d.idx) : [...days, d.idx].sort())}
+                                  onClick={() => { setRecurDays(days => on ? days.filter(x => x !== d.idx) : [...days, d.idx].sort()); setFieldErrors(fe => ({ ...fe, days: undefined })); }}
                                   className="flex-1 py-1.5 rounded-lg text-xs font-bold transition-all"
                                   style={{
                                     background: on ? "var(--primary)" : "var(--elevated)",
