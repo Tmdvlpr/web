@@ -67,6 +67,29 @@ async def admin_list_users(
     return result.scalars().all()
 
 
+@router.patch("/admin/users/{user_id}/role")
+async def admin_set_role(
+    user_id: int,
+    body: dict,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict:
+    if current_user.role != Role.admin:
+        raise HTTPException(403, "Admin only")
+    new_role = body.get("role")
+    if new_role not in ("user", "admin"):
+        raise HTTPException(400, "role must be 'user' or 'admin'")
+    result = await db.execute(select(User).where(User.id == user_id))
+    target = result.scalar_one_or_none()
+    if not target:
+        raise HTTPException(404, "User not found")
+    if target.id == current_user.id:
+        raise HTTPException(400, "Cannot change your own role")
+    target.role = Role(new_role)
+    await db.commit()
+    return {"id": target.id, "role": new_role}
+
+
 @router.get("/admin/stats")
 async def admin_stats(
     db: AsyncSession = Depends(get_db),

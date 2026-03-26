@@ -4,6 +4,9 @@ import { InteractiveStripe } from "../Common/InteractiveStripe";
 import { MeetingListSkeleton } from "../Common/Skeleton";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useAdminBookings, useAdminStats, useAdminUsers } from "../../hooks/useBookings";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { usersApi } from "../../api/users";
+import { useAuth } from "../../hooks/useAuth";
 
 interface Props {
   isOpen: boolean;
@@ -25,9 +28,17 @@ export function AdminPanel({ isOpen, onClose }: Props) {
   const { isDark } = useTheme();
   const [tab, setTab] = useState<Tab>("stats");
 
+  const { user: currentUser } = useAuth();
+  const queryClient = useQueryClient();
   const { data: stats, isLoading: statsLoading } = useAdminStats();
   const { data: bookings = [], isLoading: bookingsLoading } = useAdminBookings();
   const { data: users = [], isLoading: usersLoading } = useAdminUsers();
+
+  const { mutate: setRole, variables: roleVars } = useMutation({
+    mutationFn: ({ userId, role }: { userId: number; role: "user" | "admin" }) =>
+      usersApi.adminSetRole(userId, role),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin", "users"] }),
+  });
 
   const statCards = stats ? [
     { label: "Пользователей", value: stats.total_users, icon: "👤", color: "#7c3aed" },
@@ -157,18 +168,28 @@ export function AdminPanel({ isOpen, onClose }: Props) {
                           style={{ background: "var(--elevated)", border: "1px solid var(--border)" }}>
                           <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0"
                             style={{ background: c }}>{u.display_name[0]}</div>
-                          <div className="min-w-0">
+                          <div className="min-w-0 flex-1">
                             <p className="text-xs font-bold truncate" style={{ color: "var(--text)" }}>{u.display_name}</p>
                             <div className="flex items-center gap-2 mt-0.5">
                               {u.username && (
                                 <span className="text-xs" style={{ color: "var(--text-muted)" }}>@{u.username}</span>
                               )}
-                              {u.role === "admin" && (
-                                <span className="text-xs px-1.5 py-0.5 rounded font-semibold"
-                                  style={{ background: "rgba(124,58,237,0.12)", color: "var(--primary)" }}>admin</span>
-                              )}
                             </div>
                           </div>
+                          {u.id !== currentUser?.id && (
+                            <button
+                              onClick={() => setRole({ userId: u.id, role: u.role === "admin" ? "user" : "admin" })}
+                              disabled={roleVars?.userId === u.id}
+                              className="shrink-0 text-xs px-2 py-1 rounded-lg font-semibold transition-all disabled:opacity-40"
+                              style={u.role === "admin"
+                                ? { background: "rgba(124,58,237,0.12)", color: "var(--primary)", border: "1px solid var(--primary-border)" }
+                                : { background: "var(--elevated)", color: "var(--text-muted)", border: "1px solid var(--border)" }
+                              }
+                              title={u.role === "admin" ? "Снять права admin" : "Назначить admin"}
+                            >
+                              {u.role === "admin" ? "admin ✕" : "+ admin"}
+                            </button>
+                          )}
                         </div>
                       );
                     })}

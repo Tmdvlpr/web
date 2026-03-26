@@ -26,4 +26,8 @@ export const usersApi = {
     const res = await apiClient.get<AdminStats>("/api/v1/users/admin/stats");
     return res.data;
   },
+
+  adminSetRole: async (userId: number, role: "user" | "admin"): Promise<void> => {
+    await apiClient.patch(`/api/v1/users/admin/users/${userId}/role`, { role });
+  },
 };

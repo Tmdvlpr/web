@@ -69,3 +69,29 @@ async def consume_session(session_token: str, db: AsyncSession = Depends(get_db)
 @router.get("/me", response_model=UserResponse)
 async def get_me(current_user: User = Depends(get_current_user)) -> UserResponse:
     return current_user
+
+
+@router.post("/dev-login", response_model=TokenResponse)
+async def dev_login(db: AsyncSession = Depends(get_db)) -> TokenResponse:
+    """Dev-only: instant login as a test user (no Telegram required)."""
+    from sqlalchemy import select as _select
+    DEV_TG_ID = 999_000_001
+    result = await db.execute(_select(User).where(User.telegram_id == DEV_TG_ID))
+    user = result.scalar_one_or_none()
+    if not user:
+        user = User(
+            telegram_id=DEV_TG_ID,
+            first_name="Dev",
+            last_name="User",
+            name="Dev User",
+            username="devuser",
+            role="admin",
+            is_registered=True,
+            is_active=True,
+        )
+        db.add(user)
+        await db.commit()
+        await db.refresh(user)
+    from app.services.auth_service import create_access_token
+    token = create_access_token(user.id)
+    return TokenResponse(access_token=token, expires_in=_EXPIRE_IN)

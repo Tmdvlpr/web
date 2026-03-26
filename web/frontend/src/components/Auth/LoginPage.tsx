@@ -7,6 +7,51 @@ import { useTelegram } from "../../hooks/useTelegram";
 import LoadingSpinner from "../Common/LoadingSpinner";
 
 /* ─────────────────────────────────────────────────────
+   DEV BYPASS BUTTON
+───────────────────────────────────────────────────── */
+function DevLoginButton() {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+
+  const handleClick = async () => {
+    setLoading(true);
+    try {
+      const { access_token } = await authApi.devLogin();
+      storage.setToken(access_token);
+      navigate("/bookings", { replace: true });
+    } catch {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      disabled={loading}
+      className="w-full py-2.5 rounded-xl text-xs font-semibold transition-all disabled:opacity-50"
+      style={{
+        border: "1.5px dashed rgba(37,99,235,0.3)",
+        color: "rgba(37,99,235,0.5)",
+        background: "rgba(37,99,235,0.04)",
+        letterSpacing: "0.04em",
+      }}
+      onMouseEnter={e => {
+        e.currentTarget.style.background = "rgba(37,99,235,0.08)";
+        e.currentTarget.style.borderColor = "rgba(37,99,235,0.5)";
+        e.currentTarget.style.color = "rgba(37,99,235,0.8)";
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.background = "rgba(37,99,235,0.04)";
+        e.currentTarget.style.borderColor = "rgba(37,99,235,0.3)";
+        e.currentTarget.style.color = "rgba(37,99,235,0.5)";
+      }}
+    >
+      {loading ? "Входим..." : "DEV — войти без Telegram"}
+    </button>
+  );
+}
+
+/* ─────────────────────────────────────────────────────
    DIGITAL CIRCUIT CANVAS
 ───────────────────────────────────────────────────── */
 function DigitalCanvas() {
@@ -347,9 +392,17 @@ export default function LoginPage() {
                 ))}
               </div>
 
+              {/* Dev bypass — only in development */}
+              {import.meta.env.DEV && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.9 }}
+                  className="mt-6">
+                  <DevLoginButton />
+                </motion.div>
+              )}
+
               {/* Waiting */}
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.95 }}
-                className="mt-8 flex items-center justify-center gap-2">
+                className="mt-4 flex items-center justify-center gap-2">
                 {[0, 0.2, 0.4].map((d, i) => (
                   <motion.div key={i} className="w-1.5 h-1.5 rounded-full"
                     style={{ background: "rgba(37,99,235,0.65)" }}
