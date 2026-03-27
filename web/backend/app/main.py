@@ -60,6 +60,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             "CREATE INDEX IF NOT EXISTS idx_browser_sessions_token ON browser_sessions(token)",
             "ALTER TABLE users ADD COLUMN IF NOT EXISTS feed_token VARCHAR(64) UNIQUE",
             "ALTER TABLE bookings ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ",
+            "ALTER TABLE browser_sessions ALTER COLUMN user_id DROP NOT NULL",
+            "ALTER TABLE users ALTER COLUMN name DROP NOT NULL",
             "CREATE UNIQUE INDEX IF NOT EXISTS idx_users_feed_token ON users(feed_token) WHERE feed_token IS NOT NULL",
         ]
         for sql in migrations:
@@ -68,38 +70,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             except Exception:
                 pass
 
-    # ── 2. Запуск TG Bot + фоновых задач ─────────────────────────────────────
-    from app.bot.bot import create_bot_and_dispatcher
-    from app.bot.tasks.notifications import run_notification_task
-    from app.bot.tasks.reminders import run_reminder_task
-
-    bot, dp = create_bot_and_dispatcher()
-
-    bg_tasks = [
-        asyncio.create_task(
-            dp.start_polling(bot, handle_signals=False),
-            name="bot_polling",
-        ),
-        asyncio.create_task(
-            run_notification_task(bot),
-            name="bot_notifications",
-        ),
-        asyncio.create_task(
-            run_reminder_task(bot),
-            name="bot_reminders",
-        ),
-    ]
-    logger.info("TG Bot started (polling + notification + reminder tasks)")
+    # ── 2. TG Bot запускается отдельно (tg/tg/bot.py) ────────────────────────
+    # Бот НЕ запускается в lifespan — он работает как отдельный процесс
+    # с полным набором хендлеров, Mini App сервером и фоновыми задачами.
+    logger.info("Backend ready. TG Bot runs separately (tg/tg/bot.py)")
 
     yield  # ← FastAPI обрабатывает HTTP-запросы
 
-    # ── 3. Graceful shutdown ──────────────────────────────────────────────────
-    logger.info("Shutting down TG Bot tasks...")
-    for task in bg_tasks:
-        task.cancel()
-    await asyncio.gather(*bg_tasks, return_exceptions=True)
-    await bot.session.close()
-    logger.info("TG Bot stopped.")
+    logger.info("Backend shutting down.")
 
 
 app = FastAPI(
@@ -131,3 +109,32 @@ app.include_router(internal.router, prefix="/api/v1")  # только для TG 
 @app.get("/health")
 async def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+# ── Serve production frontend build ─────────────────────────────────────────
+import os
+from pathlib import Path
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+
+_DIST = Path(__file__).resolve().parents[2] / "frontend" / "dist"
+
+if _DIST.is_dir():
+    # Serve static assets (js, css, images)
+    app.mount("/assets", StaticFiles(directory=str(_DIST / "assets")), name="assets")
+
+    # Serve other static files from dist root (logo, vite.svg, etc.)
+    for f in _DIST.iterdir():
+        if f.is_file() and f.name != "index.html":
+            app.mount(f"/{f.name}", StaticFiles(directory=str(_DIST)), name=f"static-{f.name}")
+
+    # SPA fallback: all non-API routes → index.html
+    @app.get("/{full_path:path}")
+    async def spa_fallback(full_path: str):
+        # Don't intercept API and docs routes
+        if full_path.startswith(("api/", "docs", "openapi.json", "health")):
+            return
+        file = _DIST / full_path
+        if file.is_file():
+            return FileResponse(str(file))
+        return FileResponse(str(_DIST / "index.html"))

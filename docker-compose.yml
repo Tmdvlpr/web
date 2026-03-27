@@ -1,0 +1,64 @@
+version: "3.9"
+
+services:
+  backend:
+    build: ./web/backend
+    container_name: corpmeet-backend
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    env_file:
+      - ./web/backend/.env
+    depends_on:
+      - db
+    networks:
+      - corpmeet
+
+  frontend:
+    build:
+      context: ./web/frontend
+      args:
+        VITE_API_URL: ""
+    container_name: corpmeet-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - corpmeet
+
+  tg-bot:
+    build: ./tg
+    container_name: corpmeet-tg-bot
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    env_file:
+      - ./tg/.env
+    depends_on:
+      - backend
+    networks:
+      - corpmeet
+
+  db:
+    image: postgres:16-alpine
+    container_name: corpmeet-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: corpmeet
+      POSTGRES_USER: corpmeet
+      POSTGRES_PASSWORD: eW3lA7lU1j
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - corpmeet
+
+volumes:
+  pgdata:
+
+networks:
+  corpmeet:
+    driver: bridge

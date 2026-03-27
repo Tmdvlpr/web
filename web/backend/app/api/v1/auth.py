@@ -57,13 +57,87 @@ async def create_session(
     return BrowserSessionResponse(session_token=session_token, browser_url=browser_url)
 
 
-@router.get("/session/{session_token}", response_model=TokenResponse)
-async def consume_session(session_token: str, db: AsyncSession = Depends(get_db)) -> TokenResponse:
-    """Exchange a one-time session token for a JWT (browser auth)."""
-    token = await consume_browser_session(session_token, db)
-    if token is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired session token")
-    return TokenResponse(access_token=token, expires_in=_EXPIRE_IN)
+@router.post("/qr-session")
+async def create_qr_session(db: AsyncSession = Depends(get_db)) -> dict:
+    """Create a QR session (no auth). Returns token + bot deep-link for scanning."""
+    import secrets
+    from datetime import datetime, timedelta, timezone
+    from app.models.browser_session import BrowserSession
+
+    token = secrets.token_urlsafe(32)
+    session = BrowserSession(
+        token=token,
+        user_id=None,
+        expires_at=datetime.now(timezone.utc) + timedelta(minutes=5),
+    )
+    db.add(session)
+    await db.commit()
+
+    bot_url = f"https://t.me/{settings.TG_BOT_USERNAME}?start={token}" if settings.TG_BOT_USERNAME else None
+    return {"token": token, "bot_url": bot_url, "expires_in": 300}
+
+
+@router.get("/session/{session_token}")
+async def consume_session(session_token: str, db: AsyncSession = Depends(get_db)) -> dict:
+    """Check/consume a session token. Returns JWT if ready, 202 if pending."""
+    from sqlalchemy import select
+    from app.models.browser_session import BrowserSession
+
+    result = await db.execute(select(BrowserSession).where(BrowserSession.token == session_token))
+    session = result.scalar_one_or_none()
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    from datetime import datetime, timezone
+    expires = session.expires_at
+    if expires.tzinfo is None:
+        expires = expires.replace(tzinfo=timezone.utc)
+    if expires < datetime.now(timezone.utc):
+        raise HTTPException(status_code=410, detail="Session expired")
+
+    # QR session: user_id might not be set yet (bot hasn't consumed)
+    if not session.user_id:
+        from fastapi.responses import JSONResponse
+        return JSONResponse(status_code=202, content={"status": "pending"})
+
+    # Session has user — consume and return JWT
+    if not session.used:
+        session.used = True
+        session.used_at = datetime.now(timezone.utc)
+        await db.commit()
+
+    from app.services.auth_service import create_access_token
+    token = create_access_token(session.user_id)
+    return {"access_token": token, "expires_in": _EXPIRE_IN}
+
+
+@router.post("/web-register")
+async def web_register(body: dict, db: AsyncSession = Depends(get_db)) -> dict:
+    """Register directly from web (no Telegram required). Creates user + returns JWT."""
+    from sqlalchemy import select
+    from app.models.user import User
+    from app.services.auth_service import create_access_token
+
+    first_name = (body.get("first_name") or "").strip()
+    last_name = (body.get("last_name") or "").strip()
+    if not first_name:
+        raise HTTPException(400, "first_name is required")
+
+    display = f"{first_name} {last_name}".strip()
+    user = User(
+        telegram_id=0,
+        name=display,
+        first_name=first_name,
+        last_name=last_name or None,
+        is_registered=True,
+        is_active=True,
+    )
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+
+    token = create_access_token(user.id)
+    return {"access_token": token, "expires_in": settings.JWT_EXPIRE_DAYS * 86400, "user_id": user.id}
 
 
 @router.get("/me", response_model=UserResponse)

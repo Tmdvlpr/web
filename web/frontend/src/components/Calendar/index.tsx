@@ -5,7 +5,6 @@ import { CalendarDragProvider } from "../../contexts/CalendarDragContext";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useBookings, useSlots, useUpdateBooking } from "../../hooks/useBookings";
 import { bookingsApi } from "../../api/bookings";
-import { Skeleton } from "../Common/Skeleton";
 import type { Booking, SlotResponse, User } from "../../types";
 import { DayColumn } from "./DayColumn";
 

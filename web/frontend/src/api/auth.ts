@@ -31,6 +31,22 @@ export const authApi = {
     return res.data;
   },
 
+  createQrSession: async (): Promise<{ token: string; bot_url: string | null; expires_in: number }> => {
+    const res = await apiClient.post<{ token: string; bot_url: string | null; expires_in: number }>("/api/v1/auth/qr-session");
+    return res.data;
+  },
+
+  pollSession: async (token: string): Promise<{ status: "pending" } | TokenResponse> => {
+    const res = await apiClient.get(`/api/v1/auth/session/${token}`);
+    if (res.status === 202) return { status: "pending" };
+    return res.data;
+  },
+
+  webRegister: async (first_name: string, last_name: string): Promise<TokenResponse> => {
+    const res = await apiClient.post<TokenResponse>("/api/v1/auth/web-register", { first_name, last_name });
+    return res.data;
+  },
+
   devLogin: async (): Promise<TokenResponse> => {
     const res = await apiClient.post<TokenResponse>("/api/v1/auth/dev-login");
     return res.data;

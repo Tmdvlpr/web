@@ -15,6 +15,8 @@ class Settings(BaseSettings):
     BOT_SECRET: str = ""
     # Адрес бэкенда для вызовов из бота (внутри одного процесса)
     INTERNAL_API_URL: str = "http://127.0.0.1:8000"
+    # Username бота (без @) для QR-авторизации
+    TG_BOT_USERNAME: str = ""
 
     class Config:
         env_file = ".env"

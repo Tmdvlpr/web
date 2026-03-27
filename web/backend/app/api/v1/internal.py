@@ -313,11 +313,29 @@ async def consume_session_bot(
     if expires < datetime.now(timezone.utc):
         raise HTTPException(status_code=410, detail="Session expired")
 
-    # Привязываем telegram_id к пользователю (если ещё не задан)
-    user_result = await db.execute(select(User).where(User.id == session.user_id))
+    # Находим пользователя по telegram_id
+    user_result = await db.execute(select(User).where(User.telegram_id == body.telegram_id))
     user = user_result.scalar_one_or_none()
-    if user and not user.telegram_id:
-        user.telegram_id = body.telegram_id
+
+    if session.user_id:
+        # Обычная сессия (из Mini App) — привязать telegram_id если не задан
+        if not user:
+            existing = await db.execute(select(User).where(User.id == session.user_id))
+            user = existing.scalar_one_or_none()
+            if user and not user.telegram_id:
+                user.telegram_id = body.telegram_id
+    else:
+        # QR-сессия (user_id=NULL) — создать юзера если не существует
+        if not user:
+            user = User(
+                telegram_id=body.telegram_id,
+                name=f"user_{body.telegram_id}",
+                is_registered=True,
+                is_active=True,
+            )
+            db.add(user)
+            await db.flush()
+        session.user_id = user.id
 
     # Сжигаем токен
     session.used = True
