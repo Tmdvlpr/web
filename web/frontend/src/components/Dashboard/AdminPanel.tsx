@@ -34,10 +34,31 @@ export function AdminPanel({ isOpen, onClose }: Props) {
   const { data: bookings = [], isLoading: bookingsLoading } = useAdminBookings();
   const { data: users = [], isLoading: usersLoading } = useAdminUsers();
 
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newUsername, setNewUsername] = useState("");
+
   const { mutate: setRole, variables: roleVars } = useMutation({
     mutationFn: ({ userId, role }: { userId: number; role: "user" | "admin" }) =>
       usersApi.adminSetRole(userId, role),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin", "users"] }),
+  });
+
+  const { mutate: createUser, isPending: creating } = useMutation({
+    mutationFn: () => usersApi.adminCreateUser(newName.trim(), newUsername.trim() || undefined),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "stats"] });
+      setNewName(""); setNewUsername(""); setShowAddForm(false);
+    },
+  });
+
+  const { mutate: deleteUser } = useMutation({
+    mutationFn: (userId: number) => usersApi.adminDeleteUser(userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "stats"] });
+    },
   });
 
   const statCards = stats ? [
@@ -158,9 +179,37 @@ export function AdminPanel({ isOpen, onClose }: Props) {
               {tab === "users" && (
                 usersLoading ? <MeetingListSkeleton /> : (
                   <div className="space-y-2">
-                    <p className="text-xs font-semibold mb-2" style={{ color: "var(--text-muted)" }}>
-                      {users.length} пользователей
-                    </p>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>
+                        {users.length} пользователей
+                      </p>
+                      <button onClick={() => setShowAddForm(v => !v)}
+                        className="text-xs px-2.5 py-1 rounded-lg font-semibold transition-all"
+                        style={{ background: "var(--primary)", color: "#fff" }}>
+                        {showAddForm ? "Отмена" : "+ Добавить"}
+                      </button>
+                    </div>
+
+                    {showAddForm && (
+                      <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
+                        className="rounded-xl p-3 space-y-2"
+                        style={{ background: "var(--elevated)", border: "1px solid var(--primary-border)" }}>
+                        <input type="text" placeholder="Имя Фамилия" value={newName}
+                          onChange={e => setNewName(e.target.value)}
+                          className="w-full text-xs rounded-lg px-3 py-2 outline-none"
+                          style={{ background: "var(--input-bg)", border: "1px solid var(--input-border)", color: "var(--text)" }} />
+                        <input type="text" placeholder="@username (необязательно)" value={newUsername}
+                          onChange={e => setNewUsername(e.target.value)}
+                          className="w-full text-xs rounded-lg px-3 py-2 outline-none"
+                          style={{ background: "var(--input-bg)", border: "1px solid var(--input-border)", color: "var(--text)" }} />
+                        <button onClick={() => createUser()} disabled={!newName.trim() || creating}
+                          className="w-full text-xs py-2 rounded-lg font-bold text-white disabled:opacity-40"
+                          style={{ background: "var(--primary)" }}>
+                          {creating ? "Создание..." : "Создать пользователя"}
+                        </button>
+                      </motion.div>
+                    )}
+
                     {users.map(u => {
                       const c = color(u.id);
                       return (
@@ -177,18 +226,32 @@ export function AdminPanel({ isOpen, onClose }: Props) {
                             </div>
                           </div>
                           {u.id !== currentUser?.id && (
-                            <button
-                              onClick={() => setRole({ userId: u.id, role: u.role === "admin" ? "user" : "admin" })}
-                              disabled={roleVars?.userId === u.id}
-                              className="shrink-0 text-xs px-2 py-1 rounded-lg font-semibold transition-all disabled:opacity-40"
-                              style={u.role === "admin"
-                                ? { background: "rgba(124,58,237,0.12)", color: "var(--primary)", border: "1px solid var(--primary-border)" }
-                                : { background: "var(--elevated)", color: "var(--text-muted)", border: "1px solid var(--border)" }
-                              }
-                              title={u.role === "admin" ? "Снять права admin" : "Назначить admin"}
-                            >
-                              {u.role === "admin" ? "admin ✕" : "+ admin"}
-                            </button>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <button
+                                onClick={() => setRole({ userId: u.id, role: u.role === "admin" ? "user" : "admin" })}
+                                disabled={roleVars?.userId === u.id}
+                                className="text-xs px-2 py-1 rounded-lg font-semibold transition-all disabled:opacity-40"
+                                style={u.role === "admin"
+                                  ? { background: "rgba(124,58,237,0.12)", color: "var(--primary)", border: "1px solid var(--primary-border)" }
+                                  : { background: "var(--elevated)", color: "var(--text-muted)", border: "1px solid var(--border)" }
+                                }
+                                title={u.role === "admin" ? "Снять admin" : "Дать admin"}
+                              >
+                                {u.role === "admin" ? "admin ✕" : "+ admin"}
+                              </button>
+                              <button
+                                onClick={() => { if (confirm(`Удалить ${u.display_name}?`)) deleteUser(u.id); }}
+                                className="w-7 h-7 flex items-center justify-center rounded-lg text-xs transition-all"
+                                style={{ color: "var(--text-muted)" }}
+                                onMouseEnter={e => { e.currentTarget.style.color = "#ef4444"; e.currentTarget.style.background = "rgba(239,68,68,0.1)"; }}
+                                onMouseLeave={e => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = ""; }}
+                                title="Удалить пользователя"
+                              >
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                                  <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                                </svg>
+                              </button>
+                            </div>
                           )}
                         </div>
                       );

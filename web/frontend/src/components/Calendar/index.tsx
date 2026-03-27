@@ -1,8 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
+import { CalendarDragProvider } from "../../contexts/CalendarDragContext";
 import { useTheme } from "../../contexts/ThemeContext";
-import { useBookings, useSlots } from "../../hooks/useBookings";
+import { useBookings, useSlots, useUpdateBooking } from "../../hooks/useBookings";
 import { bookingsApi } from "../../api/bookings";
 import { Skeleton } from "../Common/Skeleton";
 import type { Booking, SlotResponse, User } from "../../types";
@@ -27,21 +28,20 @@ interface DayContainerProps {
 function DayContainer({ date, dateStr, currentUser, onSlotClick, onCardClick, isToday, searchQuery }: DayContainerProps) {
   const { data: bookings = [], isLoading } = useBookings(dateStr);
   const { data: slots = [] } = useSlots(dateStr);
+  const { mutate: updateBooking } = useUpdateBooking();
 
-  if (isLoading) {
+  const handleBookingDrop = (booking: Booking, newStart: Date) => {
+    const durationMs = new Date(booking.end_time).getTime() - new Date(booking.start_time).getTime();
+    const newEnd = new Date(newStart.getTime() + durationMs);
+    updateBooking({ id: booking.id, payload: { start_time: newStart.toISOString(), end_time: newEnd.toISOString() } });
+  };
+
+  if (isLoading && !bookings.length) {
     return (
       <div className="flex flex-col min-w-0" style={{ borderRight: "1px solid var(--border)" }}>
         <div className="text-center py-2 px-1 sticky top-0 z-10"
-          style={{ background: "var(--bg)", borderBottom: "1px solid var(--border)", height: 48 }}>
-          <Skeleton className="mx-auto w-6 h-3 mt-1 mb-1" />
-          <Skeleton className="mx-auto w-8 h-8 rounded-full" />
-        </div>
-        <div style={{ height: `${TOTAL_HOURS * HOUR_HEIGHT_PX}px`, position: "relative" }}>
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="absolute left-1 right-1 rounded-xl"
-              style={{ top: `${15 + i * 28}%`, height: "22%" }} />
-          ))}
-        </div>
+          style={{ background: "var(--day-header)", borderBottom: "1px solid var(--border)", height: 56, flexShrink: 0 }} />
+        <div style={{ height: `${TOTAL_HOURS * HOUR_HEIGHT_PX}px` }} />
       </div>
     );
   }
@@ -55,7 +55,7 @@ function DayContainer({ date, dateStr, currentUser, onSlotClick, onCardClick, is
     : bookings as Booking[];
   return (
     <DayColumn date={date} bookings={filtered} freeSlots={slots as SlotResponse[]} currentUser={currentUser}
-      onSlotClick={onSlotClick} onCardClick={onCardClick} isToday={isToday} />
+      onSlotClick={onSlotClick} onCardClick={onCardClick} onBookingDrop={handleBookingDrop} isToday={isToday} />
   );
 }
 
@@ -163,34 +163,40 @@ export function Calendar({ currentUser, onSlotClick, onCardClick }: CalendarProp
   const monthLabel = weekDates[0].toLocaleDateString("ru-RU", { month: "long", year: "numeric" });
 
   return (
+    <CalendarDragProvider>
     <div className="flex flex-col h-full" style={{ background: "var(--bg)" }}>
       {/* Toolbar */}
-      <div className="flex items-center gap-2 px-4 py-2 sticky top-0 z-20"
-        style={{ borderBottom: "1px solid var(--border)", background: "var(--toolbar)", backdropFilter: "blur(12px)" }}>
+      <div className="flex items-center gap-3 px-4 sticky top-0 z-20"
+        style={{ height: 48, borderBottom: "1px solid var(--border)", background: "var(--toolbar)", backdropFilter: "blur(12px)" }}>
 
-        <button onClick={() => setAnchorDate(new Date())}
-          className="px-3 py-1.5 text-xs font-semibold rounded-lg transition-all shrink-0"
-          style={{ border: "1px solid var(--primary-border)", color: "var(--primary)", background: "var(--primary-light)" }}
-          onMouseEnter={(e) => { e.currentTarget.style.opacity = "0.8"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.opacity = "1"; }}>
-          Сегодня
-        </button>
-        <button onClick={prevWeek} className="w-7 h-7 flex items-center justify-center rounded-lg text-lg leading-none transition-all shrink-0"
-          style={{ color: "var(--text-muted)" }}
-          onMouseEnter={(e) => { e.currentTarget.style.color = "var(--primary)"; e.currentTarget.style.background = "var(--primary-light)"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = ""; }}>
-          ‹
-        </button>
-        <button onClick={nextWeek} className="w-7 h-7 flex items-center justify-center rounded-lg text-lg leading-none transition-all shrink-0"
-          style={{ color: "var(--text-muted)" }}
-          onMouseEnter={(e) => { e.currentTarget.style.color = "var(--primary)"; e.currentTarget.style.background = "var(--primary-light)"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = ""; }}>
-          ›
-        </button>
+        {/* Navigation group */}
+        <div className="flex items-center gap-1">
+          <button onClick={() => setAnchorDate(new Date())}
+            className="px-3 h-7 text-xs font-semibold rounded-lg transition-all shrink-0"
+            style={{ border: "1.5px solid var(--primary-border)", color: "var(--primary)", background: "var(--primary-light)" }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = "var(--primary)"; e.currentTarget.style.color = "#fff"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "var(--primary-light)"; e.currentTarget.style.color = "var(--primary)"; }}>
+            Сегодня
+          </button>
+          <button onClick={prevWeek}
+            className="w-7 h-7 flex items-center justify-center rounded-lg font-semibold transition-all shrink-0 text-base leading-none"
+            style={{ color: "var(--text-muted)" }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = "var(--text)"; e.currentTarget.style.background = "var(--elevated)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = ""; }}>
+            ‹
+          </button>
+          <button onClick={nextWeek}
+            className="w-7 h-7 flex items-center justify-center rounded-lg font-semibold transition-all shrink-0 text-base leading-none"
+            style={{ color: "var(--text-muted)" }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = "var(--text)"; e.currentTarget.style.background = "var(--elevated)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = ""; }}>
+            ›
+          </button>
+        </div>
 
+        {/* Month label / search */}
         {searchOpen ? (
-          <motion.div initial={{ width: 0, opacity: 0 }} animate={{ width: 200, opacity: 1 }}
-            className="relative" style={{ overflow: "hidden" }}>
+          <motion.div initial={{ width: 0, opacity: 0 }} animate={{ width: 220, opacity: 1 }} style={{ overflow: "hidden" }}>
             <input
               ref={searchRef}
               type="text"
@@ -204,28 +210,28 @@ export function Calendar({ currentUser, onSlotClick, onCardClick }: CalendarProp
             />
           </motion.div>
         ) : (
-          <span className="text-sm font-bold capitalize" style={{ color: "var(--text)" }}>{monthLabel}</span>
+          <span className="text-sm font-bold capitalize" style={{ color: "var(--text)", letterSpacing: "-0.01em" }}>{monthLabel}</span>
         )}
 
-        <div className="ml-auto flex items-center gap-2">
-          {/* Room status */}
+        <div className="ml-auto flex items-center gap-3">
           <RoomStatus />
 
-          {/* Search toggle */}
           <button
             onClick={() => { setSearchOpen((v) => !v); if (searchOpen) setSearchQuery(""); }}
-            className="w-7 h-7 flex items-center justify-center rounded-lg text-sm transition-all"
+            className="w-7 h-7 flex items-center justify-center rounded-lg transition-all"
             style={{
               color: searchQuery ? "var(--primary)" : "var(--text-muted)",
               background: searchQuery ? "var(--primary-light)" : "transparent",
-              border: searchQuery ? "1px solid var(--primary-border)" : "1px solid transparent",
             }}
             title="Поиск">
-            🔍
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
           </button>
 
           <div className="flex items-center gap-1.5 text-xs" style={{ color: "var(--text-muted)" }}>
-            <div className="w-1.5 h-1.5 rounded-full bg-red-400" />
+            <motion.div animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 2, repeat: Infinity }}
+              className="w-2 h-2 rounded-full" style={{ background: "#ef4444" }} />
             <span>сейчас</span>
           </div>
         </div>
@@ -234,11 +240,12 @@ export function Calendar({ currentUser, onSlotClick, onCardClick }: CalendarProp
       {/* Grid */}
       <div className="flex flex-1 overflow-hidden">
         {/* Time axis */}
-        <div ref={timeRef} className="shrink-0 w-14 flex flex-col" style={{ overflowY: "hidden", background: "var(--time-axis)" }}>
-          <div style={{ height: 48, flexShrink: 0 }} />
+        <div ref={timeRef} className="shrink-0 w-14 flex flex-col"
+          style={{ overflowY: "hidden", background: "var(--time-axis)", borderRight: "1px solid var(--border)" }}>
+          <div style={{ height: 56, flexShrink: 0, borderBottom: "1px solid var(--border)" }} />
           {HOURS.map((h) => (
-            <div key={h} className="text-right pr-2 text-xs select-none shrink-0"
-              style={{ height: `${HOUR_HEIGHT_PX}px`, color: "var(--text-muted)", paddingTop: 2 }}>
+            <div key={h} className="text-right pr-3 text-xs select-none shrink-0 flex items-start justify-end"
+              style={{ height: `${HOUR_HEIGHT_PX}px`, color: "var(--text-muted)", paddingTop: 4, fontWeight: 500, fontVariantNumeric: "tabular-nums" }}>
               {String(h).padStart(2, "0")}:00
             </div>
           ))}
@@ -260,5 +267,6 @@ export function Calendar({ currentUser, onSlotClick, onCardClick }: CalendarProp
         </div>
       </div>
     </div>
+    </CalendarDragProvider>
   );
 }

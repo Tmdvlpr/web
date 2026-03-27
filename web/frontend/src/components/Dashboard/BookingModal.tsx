@@ -216,9 +216,9 @@ export function BookingModal({
     window.addEventListener("resize", resize);
 
     const W0 = window.innerWidth, H0 = window.innerHeight;
-    const N_NODES   = 140;
-    const MAX_CONN  = 150;
-    const HL_RADIUS = 280;
+    const N_NODES   = 180;
+    const MAX_CONN  = 200;
+    const HL_RADIUS = 380;
 
     nodesRef.current = Array.from({ length: N_NODES }, () => {
       const dir = Math.random() * Math.PI * 2;
@@ -285,7 +285,7 @@ export function BookingModal({
           const dist = Math.sqrt(dist2);
 
           // base alpha: fades with distance
-          const baseA = (1 - dist / MAX_CONN) * (dark ? 0.18 : 0.22);
+          const baseA = (1 - dist / MAX_CONN) * (dark ? 0.32 : 0.38);
 
           // highlight: how close is card center to the midpoint of this line?
           const mx = (a.x + b.x) * 0.5, my = (a.y + b.y) * 0.5;
@@ -294,7 +294,7 @@ export function BookingModal({
           const hl = Math.max(0, 1 - cardDist / HL_RADIUS);
           const hlPulse = Math.max(0, 1 - Math.sqrt((mx-cx)**2+(my-cy)**2) / (HL_RADIUS * 1.5)) * pulse;
 
-          const alpha = baseA + hl * (dark ? 0.55 : 0.45) + hlPulse * 0.35;
+          const alpha = baseA + hl * (dark ? 0.70 : 0.58) + hlPulse * 0.45;
           if (alpha < 0.005) continue;
 
           const hue = dark ? 220 + hl * 50 : (a.hue + b.hue) * 0.5;
@@ -302,7 +302,7 @@ export function BookingModal({
           const lit = dark ? 65 + hl * 25  : 45 + hl * 20;
 
           ctx.globalAlpha = alpha;
-          ctx.lineWidth   = 0.6 + hl * 1.0;
+          ctx.lineWidth   = 0.8 + hl * 1.4;
           ctx.strokeStyle = `hsl(${hue},${sat}%,${lit}%)`;
           ctx.beginPath();
           ctx.moveTo(a.x, a.y);
@@ -318,8 +318,8 @@ export function BookingModal({
         const hl = Math.max(0, 1 - cardDist / HL_RADIUS);
         const hlPulse = Math.max(0, 1 - cardDist / (HL_RADIUS * 1.5)) * pulse;
 
-        const baseA = dark ? 0.18 : 0.22;
-        const alpha = baseA + hl * (dark ? 0.72 : 0.60) + hlPulse * 0.35;
+        const baseA = dark ? 0.38 : 0.45;
+        const alpha = baseA + hl * (dark ? 0.72 : 0.60) + hlPulse * 0.45;
         const r     = n.size * (1 + hl * 1.4 + hlPulse * 0.8);
         const hue   = dark ? 220 + hl * 60 : n.hue;
         const sat   = dark ? 50 + hl * 40  : 70 + hl * 25;
@@ -327,7 +327,7 @@ export function BookingModal({
 
         // glow for highlighted nodes
         if (hl > 0.05) {
-          ctx.globalAlpha = (hl + hlPulse) * (dark ? 0.20 : 0.15);
+          ctx.globalAlpha = (hl + hlPulse) * (dark ? 0.35 : 0.28);
           ctx.fillStyle   = `hsl(${hue},${sat}%,${lit + 15}%)`;
           ctx.beginPath();
           ctx.arc(n.x, n.y, r * 3.5, 0, Math.PI * 2);

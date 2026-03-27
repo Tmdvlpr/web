@@ -39,7 +39,7 @@ async def public_ical_feed(
     result = await db.execute(
         _select(Booking)
         .options(selectinload(Booking.user))
-        .where(Booking.user_id == user.id)
+        .where(and_(Booking.user_id == user.id, Booking.deleted_at.is_(None)))
         .order_by(Booking.start_time)
     )
     bookings = result.scalars().all()
@@ -87,6 +87,7 @@ async def admin_list_bookings(
     result = await db.execute(
         select(Booking)
         .options(selectinload(Booking.user))
+        .where(Booking.deleted_at.is_(None))
         .order_by(Booking.start_time.desc())
         .limit(200)
     )
@@ -111,7 +112,7 @@ async def export_bookings(
     result = await db.execute(
         select(Booking)
         .options(selectinload(Booking.user))
-        .where(Booking.user_id == current_user.id)
+        .where(and_(Booking.user_id == current_user.id, Booking.deleted_at.is_(None)))
         .order_by(Booking.start_time)
     )
     bookings = result.scalars().all()
@@ -160,6 +161,7 @@ async def list_active(
             Booking.end_time >= now,
             Booking.start_time <= now + timedelta(days=30),
             Booking.user_id == current_user.id,
+            Booking.deleted_at.is_(None),
         ))
         .order_by(Booking.start_time)
     )
@@ -179,7 +181,7 @@ async def list_bookings(
     result = await db.execute(
         select(Booking)
         .options(selectinload(Booking.user))
-        .where(and_(Booking.start_time >= day_start, Booking.start_time <= day_end))
+        .where(and_(Booking.start_time >= day_start, Booking.start_time <= day_end, Booking.deleted_at.is_(None)))
         .order_by(Booking.start_time)
     )
     return result.scalars().all()
@@ -230,7 +232,7 @@ async def create_booking(
 
     if payload.recurrence == "none":
         ov = await db.execute(
-            select(Booking).where(and_(Booking.start_time < payload.end_time, Booking.end_time > payload.start_time))
+            select(Booking).where(and_(Booking.start_time < payload.end_time, Booking.end_time > payload.start_time, Booking.deleted_at.is_(None)))
         )
         if ov.scalar_one_or_none():
             raise HTTPException(status.HTTP_409_CONFLICT, "Время пересекается с существующим бронированием")
@@ -240,7 +242,7 @@ async def create_booking(
 
     for s, e in slots:
         if payload.recurrence != "none":
-            ov = await db.execute(select(Booking).where(and_(Booking.start_time < e, Booking.end_time > s)))
+            ov = await db.execute(select(Booking).where(and_(Booking.start_time < e, Booking.end_time > s, Booking.deleted_at.is_(None))))
             if ov.scalar_one_or_none():
                 continue
         b = Booking(
@@ -294,6 +296,7 @@ async def update_booking(
             Booking.id != booking_id,
             Booking.start_time < new_end,
             Booking.end_time > new_start,
+            Booking.deleted_at.is_(None),
         ))
     )
     if ov.scalar_one_or_none():
@@ -334,17 +337,18 @@ async def delete_booking(
     if booking.user_id != current_user.id and current_user.role != Role.admin:
         raise HTTPException(403, "Not allowed")
 
+    now_utc = datetime.now(timezone.utc)
     if delete_series and booking.recurrence_group_id:
-        now_utc = datetime.now(timezone.utc)
         series = await db.execute(
             select(Booking).where(and_(
                 Booking.recurrence_group_id == booking.recurrence_group_id,
                 Booking.start_time >= now_utc,
+                Booking.deleted_at.is_(None),
             ))
         )
         for b in series.scalars().all():
-            await db.delete(b)
+            b.deleted_at = now_utc
     else:
-        await db.delete(booking)
+        booking.deleted_at = now_utc
 
     await db.commit()

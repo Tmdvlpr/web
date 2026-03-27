@@ -1,4 +1,6 @@
 import { motion } from "framer-motion";
+import { useState } from "react";
+import { useCalendarDrag } from "../../contexts/CalendarDragContext";
 import { useTheme } from "../../contexts/ThemeContext";
 import type { Booking, User } from "../../types";
 
@@ -10,39 +12,58 @@ interface BookingCardProps {
   onClick: () => void;
 }
 
-// Light theme — solid pastel with vibrant borders
+// Light — saturated tinted cards that pop against white background
 const LIGHT_PALETTES = [
-  { bg: "#f5f3ff", border: "#7c3aed", text: "#4c1d95", accent: "#7c3aed" },
-  { bg: "#ecfeff", border: "#0891b2", text: "#164e63", accent: "#0891b2" },
-  { bg: "#f0fdf4", border: "#16a34a", text: "#14532d", accent: "#16a34a" },
-  { bg: "#fffbeb", border: "#d97706", text: "#78350f", accent: "#d97706" },
-  { bg: "#fff1f2", border: "#e11d48", text: "#881337", accent: "#e11d48" },
-  { bg: "#fdf4ff", border: "#c026d3", text: "#701a75", accent: "#c026d3" },
-  { bg: "#eef2ff", border: "#4f46e5", text: "#1e1b4b", accent: "#4f46e5" },
-  { bg: "#fff7ed", border: "#ea580c", text: "#7c2d12", accent: "#ea580c" },
+  { bg: "#ede9fe", border: "#7c3aed", text: "#3b0764", accent: "#6d28d9", tint: "rgba(109,40,217,0.08)" },
+  { bg: "#dbeafe", border: "#2563eb", text: "#1e3a8a", accent: "#1d4ed8", tint: "rgba(29,78,216,0.07)" },
+  { bg: "#d1fae5", border: "#059669", text: "#064e3b", accent: "#047857", tint: "rgba(4,120,87,0.07)" },
+  { bg: "#fef3c7", border: "#d97706", text: "#78350f", accent: "#b45309", tint: "rgba(180,83,9,0.07)" },
+  { bg: "#fee2e2", border: "#dc2626", text: "#7f1d1d", accent: "#b91c1c", tint: "rgba(185,28,28,0.07)" },
+  { bg: "#fce7f3", border: "#be185d", text: "#500724", accent: "#9d174d", tint: "rgba(157,23,77,0.07)" },
+  { bg: "#e0e7ff", border: "#4338ca", text: "#1e1b4b", accent: "#3730a3", tint: "rgba(55,48,163,0.07)" },
+  { bg: "#ffedd5", border: "#ea580c", text: "#7c2d12", accent: "#c2410c", tint: "rgba(194,65,12,0.07)" },
 ];
 
-// Dark theme — neon glow
+// Dark — vivid neon glow cards
 const DARK_PALETTES = [
-  { bg: "rgba(168,85,247,0.15)",  border: "rgba(168,85,247,0.7)",  text: "#e9d5ff", accent: "#a855f7" },
-  { bg: "rgba(6,182,212,0.12)",   border: "rgba(6,182,212,0.7)",   text: "#a5f3fc", accent: "#06b6d4" },
-  { bg: "rgba(16,185,129,0.12)",  border: "rgba(16,185,129,0.7)",  text: "#6ee7b7", accent: "#10b981" },
-  { bg: "rgba(245,158,11,0.12)",  border: "rgba(245,158,11,0.7)",  text: "#fde68a", accent: "#f59e0b" },
-  { bg: "rgba(239,68,68,0.12)",   border: "rgba(239,68,68,0.65)",  text: "#fecaca", accent: "#ef4444" },
-  { bg: "rgba(236,72,153,0.12)",  border: "rgba(236,72,153,0.65)", text: "#fbcfe8", accent: "#ec4899" },
-  { bg: "rgba(99,102,241,0.12)",  border: "rgba(99,102,241,0.65)", text: "#c7d2fe", accent: "#6366f1" },
-  { bg: "rgba(251,146,60,0.12)",  border: "rgba(251,146,60,0.65)", text: "#fed7aa", accent: "#fb923c" },
+  { bg: "rgba(139,92,246,0.16)", border: "#a78bfa", text: "#ede9fe", accent: "#c4b5fd", tint: "rgba(167,139,250,0.08)" },
+  { bg: "rgba(59,130,246,0.14)", border: "#60a5fa", text: "#dbeafe", accent: "#93c5fd", tint: "rgba(96,165,250,0.07)" },
+  { bg: "rgba(16,185,129,0.14)", border: "#34d399", text: "#d1fae5", accent: "#6ee7b7", tint: "rgba(52,211,153,0.07)" },
+  { bg: "rgba(245,158,11,0.14)", border: "#fbbf24", text: "#fef3c7", accent: "#fcd34d", tint: "rgba(251,191,36,0.07)" },
+  { bg: "rgba(239,68,68,0.14)",  border: "#f87171", text: "#fee2e2", accent: "#fca5a5", tint: "rgba(248,113,113,0.07)" },
+  { bg: "rgba(236,72,153,0.14)", border: "#f472b6", text: "#fce7f3", accent: "#f9a8d4", tint: "rgba(244,114,182,0.07)" },
+  { bg: "rgba(99,102,241,0.14)", border: "#818cf8", text: "#e0e7ff", accent: "#a5b4fc", tint: "rgba(129,140,248,0.07)" },
+  { bg: "rgba(251,146,60,0.14)", border: "#fb923c", text: "#ffedd5", accent: "#fdba74", tint: "rgba(251,146,60,0.07)" },
 ];
 
-export function BookingCard({ booking, topPercent, heightPercent, onClick }: BookingCardProps) {
+export function BookingCard({ booking, topPercent, heightPercent, currentUser, onClick }: BookingCardProps) {
   const { isDark } = useTheme();
+  const { setDrag } = useCalendarDrag();
+  const [isDragging, setIsDragging] = useState(false);
   const palettes = isDark ? DARK_PALETTES : LIGHT_PALETTES;
   const p = palettes[booking.user_id % palettes.length];
   const startLabel = new Date(booking.start_time).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
   const endLabel   = new Date(booking.end_time).toLocaleTimeString("ru-RU",   { hour: "2-digit", minute: "2-digit" });
   const isShort    = heightPercent < 6;
+  const canDrag    = !!currentUser && (currentUser.id === booking.user_id || currentUser.role === "admin");
 
-  const glowColor = isDark ? `${p.accent}40` : `${p.border}25`;
+  const shadow = isDark
+    ? `0 0 0 1px ${p.border}50, 0 4px 20px ${p.accent}30, inset 0 1px 0 rgba(255,255,255,0.07)`
+    : `0 1px 0 ${p.border}40, 0 2px 8px ${p.border}30`;
+
+  const handleDragStart = (e: React.DragEvent) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const offsetFraction = (e.clientY - rect.top) / rect.height;
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("bookingId", String(booking.id));
+    setDrag({ booking, offsetFraction });
+    requestAnimationFrame(() => setIsDragging(true));
+  };
+
+  const handleDragEnd = () => {
+    setIsDragging(false);
+    setDrag(null);
+  };
 
   return (
     <motion.div
@@ -52,29 +73,31 @@ export function BookingCard({ booking, topPercent, heightPercent, onClick }: Boo
       exit={{ opacity: 0, scale: 0.9 }}
       transition={{ duration: 0.18, type: "spring", stiffness: 340, damping: 22 }}
       onClick={(e) => { e.stopPropagation(); onClick(); }}
-      whileHover={{ scale: 1.02, zIndex: 10 }}
+      whileHover={{ scale: canDrag ? 1.015 : 1.02, zIndex: 10 }}
+      draggable={canDrag}
+      onDragStart={canDrag ? handleDragStart : undefined}
+      onDragEnd={canDrag ? handleDragEnd : undefined}
       style={{
         position: "absolute",
         top: `${topPercent}%`,
         height: `${heightPercent}%`,
-        left: 3, right: 3,
+        left: 4, right: 4,
         background: p.bg,
-        border: `1px solid ${p.border}50`,
+        borderTop: `1px solid ${p.border}28`,
+        borderRight: `1px solid ${p.border}28`,
+        borderBottom: `1px solid ${p.border}28`,
         borderLeft: `3px solid ${p.border}`,
-        borderRadius: 8,
-        cursor: "pointer",
+        borderRadius: 10,
+        cursor: canDrag ? "grab" : "pointer",
         overflow: "hidden",
-        boxShadow: isDark
-          ? `0 0 12px ${glowColor}, inset 0 1px 0 rgba(255,255,255,0.06)`
-          : `0 1px 4px ${glowColor}`,
+        opacity: isDragging ? 0.3 : 1,
+        boxShadow: shadow,
+        backdropFilter: isDark ? "blur(8px)" : "none",
       }}
       className="px-2 py-1"
     >
-      {/* Hover shimmer for dark mode */}
-      {isDark && (
-        <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"
-          style={{ background: `linear-gradient(135deg, ${glowColor} 0%, transparent 60%)` }} />
-      )}
+      {/* Background tint */}
+      <div className="absolute inset-0 pointer-events-none" style={{ background: p.tint }} />
 
       {isShort ? (
         <p className="text-xs font-bold truncate leading-tight relative z-10" style={{ color: p.text }}>

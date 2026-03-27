@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useCalendarDrag } from "../../contexts/CalendarDragContext";
 import { useTheme } from "../../contexts/ThemeContext";
 import type { Booking, SlotResponse, User } from "../../types";
 import { BookingCard } from "./BookingCard";
@@ -12,6 +13,7 @@ interface DayColumnProps {
   currentUser: User | null;
   onSlotClick: (start: Date, end: Date) => void;
   onCardClick: (booking: Booking) => void;
+  onBookingDrop?: (booking: Booking, newStart: Date) => void;
   isToday: boolean;
 }
 
@@ -27,13 +29,64 @@ function nowPercent(): number {
   return ((hours - DAY_START_HOUR) / TOTAL_HOURS) * 100;
 }
 
-export function DayColumn({ date, bookings, freeSlots = [], currentUser, onSlotClick, onCardClick, isToday }: DayColumnProps) {
+export function DayColumn({ date, bookings, freeSlots = [], currentUser, onSlotClick, onCardClick, onBookingDrop, isToday }: DayColumnProps) {
   const { isDark } = useTheme();
+  const { drag, setDrag } = useCalendarDrag();
+  const gridRef = useRef<HTMLDivElement>(null);
   const dayName = date.toLocaleDateString("ru-RU", { weekday: "short" });
   const dayNum  = date.getDate();
   const isPast  = date < new Date(new Date().setHours(0, 0, 0, 0));
   const [nowPct, setNowPct] = useState(nowPercent);
   const [hoverSlot, setHoverSlot] = useState<{ startPct: number; heightPct: number; label: string } | null>(null);
+  const [ghost, setGhost] = useState<{ topPct: number; heightPct: number; label: string } | null>(null);
+
+  function calcDrop(clientY: number): { topPct: number; heightPct: number; startMinute: number } | null {
+    if (!drag || !gridRef.current) return null;
+    const rect = gridRef.current.getBoundingClientRect();
+    const fraction = (clientY - rect.top) / rect.height;
+    const durationMs = new Date(drag.booking.end_time).getTime() - new Date(drag.booking.start_time).getTime();
+    const durationHours = durationMs / 3_600_000;
+    const startFraction = fraction - (drag.offsetFraction * durationHours / TOTAL_HOURS);
+    const totalMinutes = TOTAL_HOURS * 60;
+    const rawMinute = DAY_START_HOUR * 60 + startFraction * totalMinutes;
+    const snapped = Math.round(rawMinute / 30) * 30;
+    const maxStart = DAY_END_HOUR * 60 - Math.round(durationMs / 60_000);
+    const startMinute = Math.max(DAY_START_HOUR * 60, Math.min(maxStart, snapped));
+    const topPct = ((startMinute - DAY_START_HOUR * 60) / totalMinutes) * 100;
+    const heightPct = (durationHours / TOTAL_HOURS) * 100;
+    return { topPct, heightPct, startMinute };
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    if (isPast || !drag) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setHoverSlot(null);
+    const calc = calcDrop(e.clientY);
+    if (!calc) return;
+    const h = Math.floor(calc.startMinute / 60), m = calc.startMinute % 60;
+    const durationMs = new Date(drag.booking.end_time).getTime() - new Date(drag.booking.start_time).getTime();
+    const endMinute = calc.startMinute + Math.round(durationMs / 60_000);
+    const eh = Math.floor(endMinute / 60), em = endMinute % 60;
+    const label = `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")} – ${String(eh).padStart(2,"0")}:${String(em).padStart(2,"0")}`;
+    setGhost({ topPct: calc.topPct, heightPct: calc.heightPct, label });
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    if (!gridRef.current?.contains(e.relatedTarget as Node)) setGhost(null);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setGhost(null);
+    if (!drag || isPast) return;
+    const calc = calcDrop(e.clientY);
+    if (!calc) return;
+    const newStart = new Date(date);
+    newStart.setHours(Math.floor(calc.startMinute / 60), calc.startMinute % 60, 0, 0);
+    onBookingDrop?.(drag.booking, newStart);
+    setDrag(null);
+  };
 
   useEffect(() => {
     if (!isToday) return;
@@ -65,35 +118,45 @@ export function DayColumn({ date, bookings, freeSlots = [], currentUser, onSlotC
   };
 
   // Colors derived from theme
-  const todayHeaderBg   = isDark ? "rgba(168,85,247,0.08)" : "#f5f3ff";
-  const headerBg        = isDark ? "rgba(5,5,15,0.95)" : "#ffffff";
-  const todayNumStyle   = isDark
-    ? { background: "linear-gradient(135deg,#7c3aed,#a855f7)", color: "#fff", boxShadow: "0 0 16px rgba(168,85,247,0.5)" }
-    : { background: "linear-gradient(135deg,#7c3aed,#a855f7)", color: "#fff", boxShadow: "0 0 16px rgba(124,58,237,0.35)" };
-  const pastNumColor    = isDark ? "#1e293b" : "#cbd5e1";
-  const normalNumColor  = isDark ? "#94a3b8" : "#475569";
+  const isWeekend       = date.getDay() === 0 || date.getDay() === 6;
+  const todayHeaderBg   = "var(--day-header-today)";
+  const headerBg        = "var(--day-header)";
+  const todayNumStyle   = {
+    background: "linear-gradient(135deg,#6d28d9,#8b5cf6)",
+    color: "#fff",
+    boxShadow: isDark ? "0 0 14px rgba(139,92,246,0.55)" : "0 2px 10px rgba(109,40,217,0.35)",
+  };
+  const pastNumColor    = isDark ? "#2a2e45" : "#c9cdd6";
+  const normalNumColor  = isDark ? "#525c78" : "#9ca3af";
   const gridBg          = isPast
-    ? (isDark ? "rgba(255,255,255,0.01)" : "#f8fafc")
+    ? "var(--day-grid-past)"
     : isToday
-      ? (isDark ? "rgba(168,85,247,0.02)" : "#faf9ff")
-      : (isDark ? "transparent" : "#ffffff");
-  const todayNameColor  = isDark ? "#c084fc" : "#7c3aed";
-  const normalNameColor = isDark ? "#334155" : "#94a3b8";
+      ? "var(--day-grid-today)"
+      : isWeekend
+        ? "var(--day-grid-weekend)"
+        : "var(--day-grid)";
+  const todayNameColor  = isDark ? "#a78bfa" : "#6d28d9";
+  const normalNameColor = isDark ? "#3d4259" : "#94a3b8";
 
   return (
-    <div className="flex flex-col min-w-0" style={{ borderRight: "1px solid var(--border)" }}>
+    <div className="flex flex-col min-w-0 relative"
+      style={{
+        borderRight: "1px solid var(--border)",
+        borderLeft: isToday ? "2px solid var(--primary)" : undefined,
+      }}>
       {/* Header */}
-      <div className="text-center py-2 px-1 sticky top-0 z-10"
+      <div className="flex flex-col items-center justify-center sticky top-0 z-10"
         style={{
+          height: 56,
           background: isToday ? todayHeaderBg : headerBg,
-          borderBottom: "1px solid var(--border)",
+          borderBottom: `1px solid ${isToday ? "var(--primary-border)" : "var(--border)"}`,
           backdropFilter: "blur(8px)",
         }}>
-        <div className="text-xs uppercase tracking-widest font-semibold"
-          style={{ color: isToday ? todayNameColor : normalNameColor }}>
+        <div className="text-xs font-semibold uppercase tracking-widest"
+          style={{ color: isToday ? todayNameColor : normalNameColor, letterSpacing: "0.1em" }}>
           {dayName}
         </div>
-        <div className="mx-auto w-8 h-8 flex items-center justify-center rounded-full mt-0.5 text-sm font-bold"
+        <div className="flex items-center justify-center w-8 h-8 rounded-xl mt-0.5 text-sm font-bold"
           style={isToday ? todayNumStyle : { color: isPast ? pastNumColor : normalNumColor }}>
           {dayNum}
         </div>
@@ -101,11 +164,15 @@ export function DayColumn({ date, bookings, freeSlots = [], currentUser, onSlotC
 
       {/* Time grid */}
       <div
+        ref={gridRef}
         className={`relative ${isPast ? "" : "cursor-crosshair"}`}
         style={{ height: `${TOTAL_HOURS * HOUR_HEIGHT_PX}px`, background: gridBg }}
         onClick={isPast ? undefined : handleColumnClick}
         onMouseMove={!isPast ? handleMouseMove : undefined}
         onMouseLeave={() => setHoverSlot(null)}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
       >
         {/* Free slot highlights */}
         {!isPast && freeSlots.filter(s => s.available).map((slot, i) => {
@@ -134,8 +201,30 @@ export function DayColumn({ date, bookings, freeSlots = [], currentUser, onSlotC
             style={{ top: `${((i + 0.5) / TOTAL_HOURS) * 100}%`, borderTop: "1px dashed var(--hour-dash)" }} />
         ))}
 
+        {/* Drag-and-drop ghost preview */}
+        {ghost && drag && (
+          <div className="absolute left-0 right-0 pointer-events-none z-30"
+            style={{
+              top: `${ghost.topPct}%`,
+              height: `${ghost.heightPct}%`,
+              background: isDark ? "rgba(124,58,237,0.25)" : "rgba(124,58,237,0.12)",
+              border: "2px dashed var(--primary)",
+              borderRadius: 8,
+              backdropFilter: "blur(2px)",
+            }}>
+            <span className="absolute top-1 left-2 text-xs font-bold"
+              style={{ color: "var(--primary)" }}>
+              {drag.booking.title}
+            </span>
+            <span className="absolute bottom-1 left-2 text-xs font-semibold"
+              style={{ color: "var(--primary)", opacity: 0.8 }}>
+              {ghost.label}
+            </span>
+          </div>
+        )}
+
         {/* Hover slot preview */}
-        {!isPast && hoverSlot && (
+        {!isPast && !ghost && hoverSlot && (
           <div className="absolute left-0 right-0 pointer-events-none z-10"
             style={{
               top: `${hoverSlot.startPct}%`,

@@ -20,6 +20,7 @@ class Booking(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
     reminder_sent: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     guests: Mapped[list] = mapped_column(JSON, nullable=False, default=list, server_default="[]")
     recurrence: Mapped[str] = mapped_column(String(10), nullable=False, default="none", server_default="none")
     recurrence_until: Mapped[date | None] = mapped_column(Date, nullable=True)

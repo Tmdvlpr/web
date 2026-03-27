@@ -30,4 +30,13 @@ export const usersApi = {
   adminSetRole: async (userId: number, role: "user" | "admin"): Promise<void> => {
     await apiClient.patch(`/api/v1/users/admin/users/${userId}/role`, { role });
   },
+
+  adminCreateUser: async (name: string, username?: string, role?: string): Promise<User> => {
+    const res = await apiClient.post<User>("/api/v1/users/admin/users", { name, username, role });
+    return res.data;
+  },
+
+  adminDeleteUser: async (userId: number): Promise<void> => {
+    await apiClient.delete(`/api/v1/users/admin/users/${userId}`);
+  },
 };

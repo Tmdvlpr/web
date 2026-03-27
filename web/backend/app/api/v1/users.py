@@ -1,6 +1,8 @@
 import secrets
+from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -24,20 +26,22 @@ async def search_users(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> list[UserResponse]:
+    order = func.coalesce(User.first_name, User.name, User.username)
     if not q.strip():
         result = await db.execute(
-            select(User).where(User.id != current_user.id).order_by(User.first_name).limit(50)
+            select(User).where(User.id != current_user.id).order_by(order).limit(50)
         )
     else:
         term = f"%{q.strip().lstrip('@')}%"
         result = await db.execute(
             select(User).where(
                 or_(
+                    User.name.ilike(term),
                     User.first_name.ilike(term),
                     User.last_name.ilike(term),
                     User.username.ilike(term),
                 )
-            ).order_by(User.first_name).limit(20)
+            ).order_by(order).limit(20)
         )
     return result.scalars().all()
 
@@ -88,6 +92,63 @@ async def admin_set_role(
     target.role = Role(new_role)
     await db.commit()
     return {"id": target.id, "role": new_role}
+
+
+class AdminCreateUser(BaseModel):
+    name: str
+    username: str | None = None
+    role: str = "user"
+
+
+@router.post("/admin/users", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+async def admin_create_user(
+    body: AdminCreateUser,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> UserResponse:
+    if current_user.role != Role.admin:
+        raise HTTPException(403, "Admin only")
+    if body.role not in ("user", "admin"):
+        raise HTTPException(400, "role must be 'user' or 'admin'")
+    user = User(
+        telegram_id=0,
+        name=body.name,
+        first_name=body.name.split()[0] if body.name else None,
+        last_name=body.name.split()[1] if body.name and len(body.name.split()) > 1 else None,
+        username=body.username,
+        role=Role(body.role),
+        is_active=True,
+        is_registered=True,
+    )
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+    return user
+
+
+@router.delete("/admin/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def admin_delete_user(
+    user_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> None:
+    if current_user.role != Role.admin:
+        raise HTTPException(403, "Admin only")
+    result = await db.execute(select(User).where(User.id == user_id))
+    target = result.scalar_one_or_none()
+    if not target:
+        raise HTTPException(404, "User not found")
+    if target.id == current_user.id:
+        raise HTTPException(400, "Cannot delete yourself")
+    # Soft-delete all user bookings
+    now_utc = datetime.now(timezone.utc)
+    bookings_result = await db.execute(
+        select(Booking).where(Booking.user_id == user_id, Booking.deleted_at.is_(None))
+    )
+    for b in bookings_result.scalars().all():
+        b.deleted_at = now_utc
+    await db.delete(target)
+    await db.commit()
 
 
 @router.get("/admin/stats")

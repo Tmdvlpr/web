@@ -1,3 +1,5 @@
+import asyncio
+import logging
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
@@ -7,11 +9,14 @@ from sqlalchemy import text
 
 from app.config import settings
 from app.database import Base, engine
-from app.api.v1 import auth, bookings, slots, users
+from app.api.v1 import auth, bookings, internal, slots, users
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    # ── 1. Миграции БД ────────────────────────────────────────────────────────
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
         # Safe migrations — add new columns and tables if missing
@@ -54,6 +59,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             """,
             "CREATE INDEX IF NOT EXISTS idx_browser_sessions_token ON browser_sessions(token)",
             "ALTER TABLE users ADD COLUMN IF NOT EXISTS feed_token VARCHAR(64) UNIQUE",
+            "ALTER TABLE bookings ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ",
             "CREATE UNIQUE INDEX IF NOT EXISTS idx_users_feed_token ON users(feed_token) WHERE feed_token IS NOT NULL",
         ]
         for sql in migrations:
@@ -61,12 +67,44 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
                 await conn.execute(text(sql))
             except Exception:
                 pass
-    yield
+
+    # ── 2. Запуск TG Bot + фоновых задач ─────────────────────────────────────
+    from app.bot.bot import create_bot_and_dispatcher
+    from app.bot.tasks.notifications import run_notification_task
+    from app.bot.tasks.reminders import run_reminder_task
+
+    bot, dp = create_bot_and_dispatcher()
+
+    bg_tasks = [
+        asyncio.create_task(
+            dp.start_polling(bot, handle_signals=False),
+            name="bot_polling",
+        ),
+        asyncio.create_task(
+            run_notification_task(bot),
+            name="bot_notifications",
+        ),
+        asyncio.create_task(
+            run_reminder_task(bot),
+            name="bot_reminders",
+        ),
+    ]
+    logger.info("TG Bot started (polling + notification + reminder tasks)")
+
+    yield  # ← FastAPI обрабатывает HTTP-запросы
+
+    # ── 3. Graceful shutdown ──────────────────────────────────────────────────
+    logger.info("Shutting down TG Bot tasks...")
+    for task in bg_tasks:
+        task.cancel()
+    await asyncio.gather(*bg_tasks, return_exceptions=True)
+    await bot.session.close()
+    logger.info("TG Bot stopped.")
 
 
 app = FastAPI(
-    title="CorpMeet Web API",
-    version="1.0.0",
+    title="CorpMeet API",
+    version="2.0.0",
     lifespan=lifespan,
 )
 
@@ -87,6 +125,7 @@ app.include_router(auth.router, prefix="/api/v1")
 app.include_router(bookings.router, prefix="/api/v1")
 app.include_router(slots.router, prefix="/api/v1")
 app.include_router(users.router, prefix="/api/v1")
+app.include_router(internal.router, prefix="/api/v1")  # только для TG Bot
 
 
 @app.get("/health")

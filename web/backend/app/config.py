@@ -9,6 +9,12 @@ class Settings(BaseSettings):
     JWT_EXPIRE_DAYS: int = 7
     FRONTEND_URL: str = "http://localhost:5173"
     APP_TIMEZONE: str = "Europe/Moscow"
+    # TG Bot: группа/чат для уведомлений о встречах и напоминаний
+    TG_GROUP_CHAT_ID: int = 0
+    # Секрет для внутреннего API (bot → backend). Задать в .env
+    BOT_SECRET: str = ""
+    # Адрес бэкенда для вызовов из бота (внутри одного процесса)
+    INTERNAL_API_URL: str = "http://127.0.0.1:8000"
 
     class Config:
         env_file = ".env"

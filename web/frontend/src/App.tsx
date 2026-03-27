@@ -135,7 +135,7 @@ function ThemeToggle() {
       onClick={toggle}
       whileHover={{ scale: 1.08 }}
       whileTap={{ scale: 0.93 }}
-      className="w-9 h-9 flex items-center justify-center rounded-xl transition-all text-base"
+      className="w-8 h-8 flex items-center justify-center rounded-lg transition-all text-sm"
       title={isDark ? "Светлая тема" : "Тёмная тема"}
       style={{
         border: "1px solid var(--border)",
@@ -201,130 +201,117 @@ function Dashboard() {
     <div className="h-screen flex flex-col" style={{ background: "var(--bg)" }}>
       {/* Header */}
       <header
-        className="flex items-center justify-between px-5 py-2.5 shrink-0 relative overflow-visible"
+        className="flex items-center justify-between px-4 shrink-0 relative overflow-visible"
         style={{
+          height: 60,
           borderBottom: "1px solid var(--border)",
           background: "var(--header)",
           backdropFilter: "blur(20px)",
-          boxShadow: isDark ? "none" : "0 1px 4px rgba(0,0,0,0.06)",
+          boxShadow: isDark
+            ? "0 1px 0 rgba(255,255,255,0.04)"
+            : "0 2px 16px rgba(0,0,0,0.05)",
+          zIndex: 30,
         }}
       >
         <InteractiveStripe edge="bottom" />
 
-        <div className="flex items-center gap-3">
+        {/* Logo */}
+        <div className="flex items-center gap-3 shrink-0">
           <motion.div
-            animate={{
-              boxShadow: [
-                "0 0 12px rgba(124,58,237,0.3)",
-                "0 0 24px rgba(124,58,237,0.6)",
-                "0 0 12px rgba(124,58,237,0.3)",
-              ],
-            }}
-            transition={{ duration: 2, repeat: Infinity }}
-            className="rounded-xl overflow-hidden"
+            animate={{ boxShadow: ["0 0 8px rgba(109,40,217,0.2)","0 0 20px rgba(109,40,217,0.5)","0 0 8px rgba(109,40,217,0.2)"] }}
+            transition={{ duration: 3, repeat: Infinity }}
+            className="rounded-xl overflow-hidden shrink-0"
           >
-            <img src="/logo.png" alt="Logo" className="w-8 h-8" />
+            <img src="/logo.png" alt="Logo" className="w-9 h-9" />
           </motion.div>
           <div>
-            <div
-              className="font-black text-base tracking-tight leading-none"
-              style={{ color: "var(--text)" }}
-            >
-              Corp
-              <span
-                style={{
-                  background: "linear-gradient(90deg,#7c3aed,#06b6d4)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                }}
-              >
-                Meet
-              </span>
+            <div className="leading-none" style={{ fontFamily: "Unbounded, sans-serif", fontWeight: 800, fontSize: 14, letterSpacing: "0.07em" }}>
+              <span style={{ color: "var(--text)" }}>CORP</span>
+              <span style={{ background: "linear-gradient(100deg,#6d28d9,#0ea5e9)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>MEET</span>
             </div>
-            <div className="text-xs" style={{ color: "var(--text-muted)" }}>
-              Бронирование переговорной
+            <div style={{ color: "var(--text-muted)", fontSize: 10, letterSpacing: "0.06em", marginTop: 2, textTransform: "uppercase" }}>
+              Переговорная
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <motion.button
-            onClick={() =>
-              handleSlotClick(new Date(), new Date(Date.now() + 3_600_000))
-            }
-            whileHover={{ scale: 1.04, boxShadow: "0 6px 28px rgba(124,58,237,0.5)" }}
-            whileTap={{ scale: 0.97 }}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white"
-            style={{
-              background: "linear-gradient(135deg,#7c3aed,#a855f7)",
-              boxShadow: "0 4px 16px rgba(124,58,237,0.35)",
-            }}
-          >
-            <span className="text-base leading-none">＋</span> Забронировать
-          </motion.button>
+        {/* Center: primary action */}
+        <motion.button
+          onClick={() => handleSlotClick(new Date(), new Date(Date.now() + 3_600_000))}
+          whileHover={{ scale: 1.03, boxShadow: "0 6px 24px rgba(109,40,217,0.50)" }}
+          whileTap={{ scale: 0.97 }}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white"
+          style={{
+            background: "linear-gradient(135deg,#6d28d9,#8b5cf6)",
+            boxShadow: "0 3px 14px rgba(109,40,217,0.38)",
+            letterSpacing: "0.01em",
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M7 1v12M1 7h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+          Забронировать
+        </motion.button>
 
+        {/* Right: user + controls */}
+        <div className="flex items-center gap-2 shrink-0">
+          {/* My meetings button — shows avatar + label */}
           <motion.button
             onClick={() => setActiveOpen(true)}
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-xl cursor-pointer transition-all"
-            style={{ background: "var(--elevated)", border: "1px solid var(--border)" }}
+            whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.96 }}
+            className="flex items-center gap-2.5 pl-1.5 pr-3 py-1.5 rounded-xl text-sm font-semibold transition-all"
+            style={{ background: "var(--elevated)", border: "1px solid var(--border)", color: "var(--text)" }}
             title="Мои встречи"
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = "var(--primary)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = "var(--border)";
-            }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--primary-border)"; e.currentTarget.style.background = "var(--primary-light)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.background = "var(--elevated)"; }}
           >
-            <div
-              className="w-2 h-2 rounded-full"
-              style={{ background: "#22c55e", boxShadow: "0 0 6px #22c55e" }}
-            />
-            <span className="text-sm font-semibold" style={{ color: "var(--text)" }}>
-              {user?.display_name}
-            </span>
+            {/* Avatar */}
+            <div className="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold text-white shrink-0"
+              style={{ background: "linear-gradient(135deg,#6d28d9,#8b5cf6)" }}>
+              {user?.display_name?.[0]?.toUpperCase() ?? "?"}
+            </div>
+            <div className="flex flex-col items-start leading-none gap-0.5">
+              <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 500 }}>Мои встречи</span>
+              <span style={{ fontSize: 12, color: "var(--text)", fontWeight: 600 }}>{user?.display_name}</span>
+            </div>
           </motion.button>
 
-          {/* Notification bell */}
-          <motion.button
-            onClick={() => setNotifOpen(true)}
-            whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.93 }}
-            className="w-9 h-9 flex items-center justify-center rounded-xl text-base transition-all"
-            title="Уведомления"
-            style={{ border: "1px solid var(--border)", background: "var(--elevated)", color: "var(--text-sec)" }}>
-            🔔
-          </motion.button>
-
-          {/* Admin panel */}
-          {user?.role === "admin" && (
-            <motion.button
-              onClick={() => setAdminOpen(true)}
-              whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.93 }}
-              className="w-9 h-9 flex items-center justify-center rounded-xl text-base transition-all"
-              title="Администратор"
-              style={{ border: "1px solid var(--border)", background: "var(--elevated)", color: "var(--text-sec)" }}>
-              ⚙️
+          {/* Icon group */}
+          <div className="flex items-center gap-1 p-1 rounded-xl" style={{ background: "var(--elevated)", border: "1px solid var(--border)" }}>
+            <motion.button onClick={() => setNotifOpen(true)} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+              className="w-7 h-7 flex items-center justify-center rounded-lg text-sm transition-all"
+              title="Уведомления"
+              style={{ color: "var(--text-muted)" }}
+              onMouseEnter={e => { e.currentTarget.style.background = "var(--surface)"; e.currentTarget.style.color = "var(--text)"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = ""; e.currentTarget.style.color = "var(--text-muted)"; }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+              </svg>
             </motion.button>
-          )}
 
-          {miniApp && <OpenInBrowserButton />}
+            {user?.role === "admin" && (
+              <motion.button onClick={() => setAdminOpen(true)} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                className="w-7 h-7 flex items-center justify-center rounded-lg text-sm transition-all"
+                title="Панель администратора"
+                style={{ color: "var(--text-muted)" }}
+                onMouseEnter={e => { e.currentTarget.style.background = "var(--surface)"; e.currentTarget.style.color = "var(--primary)"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = ""; e.currentTarget.style.color = "var(--text-muted)"; }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 1 0 4.93 19.07M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+                </svg>
+              </motion.button>
+            )}
 
-          <ThemeToggle />
+            {miniApp && <OpenInBrowserButton />}
 
-          <button
-            onClick={handleLogout}
-            className="text-xs px-3 py-1.5 rounded-lg transition-all"
-            style={{ color: "var(--text-muted)", border: "1px solid var(--border)" }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "var(--elevated)";
-              e.currentTarget.style.color = "var(--text)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "";
-              e.currentTarget.style.color = "var(--text-muted)";
-            }}
-          >
+            <ThemeToggle />
+          </div>
+
+          <button onClick={handleLogout}
+            className="text-xs px-2.5 py-1.5 rounded-xl transition-all font-medium"
+            style={{ color: "var(--text-muted)" }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = "var(--danger)"; e.currentTarget.style.background = isDark ? "rgba(239,68,68,0.1)" : "#fff5f5"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = ""; }}>
             Выйти
           </button>
         </div>

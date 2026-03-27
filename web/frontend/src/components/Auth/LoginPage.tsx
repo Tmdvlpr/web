@@ -352,7 +352,7 @@ export default function LoginPage() {
                 </div>
                 <div className="flex items-center gap-2.5">
                   <div className="h-px w-10" style={{ background: "linear-gradient(90deg, transparent, rgba(37,99,235,0.35))" }} />
-                  <span style={{ color: "rgba(37,99,235,0.75)", fontSize: 16, letterSpacing: "0.24em" }} className="uppercase font-bold">CorpMeet</span>
+                  <span style={{ color: "rgba(37,99,235,0.9)", fontSize: 16, letterSpacing: "0.18em", fontFamily: "Unbounded, sans-serif", fontWeight: 800 }}>CORPMEET</span>
                   <div className="h-px w-10" style={{ background: "linear-gradient(90deg, rgba(37,99,235,0.35), transparent)" }} />
                 </div>
               </div>

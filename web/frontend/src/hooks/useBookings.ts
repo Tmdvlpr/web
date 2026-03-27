@@ -9,6 +9,8 @@ export function useBookings(date: string | undefined) {
     queryKey: ["bookings", date],
     queryFn: () => bookingsApi.getByDate(date!),
     enabled: !!date,
+    staleTime: 2 * 60 * 1000,
+    placeholderData: (prev) => prev,
   });
 }
 
@@ -79,13 +81,9 @@ export function useUpdateBooking() {
   return useMutation({
     mutationFn: ({ id, payload }: { id: number; payload: BookingUpdate }) =>
       bookingsApi.update(id, payload),
-    onSuccess: (_data, { payload }) => {
-      if (payload.start_time) {
-        const dateStr = payload.start_time.split("T")[0];
-        queryClient.invalidateQueries({ queryKey: ["bookings", dateStr] });
-        queryClient.invalidateQueries({ queryKey: ["slots", dateStr] });
-      }
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["bookings"] });
+      queryClient.invalidateQueries({ queryKey: ["slots"] });
     },
   });
 }
