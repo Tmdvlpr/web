@@ -1,64 +1,155 @@
 version: "3.9"
 
 services:
-  backend:
-    build: ./web/backend
-    container_name: corpmeet-backend
-    restart: unless-stopped
-    ports:
-      - "8001:8001"
-    env_file:
-      - ./web/backend/.env
-    depends_on:
-      - db
-    networks:
-      - corpmeet
-
-  frontend:
-    build:
-      context: ./web/frontend
-      args:
-        VITE_API_URL: ""
-    container_name: corpmeet-frontend
-    restart: unless-stopped
-    ports:
-      - "80:80"
-    depends_on:
-      - backend
-    networks:
-      - corpmeet
-
-  tg-bot:
-    build: ./tg
-    container_name: corpmeet-tg-bot
-    restart: unless-stopped
-    ports:
-      - "8080:8080"
-    env_file:
-      - ./tg/.env
-    depends_on:
-      - backend
-    networks:
-      - corpmeet
-
+  # PostgreSQL Database
   db:
     image: postgres:16-alpine
     container_name: corpmeet-db
     restart: unless-stopped
     environment:
-      POSTGRES_DB: corpmeet
-      POSTGRES_USER: corpmeet
-      POSTGRES_PASSWORD: eW3lA7lU1j
+      POSTGRES_DB: ${POSTGRES_DB:-corpmeet}
+      POSTGRES_USER: ${POSTGRES_USER:-corpmeet}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-eW3lA7lU1j}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
     ports:
-      - "5432:5432"
+      - "${DB_PORT:-5432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     networks:
       - corpmeet
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-corpmeet}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    security_opt:
+      - no-new-privileges:true
+
+  # Backend API (FastAPI)
+  backend:
+    build:
+      context: ./web/backend
+      dockerfile: Dockerfile
+      cache_from:
+        - type=registry,ref=corpmeet-backend:latest
+    image: corpmeet-backend:latest
+    container_name: corpmeet-backend
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-8001}:8001"
+    env_file:
+      - ./web/backend/.env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-corpmeet}:${POSTGRES_PASSWORD:-eW3lA7lU1j}@db:5432/${POSTGRES_DB:-corpmeet}
+      INTERNAL_API_URL: http://backend:8001
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - corpmeet
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/docs"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    volumes:
+      # Development mode with hot reload
+      - ./web/backend:/app
+      - /app/.venv
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    security_opt:
+      - no-new-privileges:true
+
+  # Frontend (React + Nginx)
+  frontend:
+    build:
+      context: ./web/frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8001/api/v1}
+      cache_from:
+        - type=registry,ref=corpmeet-frontend:latest
+    image: corpmeet-frontend:latest
+    container_name: corpmeet-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - corpmeet
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    security_opt:
+      - no-new-privileges:true
+
+  # Telegram Bot
+  tg-bot:
+    build:
+      context: ./tg
+      dockerfile: Dockerfile
+      cache_from:
+        - type=registry,ref=corpmeet-tg-bot:latest
+    image: corpmeet-tg-bot:latest
+    container_name: corpmeet-tg-bot
+    restart: unless-stopped
+    ports:
+      - "${BOT_PORT:-8080}:8080"
+    env_file:
+      - ./tg/.env
+    environment:
+      INTERNAL_API_URL: http://backend:8001
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - corpmeet
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 15s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    security_opt:
+      - no-new-privileges:true
 
 volumes:
   pgdata:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${PGDATA_PATH:-./pgdata}
 
 networks:
   corpmeet:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16

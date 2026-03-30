@@ -7,6 +7,7 @@ import RegistrationPage from "./components/Auth/RegistrationPage";
 import SessionAuthPage from "./components/Auth/SessionAuthPage";
 import { Calendar } from "./components/Calendar";
 import { InteractiveStripe } from "./components/Common/InteractiveStripe";
+import { ParticleBackground } from "./components/Common/ParticleBackground";
 import { ActiveMeetings } from "./components/Dashboard/BookingsList";
 import { BookingModal } from "./components/Dashboard/BookingModal";
 import { NotificationCenter, addNotification, getReminderMinutes } from "./components/Dashboard/NotificationCenter";
@@ -170,6 +171,27 @@ function Dashboard() {
   const [activeOpen, setActiveOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
+  const [zen, setZen] = useState(false);
+
+  const toggleZen = () => {
+    setZen((z) => {
+      const next = !z;
+      if (next) {
+        document.documentElement.requestFullscreen?.().catch(() => {});
+      } else {
+        if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
+      }
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    const onFsChange = () => {
+      if (!document.fullscreenElement && zen) setZen(false);
+    };
+    document.addEventListener("fullscreenchange", onFsChange);
+    return () => document.removeEventListener("fullscreenchange", onFsChange);
+  }, [zen]);
   const [slotStart, setSlotStart] = useState<Date | undefined>();
   const [slotEnd, setSlotEnd] = useState<Date | undefined>();
   const [editBooking, setEditBooking] = useState<Booking | null>(null);
@@ -199,7 +221,29 @@ function Dashboard() {
 
   return (
     <div className="h-screen flex flex-col" style={{ background: "var(--bg)" }}>
-      {/* Header */}
+      <ParticleBackground />
+
+      {/* Zen mode: exit button */}
+      <AnimatePresence>
+        {zen && (
+          <motion.button
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={toggleZen}
+            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-2xl text-sm font-medium transition-all duration-300 cursor-pointer"
+            style={{
+              background: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
+              backdropFilter: "blur(20px)",
+              border: isDark ? "1px solid rgba(255,255,255,0.15)" : "1px solid rgba(0,0,0,0.1)",
+              color: isDark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.4)",
+            }}
+          >
+            ESC — выйти
+          </motion.button>
+        )}
+      </AnimatePresence>
+
+      {/* Header — hidden in zen */}
+      {!zen && (
       <header
         className="flex items-center justify-between px-4 shrink-0 relative overflow-visible"
         style={{
@@ -276,6 +320,20 @@ function Dashboard() {
             </div>
           </motion.button>
 
+          {/* ZEN button */}
+          <motion.button onClick={toggleZen} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold tracking-wider transition-all"
+            style={{ background: "var(--elevated)", border: "1px solid var(--border)", color: "var(--text-muted)" }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--primary-border)"; e.currentTarget.style.color = "var(--primary)"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--text-muted)"; }}
+            title="Zen mode">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <path d="M9 9.563C9 9.252 9.252 9 9.563 9h4.874c.311 0 .563.252.563.563v4.874c0 .311-.252.563-.563.563H9.564A.562.562 0 019 14.437V9.564z" />
+            </svg>
+            ZEN
+          </motion.button>
+
           {/* Icon group */}
           <div className="flex items-center gap-1 p-1 rounded-xl" style={{ background: "var(--elevated)", border: "1px solid var(--border)" }}>
             <motion.button onClick={() => setNotifOpen(true)} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
@@ -316,7 +374,9 @@ function Dashboard() {
           </button>
         </div>
       </header>
+      )}
 
+      {!zen && (
       <main className="flex-1 overflow-hidden">
         <Calendar
           currentUser={user ?? null}
@@ -324,6 +384,7 @@ function Dashboard() {
           onCardClick={handleCardClick}
         />
       </main>
+      )}
 
       <ActiveMeetings
         isOpen={activeOpen}
