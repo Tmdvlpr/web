@@ -3,7 +3,7 @@ from pydantic import BaseModel, computed_field
 
 class UserResponse(BaseModel):
     id: int
-    telegram_id: int
+    telegram_id: int | None = None
     name: str | None = None
     first_name: str | None
     last_name: str | None

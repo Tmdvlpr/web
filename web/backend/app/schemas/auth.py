@@ -20,3 +20,8 @@ class TokenResponse(BaseModel):
 class BrowserSessionResponse(BaseModel):
     session_token: str
     browser_url: str
+
+
+class WebRegisterRequest(BaseModel):
+    first_name: str
+    last_name: str | None = None

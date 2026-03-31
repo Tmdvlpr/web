@@ -63,6 +63,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             "ALTER TABLE bookings ADD COLUMN IF NOT EXISTS prev_end_time TIMESTAMPTZ",
             "ALTER TABLE browser_sessions ALTER COLUMN user_id DROP NOT NULL",
             "ALTER TABLE users ALTER COLUMN name DROP NOT NULL",
+            "ALTER TABLE users ALTER COLUMN telegram_id DROP NOT NULL",
             "CREATE UNIQUE INDEX IF NOT EXISTS idx_users_feed_token ON users(feed_token) WHERE feed_token IS NOT NULL",
         ]
         for sql in migrations:

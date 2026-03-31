@@ -232,7 +232,7 @@ async def create_booking(
 
     if payload.recurrence == "none":
         ov = await db.execute(
-            select(Booking).where(and_(Booking.start_time < payload.end_time, Booking.end_time > payload.start_time, Booking.deleted_at.is_(None)))
+            select(Booking).where(and_(Booking.start_time < payload.end_time, Booking.end_time > payload.start_time, Booking.deleted_at.is_(None))).with_for_update()
         )
         if ov.scalar_one_or_none():
             raise HTTPException(status.HTTP_409_CONFLICT, "Время пересекается с существующим бронированием")
@@ -242,7 +242,7 @@ async def create_booking(
 
     for s, e in slots:
         if payload.recurrence != "none":
-            ov = await db.execute(select(Booking).where(and_(Booking.start_time < e, Booking.end_time > s, Booking.deleted_at.is_(None))))
+            ov = await db.execute(select(Booking).where(and_(Booking.start_time < e, Booking.end_time > s, Booking.deleted_at.is_(None))).with_for_update())
             if ov.scalar_one_or_none():
                 continue
         b = Booking(
@@ -297,7 +297,7 @@ async def update_booking(
             Booking.start_time < new_end,
             Booking.end_time > new_start,
             Booking.deleted_at.is_(None),
-        ))
+        )).with_for_update()
     )
     if ov.scalar_one_or_none():
         raise HTTPException(status.HTTP_409_CONFLICT, "Время пересекается с существующим бронированием")

@@ -48,7 +48,7 @@ function statusLabel(b: Booking): { label: string; color: string; bg: string } {
 
 function dayKey(iso: string) {
   const d = new Date(iso);
-  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 
 function dayLabel(iso: string) {
@@ -136,7 +136,7 @@ export function ActiveMeetings({ isOpen, onClose, onCardClick }: Props) {
   const groups: DayGroup[] = [];
   for (const b of bookings) {
     const k = dayKey(b.start_time);
-    const existing = groups.find(g => g.label === dayLabel(b.start_time) && dayKey(g.bookings[0].start_time) === k);
+    const existing = groups.find(g => g.label === dayLabel(b.start_time) && dayKey(g.bookings[0]?.start_time) === k);
     if (existing) existing.bookings.push(b);
     else groups.push({ label: dayLabel(b.start_time), bookings: [b] });
   }

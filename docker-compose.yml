@@ -1,7 +1,5 @@
-version: "3.9"
-
 services:
-  # PostgreSQL Database
+  # PostgreSQL Database - Persistent data store
   db:
     image: postgres:16-alpine
     container_name: corpmeet-db
@@ -39,7 +37,7 @@ services:
           cpus: "0.5"
           memory: 256M
 
-  # Backend API (FastAPI)
+  # Backend API - FastAPI microservice
   backend:
     build:
       context: ./web/backend
@@ -83,7 +81,7 @@ services:
           cpus: "1"
           memory: 512M
 
-  # Frontend (React + Nginx)
+  # Frontend - React + Nginx SPA
   frontend:
     build:
       context: ./web/frontend
@@ -124,7 +122,7 @@ services:
           cpus: "0.5"
           memory: 256M
 
-  # Telegram Bot
+  # Telegram Bot - Async webhook handler
   tg-bot:
     build:
       context: ./tg

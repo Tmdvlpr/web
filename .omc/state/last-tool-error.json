@@ -1,0 +1,7 @@
+{
+  "tool_name": "Read",
+  "tool_input_preview": "{\"file_path\":\"/c/Users/Timur/Desktop/kod/Work/tg/tg/package.json\"}",
+  "error": "File does not exist. Note: your current working directory is C:\\Users\\Timur\\Desktop\\kod\\Work\\tg.",
+  "timestamp": "2026-03-31T12:10:04.251Z",
+  "retry_count": 2
+}

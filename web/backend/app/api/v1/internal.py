@@ -24,8 +24,13 @@ router = APIRouter(prefix="/internal", tags=["internal"])
 # ── Аутентификация бота ───────────────────────────────────────────────────────
 
 def verify_bot_secret(x_bot_secret: str = Header(..., alias="X-Bot-Secret")) -> None:
-    """Проверяет секрет бота. 401 если не совпадает или не задан."""
-    if not settings.BOT_SECRET or x_bot_secret != settings.BOT_SECRET:
+    """Проверяет секрет бота. 503 если не настроен, 401 если не совпадает."""
+    if not settings.BOT_SECRET:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="BOT_SECRET is not configured",
+        )
+    if x_bot_secret != settings.BOT_SECRET:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or missing bot secret",

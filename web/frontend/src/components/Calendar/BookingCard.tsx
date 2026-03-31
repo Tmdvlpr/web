@@ -75,7 +75,8 @@ export function BookingCard({ booking, topPercent, heightPercent, currentUser, o
       onClick={(e) => { e.stopPropagation(); onClick(); }}
       whileHover={{ scale: canDrag ? 1.015 : 1.02, zIndex: 10 }}
       draggable={canDrag}
-      {...(canDrag ? { onDragStart: handleDragStart as any, onDragEnd: handleDragEnd as any } : {})}
+      onDragStartCapture={canDrag ? handleDragStart : undefined}
+      onDragEndCapture={canDrag ? handleDragEnd : undefined}
       style={{
         position: "absolute",
         top: `${topPercent}%`,

@@ -111,7 +111,7 @@ async def admin_create_user(
     if body.role not in ("user", "admin"):
         raise HTTPException(400, "role must be 'user' or 'admin'")
     user = User(
-        telegram_id=0,
+        telegram_id=None,
         name=body.name,
         first_name=body.name.split()[0] if body.name else None,
         last_name=body.name.split()[1] if body.name and len(body.name.split()) > 1 else None,
@@ -159,12 +159,15 @@ async def admin_stats(
     if current_user.role != Role.admin:
         raise HTTPException(403, "Admin only")
     total_users = (await db.execute(select(func.count(User.id)))).scalar_one()
-    total_bookings = (await db.execute(select(func.count(Booking.id)))).scalar_one()
+    total_bookings = (await db.execute(
+        select(func.count(Booking.id)).where(Booking.deleted_at.is_(None))
+    )).scalar_one()
     from datetime import datetime, timezone
     now = datetime.now(timezone.utc)
     active_bookings = (await db.execute(
         select(func.count(Booking.id)).where(
-            Booking.start_time <= now, Booking.end_time >= now
+            Booking.start_time <= now, Booking.end_time >= now,
+            Booking.deleted_at.is_(None),
         )
     )).scalar_one()
     return {

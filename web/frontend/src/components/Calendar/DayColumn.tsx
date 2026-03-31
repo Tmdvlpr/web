@@ -36,7 +36,7 @@ export function DayColumn({ date, bookings, freeSlots = [], currentUser, onSlotC
   const dayName = date.toLocaleDateString("ru-RU", { weekday: "short" });
   const dayNum  = date.getDate();
   const isPast  = date < new Date(new Date().setHours(0, 0, 0, 0));
-  const [nowPct, setNowPct] = useState(nowPercent);
+  const [nowPct, setNowPct] = useState(() => nowPercent());
   const [hoverSlot, setHoverSlot] = useState<{ startPct: number; heightPct: number; label: string } | null>(null);
   const [ghost, setGhost] = useState<{ topPct: number; heightPct: number; label: string } | null>(null);
 

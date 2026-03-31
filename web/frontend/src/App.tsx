@@ -59,8 +59,8 @@ function useWebReminders(isAuthenticated: boolean) {
             }
           }
         }
-      } catch {
-        /* ignore */
+      } catch (err) {
+        console.error("Failed to check web reminders:", err);
       }
     };
     check();

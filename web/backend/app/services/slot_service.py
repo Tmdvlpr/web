@@ -18,7 +18,11 @@ async def get_slots(target_date: date, db: AsyncSession) -> list[SlotResponse]:
 
     result = await db.execute(
         select(Booking).where(
-            and_(Booking.start_time < day_end, Booking.end_time > day_start)
+            and_(
+                Booking.start_time < day_end,
+                Booking.end_time > day_start,
+                Booking.deleted_at.is_(None),
+            )
         )
     )
     bookings = result.scalars().all()

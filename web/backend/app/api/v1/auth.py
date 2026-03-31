@@ -1,10 +1,12 @@
+import os
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.user import User
-from app.schemas.auth import BrowserSessionResponse, LoginRequest, RegisterRequest, TokenResponse
+from app.schemas.auth import BrowserSessionResponse, LoginRequest, RegisterRequest, TokenResponse, WebRegisterRequest
 from app.schemas.user import UserResponse
 from app.services.auth_service import (
     consume_browser_session,
@@ -83,7 +85,9 @@ async def consume_session(session_token: str, db: AsyncSession = Depends(get_db)
     from sqlalchemy import select
     from app.models.browser_session import BrowserSession
 
-    result = await db.execute(select(BrowserSession).where(BrowserSession.token == session_token))
+    result = await db.execute(
+        select(BrowserSession).where(BrowserSession.token == session_token).with_for_update()
+    )
     session = result.scalar_one_or_none()
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -112,20 +116,20 @@ async def consume_session(session_token: str, db: AsyncSession = Depends(get_db)
 
 
 @router.post("/web-register")
-async def web_register(body: dict, db: AsyncSession = Depends(get_db)) -> dict:
+async def web_register(body: WebRegisterRequest, db: AsyncSession = Depends(get_db)) -> dict:
     """Register directly from web (no Telegram required). Creates user + returns JWT."""
     from sqlalchemy import select
     from app.models.user import User
     from app.services.auth_service import create_access_token
 
-    first_name = (body.get("first_name") or "").strip()
-    last_name = (body.get("last_name") or "").strip()
+    first_name = body.first_name.strip()
+    last_name = (body.last_name or "").strip()
     if not first_name:
         raise HTTPException(400, "first_name is required")
 
     display = f"{first_name} {last_name}".strip()
     user = User(
-        telegram_id=0,
+        telegram_id=None,
         name=display,
         first_name=first_name,
         last_name=last_name or None,
@@ -145,27 +149,28 @@ async def get_me(current_user: User = Depends(get_current_user)) -> UserResponse
     return current_user
 
 
-@router.post("/dev-login", response_model=TokenResponse)
-async def dev_login(db: AsyncSession = Depends(get_db)) -> TokenResponse:
-    """Dev-only: instant login as a test user (no Telegram required)."""
-    from sqlalchemy import select as _select
-    DEV_TG_ID = 999_000_001
-    result = await db.execute(_select(User).where(User.telegram_id == DEV_TG_ID))
-    user = result.scalar_one_or_none()
-    if not user:
-        user = User(
-            telegram_id=DEV_TG_ID,
-            first_name="Dev",
-            last_name="User",
-            name="Dev User",
-            username="devuser",
-            role="admin",
-            is_registered=True,
-            is_active=True,
-        )
-        db.add(user)
-        await db.commit()
-        await db.refresh(user)
-    from app.services.auth_service import create_access_token
-    token = create_access_token(user.id)
-    return TokenResponse(access_token=token, expires_in=_EXPIRE_IN)
+if os.environ.get("CORPMEET_DEV"):
+    @router.post("/dev-login", response_model=TokenResponse)
+    async def dev_login(db: AsyncSession = Depends(get_db)) -> TokenResponse:
+        """Dev-only: instant login as a test user (no Telegram required)."""
+        from sqlalchemy import select as _select
+        DEV_TG_ID = 999_000_001
+        result = await db.execute(_select(User).where(User.telegram_id == DEV_TG_ID))
+        user = result.scalar_one_or_none()
+        if not user:
+            user = User(
+                telegram_id=DEV_TG_ID,
+                first_name="Dev",
+                last_name="User",
+                name="Dev User",
+                username="devuser",
+                role="admin",
+                is_registered=True,
+                is_active=True,
+            )
+            db.add(user)
+            await db.commit()
+            await db.refresh(user)
+        from app.services.auth_service import create_access_token
+        token = create_access_token(user.id)
+        return TokenResponse(access_token=token, expires_in=_EXPIRE_IN)
