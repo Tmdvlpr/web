@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
+import { ConfirmDialog } from "../Common/ConfirmDialog";
 import { InteractiveStripe } from "../Common/InteractiveStripe";
 import { MeetingListSkeleton } from "../Common/Skeleton";
 import { useTheme } from "../../contexts/ThemeContext";
@@ -35,6 +36,7 @@ export function AdminPanel({ isOpen, onClose }: Props) {
   const { data: users = [], isLoading: usersLoading } = useAdminUsers();
 
   const [showAddForm, setShowAddForm] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null);
   const [newName, setNewName] = useState("");
   const [newUsername, setNewUsername] = useState("");
 
@@ -62,9 +64,9 @@ export function AdminPanel({ isOpen, onClose }: Props) {
   });
 
   const statCards = stats ? [
-    { label: "Пользователей", value: stats.total_users, icon: "👤", color: "#7c3aed" },
-    { label: "Всего встреч", value: stats.total_bookings, icon: "📅", color: "#0891b2" },
-    { label: "Сейчас активно", value: stats.active_bookings, icon: "🟢", color: "#16a34a" },
+    { label: "Пользователей", value: stats.total_users, icon: "👤", color: "#7c3aed", goTo: "users" as Tab },
+    { label: "Всего встреч", value: stats.total_bookings, icon: "📅", color: "#0891b2", goTo: "bookings" as Tab },
+    { label: "Сейчас активно", value: stats.active_bookings, icon: "🟢", color: "#16a34a", goTo: "bookings" as Tab },
   ] : [];
 
   return (
@@ -133,13 +135,20 @@ export function AdminPanel({ isOpen, onClose }: Props) {
                     {statCards.map(s => (
                       <motion.div key={s.label}
                         initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                        className="rounded-xl p-4 flex items-center gap-4"
-                        style={{ background: "var(--elevated)", border: "1px solid var(--border)" }}>
+                        whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                        onClick={() => setTab(s.goTo)}
+                        className="rounded-xl p-4 flex items-center gap-4 cursor-pointer transition-all"
+                        style={{ background: "var(--elevated)", border: "1px solid var(--border)" }}
+                        onMouseEnter={e => { e.currentTarget.style.borderColor = s.color; }}
+                        onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; }}>
                         <div className="text-3xl">{s.icon}</div>
-                        <div>
+                        <div className="flex-1">
                           <div className="text-2xl font-black" style={{ color: s.color }}>{s.value}</div>
                           <div className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>{s.label}</div>
                         </div>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={s.color} strokeWidth="2" strokeLinecap="round" style={{ opacity: 0.5 }}>
+                          <polyline points="9 18 15 12 9 6"/>
+                        </svg>
                       </motion.div>
                     ))}
                   </div>
@@ -240,7 +249,7 @@ export function AdminPanel({ isOpen, onClose }: Props) {
                                 {u.role === "admin" ? "admin ✕" : "+ admin"}
                               </button>
                               <button
-                                onClick={() => { if (confirm(`Удалить ${u.display_name}?`)) deleteUser(u.id); }}
+                                onClick={() => setDeleteTarget({ id: u.id, name: u.display_name })}
                                 className="w-7 h-7 flex items-center justify-center rounded-lg text-xs transition-all"
                                 style={{ color: "var(--text-muted)" }}
                                 onMouseEnter={e => { e.currentTarget.style.color = "#ef4444"; e.currentTarget.style.background = "rgba(239,68,68,0.1)"; }}
@@ -263,6 +272,17 @@ export function AdminPanel({ isOpen, onClose }: Props) {
           </motion.div>
         </>
       )}
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="Удаление пользователя"
+        message={`Вы уверены, что хотите удалить ${deleteTarget?.name ?? ""}? Все встречи этого пользователя будут отменены.`}
+        confirmText="Удалить"
+        cancelText="Отмена"
+        danger
+        onConfirm={() => { if (deleteTarget) deleteUser(deleteTarget.id); setDeleteTarget(null); }}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </AnimatePresence>
   );
 }

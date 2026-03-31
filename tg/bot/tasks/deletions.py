@@ -57,14 +57,18 @@ async def run_deletion_task(bot: Bot):
                     except Exception as e:
                         logger.error("Failed to send deletion notification: %s", e)
 
-                # Notify guests
+                # Notify each guest personally
+                organizer = user.get("display_name", "?")
                 for guest_username in b.get("guests", []):
                     guest = await bot_api.get_user_by_username(guest_username)
                     if guest and guest.get("telegram_id"):
                         try:
                             await bot.send_message(
                                 guest["telegram_id"],
-                                f"🗑 <b>Встреча отменена</b>\n\n📝 {b['title']}\n🗓 {date}  🕐 {start} – {end}",
+                                f"🗑 <b>Встреча отменена</b>\n\n"
+                                f"📝 {b['title']}\n"
+                                f"🗓 {date}  🕐 {start} – {end}\n"
+                                f"👤 Организатор: {organizer}",
                                 parse_mode="HTML",
                             )
                         except Exception:

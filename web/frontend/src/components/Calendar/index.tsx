@@ -59,11 +59,10 @@ function DayContainer({ date, dateStr, currentUser, onSlotClick, onCardClick, is
 }
 
 function getWeekDates(anchor: Date): Date[] {
-  const monday = new Date(anchor);
-  monday.setDate(anchor.getDate() - ((anchor.getDay() + 6) % 7));
+  // Start from anchor date, show 7 days forward (no past days)
   return Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(monday);
-    d.setDate(monday.getDate() + i);
+    const d = new Date(anchor);
+    d.setDate(anchor.getDate() + i);
     return d;
   });
 }
@@ -239,12 +238,12 @@ export function Calendar({ currentUser, onSlotClick, onCardClick }: CalendarProp
       {/* Grid */}
       <div className="flex flex-1 overflow-hidden">
         {/* Time axis */}
-        <div ref={timeRef} className="shrink-0 w-14 flex flex-col"
-          style={{ overflowY: "hidden", background: "var(--time-axis)", borderRight: "1px solid var(--border)" }}>
+        <div ref={timeRef} className="shrink-0 w-14 flex flex-col relative z-10"
+          style={{ overflowY: "hidden", background: "var(--time-axis)", borderRight: "1px solid var(--border)", backdropFilter: "blur(20px)" }}>
           <div style={{ height: 56, flexShrink: 0, borderBottom: "1px solid var(--border)" }} />
           {HOURS.map((h) => (
             <div key={h} className="text-right pr-3 text-xs select-none shrink-0 flex items-start justify-end"
-              style={{ height: `${HOUR_HEIGHT_PX}px`, color: "var(--text-muted)", paddingTop: 4, fontWeight: 500, fontVariantNumeric: "tabular-nums" }}>
+              style={{ height: `${HOUR_HEIGHT_PX}px`, color: "var(--text)", paddingTop: 4, fontWeight: 600, fontVariantNumeric: "tabular-nums", opacity: 0.7 }}>
               {String(h).padStart(2, "0")}:00
             </div>
           ))}

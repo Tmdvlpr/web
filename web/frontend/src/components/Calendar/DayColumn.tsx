@@ -126,8 +126,8 @@ export function DayColumn({ date, bookings, freeSlots = [], currentUser, onSlotC
     color: "#fff",
     boxShadow: isDark ? "0 0 14px rgba(139,92,246,0.55)" : "0 2px 10px rgba(109,40,217,0.35)",
   };
-  const pastNumColor    = isDark ? "#2a2e45" : "#c9cdd6";
-  const normalNumColor  = isDark ? "#525c78" : "#9ca3af";
+  const pastNumColor    = isDark ? "#64748b" : "#c9cdd6";
+  const normalNumColor  = isDark ? "#cbd5e1" : "#64748b";
   const gridBg          = isPast
     ? "var(--day-grid-past)"
     : isToday
@@ -136,7 +136,7 @@ export function DayColumn({ date, bookings, freeSlots = [], currentUser, onSlotC
         ? "var(--day-grid-weekend)"
         : "var(--day-grid)";
   const todayNameColor  = isDark ? "#a78bfa" : "#6d28d9";
-  const normalNameColor = isDark ? "#3d4259" : "#94a3b8";
+  const normalNameColor = isDark ? "#94a3b8" : "#64748b";
 
   return (
     <div className="flex flex-col min-w-0 relative"

@@ -22,3 +22,6 @@ build/
 .mypy_cache/
 .vscode/
 .idea/
+node_modules/
+.pytest_cache/
+frontend/

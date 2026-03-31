@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
@@ -60,6 +59,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             "CREATE INDEX IF NOT EXISTS idx_browser_sessions_token ON browser_sessions(token)",
             "ALTER TABLE users ADD COLUMN IF NOT EXISTS feed_token VARCHAR(64) UNIQUE",
             "ALTER TABLE bookings ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ",
+            "ALTER TABLE bookings ADD COLUMN IF NOT EXISTS prev_start_time TIMESTAMPTZ",
+            "ALTER TABLE bookings ADD COLUMN IF NOT EXISTS prev_end_time TIMESTAMPTZ",
             "ALTER TABLE browser_sessions ALTER COLUMN user_id DROP NOT NULL",
             "ALTER TABLE users ALTER COLUMN name DROP NOT NULL",
             "CREATE UNIQUE INDEX IF NOT EXISTS idx_users_feed_token ON users(feed_token) WHERE feed_token IS NOT NULL",
@@ -70,38 +71,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             except Exception:
                 pass
 
-    # ── 2. Запуск TG Bot + фоновых задач ─────────────────────────────────────
-    from app.bot.bot import create_bot_and_dispatcher
-    from app.bot.tasks.notifications import run_notification_task
-    from app.bot.tasks.reminders import run_reminder_task
-
-    bot, dp = create_bot_and_dispatcher()
-
-    bg_tasks = [
-        asyncio.create_task(
-            dp.start_polling(bot, handle_signals=False),
-            name="bot_polling",
-        ),
-        asyncio.create_task(
-            run_notification_task(bot),
-            name="bot_notifications",
-        ),
-        asyncio.create_task(
-            run_reminder_task(bot),
-            name="bot_reminders",
-        ),
-    ]
-    logger.info("TG Bot started (polling + notification + reminder tasks)")
+    # ── 2. TG Bot polling запускается отдельно (tg/tg/bot.py) ─────────────────
+    # Бэкенд НЕ делает polling — это зона ответственности коллеги (tg-bot контейнер).
+    # Бэкенд только предоставляет internal API для бота.
+    logger.info("Backend ready. TG Bot runs separately (tg/tg/bot.py)")
 
     yield  # ← FastAPI обрабатывает HTTP-запросы
 
-    # ── 3. Graceful shutdown ──────────────────────────────────────────────────
-    logger.info("Shutting down TG Bot tasks...")
-    for task in bg_tasks:
-        task.cancel()
-    await asyncio.gather(*bg_tasks, return_exceptions=True)
-    await bot.session.close()
-    logger.info("TG Bot stopped.")
+    logger.info("Backend shutting down.")
 
 
 app = FastAPI(

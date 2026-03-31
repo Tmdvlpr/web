@@ -6,8 +6,10 @@ import LoginPage from "./components/Auth/LoginPage";
 import RegistrationPage from "./components/Auth/RegistrationPage";
 import SessionAuthPage from "./components/Auth/SessionAuthPage";
 import { Calendar } from "./components/Calendar";
-import { InteractiveStripe } from "./components/Common/InteractiveStripe";
+// import { InteractiveStripe } from "./components/Common/InteractiveStripe";
 import { ParticleBackground } from "./components/Common/ParticleBackground";
+import { DotMatrixLogo } from "./components/Common/DotMatrixLogo";
+import { SplashScreen } from "./components/Common/SplashScreen";
 import { ActiveMeetings } from "./components/Dashboard/BookingsList";
 import { BookingModal } from "./components/Dashboard/BookingModal";
 import { NotificationCenter, addNotification, getReminderMinutes } from "./components/Dashboard/NotificationCenter";
@@ -167,6 +169,7 @@ function Dashboard() {
   const { toasts, add: addToast } = useToasts();
   const navigate = useNavigate();
 
+  const [splash, setSplash] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [activeOpen, setActiveOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -221,6 +224,7 @@ function Dashboard() {
 
   return (
     <div className="h-screen flex flex-col" style={{ background: "var(--bg)" }}>
+      {splash && <SplashScreen onFinish={() => setSplash(false)} />}
       <ParticleBackground />
 
       {/* Zen mode: exit button */}
@@ -245,131 +249,92 @@ function Dashboard() {
       {/* Header — hidden in zen */}
       {!zen && (
       <header
-        className="flex items-center justify-between px-4 shrink-0 relative overflow-visible"
+        className="flex items-center justify-between px-5 shrink-0 relative"
         style={{
-          height: 60,
+          height: 52,
           borderBottom: "1px solid var(--border)",
           background: "var(--header)",
-          backdropFilter: "blur(20px)",
-          boxShadow: isDark
-            ? "0 1px 0 rgba(255,255,255,0.04)"
-            : "0 2px 16px rgba(0,0,0,0.05)",
+          backdropFilter: "blur(24px)",
           zIndex: 30,
         }}
       >
-        <InteractiveStripe edge="bottom" />
-
-        {/* Logo */}
-        <div className="flex items-center gap-3 shrink-0">
-          <motion.div
-            animate={{ boxShadow: ["0 0 8px rgba(109,40,217,0.2)","0 0 20px rgba(109,40,217,0.5)","0 0 8px rgba(109,40,217,0.2)"] }}
-            transition={{ duration: 3, repeat: Infinity }}
-            className="rounded-xl overflow-hidden shrink-0"
-          >
-            <img src="/logo.png" alt="Logo" className="w-9 h-9" />
-          </motion.div>
-          <div>
-            <div className="leading-none" style={{ fontFamily: "Unbounded, sans-serif", fontWeight: 800, fontSize: 14, letterSpacing: "0.07em" }}>
-              <span style={{ color: "var(--text)" }}>CORP</span>
-              <span style={{ background: "linear-gradient(100deg,#6d28d9,#0ea5e9)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>MEET</span>
-            </div>
-            <div style={{ color: "var(--text-muted)", fontSize: 10, letterSpacing: "0.06em", marginTop: 2, textTransform: "uppercase" }}>
-              Переговорная
-            </div>
-          </div>
+        {/* Left: logo — dot matrix easter egg */}
+        <div className="flex items-center gap-3">
+          <svg viewBox="0 0 184 184" width="30" height="30">
+            <rect x="0" y="0" width="183.477" height="183.476" rx="24" fill={isDark ? "#1e293b" : "#ffffff"} stroke={isDark ? "#334155" : "#e0e0e0"} strokeWidth="1" />
+            <path d="M183.477 -0.000213652H24.1003C10.8448 -0.000213652 0 10.8442 0 24.1002V29.4577C4.35965 30.1241 9.2007 31.4108 14.4453 33.2707C30.9597 39.1299 51.5212 50.7097 73.5983 66.6973C91.5408 53.3303 108.051 43.7672 121.444 39.0204C134.526 34.3831 144.68 34.3293 150.36 39.7837C156.794 45.9587 156.535 58.3064 150.797 74.4786C144.935 90.9937 133.356 111.555 117.37 133.632C130.738 151.575 140.298 168.087 145.045 181.48C145.286 182.154 145.511 182.818 145.725 183.476H159.377C172.632 183.476 183.477 172.634 183.477 159.378V-0.000213652Z" fill="#4f46e5"/>
+            <path d="M0 101.189V159.376C0 168.393 5.01728 176.29 12.3973 180.42C18.0218 180.586 24.8281 179.206 32.5683 176.422C48.3471 170.754 67.9784 159.273 89.4463 143.198C89.6156 143.069 89.8609 143.105 89.9921 143.275C90.1104 143.434 90.0894 143.658 89.949 143.793C83.9014 149.56 77.876 155.016 71.9314 160.131C65.8788 165.336 59.906 170.191 54.0732 174.655L54.0705 174.658L50.6656 177.231L50.6641 177.232L50.6599 177.235L50.6572 177.237C47.73 179.421 44.8397 181.502 41.9898 183.475H116.387C121.896 177.132 121.584 165.949 116.392 151.497C110.722 135.719 99.2405 116.088 83.1656 94.6182C83.0359 94.4481 83.071 94.2006 83.2423 94.0716C83.4017 93.9534 83.6256 93.9747 83.7592 94.1147H83.7611C89.5271 100.163 94.9865 106.19 100.101 112.134C105.16 118.017 109.887 123.825 114.25 129.503C121.803 114.774 126.675 101.709 128.415 91.1596C130.095 80.9622 128.849 73.1332 124.268 68.4527C118.097 62.1511 106.564 62.2476 91.463 67.6745C75.6841 73.3441 56.0556 84.8229 34.5862 100.899C34.4156 101.028 34.1715 100.994 34.0391 100.821C33.9217 100.663 33.943 100.438 34.0842 100.305H34.083C40.1287 94.5412 46.1515 89.0841 52.0938 83.9737C57.9766 78.9107 63.7907 74.1829 69.4702 69.8191C54.7411 62.2655 41.6766 57.3913 31.1279 55.6515C20.9285 53.9692 13.1007 55.2151 8.42024 59.7979C2.11631 65.9691 2.21587 77.5024 7.64207 92.6007C13.3097 108.38 24.7911 128.011 40.8664 149.476C40.9965 149.648 40.9587 149.894 40.7867 150.023C40.6299 150.143 40.4056 150.122 40.2706 149.979V149.982C34.5064 143.936 29.052 137.913 23.9397 131.971C18.7325 125.916 13.8754 119.941 9.4105 114.105L9.40821 114.104L6.83453 110.699L6.83148 110.697L6.83034 110.692L6.8269 110.69C4.42679 107.474 2.15065 104.304 0 101.189Z" fill="#4f46e5"/>
+          </svg>
+          <DotMatrixLogo />
         </div>
 
-        {/* Center: primary action */}
-        <motion.button
-          onClick={() => handleSlotClick(new Date(), new Date(Date.now() + 3_600_000))}
-          whileHover={{ scale: 1.03, boxShadow: "0 6px 24px rgba(109,40,217,0.50)" }}
-          whileTap={{ scale: 0.97 }}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white"
-          style={{
-            background: "linear-gradient(135deg,#6d28d9,#8b5cf6)",
-            boxShadow: "0 3px 14px rgba(109,40,217,0.38)",
-            letterSpacing: "0.01em",
-          }}
-        >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <path d="M7 1v12M1 7h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-          </svg>
-          Забронировать
-        </motion.button>
-
-        {/* Right: user + controls */}
-        <div className="flex items-center gap-2 shrink-0">
-          {/* My meetings button — shows avatar + label */}
-          <motion.button
-            onClick={() => setActiveOpen(true)}
-            whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.96 }}
-            className="flex items-center gap-2.5 pl-1.5 pr-3 py-1.5 rounded-xl text-sm font-semibold transition-all"
-            style={{ background: "var(--elevated)", border: "1px solid var(--border)", color: "var(--text)" }}
-            title="Мои встречи"
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--primary-border)"; e.currentTarget.style.background = "var(--primary-light)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.background = "var(--elevated)"; }}
-          >
-            {/* Avatar */}
-            <div className="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold text-white shrink-0"
-              style={{ background: "linear-gradient(135deg,#6d28d9,#8b5cf6)" }}>
+        {/* Right: labeled buttons */}
+        <div className="flex items-center gap-1">
+          {/* My meetings */}
+          <button onClick={() => setActiveOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer"
+            style={{ color: "var(--text-sec)" }}
+            onMouseEnter={e => { e.currentTarget.style.background = "var(--elevated)"; e.currentTarget.style.color = "var(--text)"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = ""; e.currentTarget.style.color = "var(--text-sec)"; }}>
+            <div className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
+              style={{ background: "var(--primary)", fontSize: 10 }}>
               {user?.display_name?.[0]?.toUpperCase() ?? "?"}
             </div>
-            <div className="flex flex-col items-start leading-none gap-0.5">
-              <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 500 }}>Мои встречи</span>
-              <span style={{ fontSize: 12, color: "var(--text)", fontWeight: 600 }}>{user?.display_name}</span>
-            </div>
-          </motion.button>
+            {user?.display_name}
+          </button>
 
-          {/* ZEN button */}
-          <motion.button onClick={toggleZen} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold tracking-wider transition-all"
-            style={{ background: "var(--elevated)", border: "1px solid var(--border)", color: "var(--text-muted)" }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--primary-border)"; e.currentTarget.style.color = "var(--primary)"; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--text-muted)"; }}
-            title="Zen mode">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              <path d="M9 9.563C9 9.252 9.252 9 9.563 9h4.874c.311 0 .563.252.563.563v4.874c0 .311-.252.563-.563.563H9.564A.562.562 0 019 14.437V9.564z" />
-            </svg>
-            ZEN
-          </motion.button>
+          <div className="w-px h-4 mx-1" style={{ background: "var(--border)" }} />
 
-          {/* Icon group */}
-          <div className="flex items-center gap-1 p-1 rounded-xl" style={{ background: "var(--elevated)", border: "1px solid var(--border)" }}>
-            <motion.button onClick={() => setNotifOpen(true)} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-              className="w-7 h-7 flex items-center justify-center rounded-lg text-sm transition-all"
-              title="Уведомления"
-              style={{ color: "var(--text-muted)" }}
-              onMouseEnter={e => { e.currentTarget.style.background = "var(--surface)"; e.currentTarget.style.color = "var(--text)"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = ""; e.currentTarget.style.color = "var(--text-muted)"; }}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-              </svg>
-            </motion.button>
-
-            {user?.role === "admin" && (
-              <motion.button onClick={() => setAdminOpen(true)} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                className="w-7 h-7 flex items-center justify-center rounded-lg text-sm transition-all"
-                title="Панель администратора"
-                style={{ color: "var(--text-muted)" }}
-                onMouseEnter={e => { e.currentTarget.style.background = "var(--surface)"; e.currentTarget.style.color = "var(--primary)"; }}
-                onMouseLeave={e => { e.currentTarget.style.background = ""; e.currentTarget.style.color = "var(--text-muted)"; }}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 1 0 4.93 19.07M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
-                </svg>
-              </motion.button>
-            )}
-
-            {miniApp && <OpenInBrowserButton />}
-
-            <ThemeToggle />
-          </div>
-
-          <button onClick={handleLogout}
-            className="text-xs px-2.5 py-1.5 rounded-xl transition-all font-medium"
+          {/* Zen */}
+          <button onClick={toggleZen}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer"
             style={{ color: "var(--text-muted)" }}
-            onMouseEnter={(e) => { e.currentTarget.style.color = "var(--danger)"; e.currentTarget.style.background = isDark ? "rgba(239,68,68,0.1)" : "#fff5f5"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = ""; }}>
+            onMouseEnter={e => { e.currentTarget.style.background = "var(--elevated)"; e.currentTarget.style.color = "var(--text)"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = ""; e.currentTarget.style.color = "var(--text-muted)"; }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <circle cx="12" cy="12" r="9"/><rect x="9" y="9" width="6" height="6" rx="0.5"/>
+            </svg>
+            Zen
+          </button>
+
+          {/* Notifications */}
+          <button onClick={() => setNotifOpen(true)}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer"
+            style={{ color: "var(--text-muted)" }}
+            onMouseEnter={e => { e.currentTarget.style.background = "var(--elevated)"; e.currentTarget.style.color = "var(--text)"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = ""; e.currentTarget.style.color = "var(--text-muted)"; }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+          </button>
+
+          {/* Admin */}
+          {user?.role === "admin" && (
+            <button onClick={() => setAdminOpen(true)}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer"
+              style={{ color: "var(--text-muted)" }}
+              onMouseEnter={e => { e.currentTarget.style.background = "var(--elevated)"; e.currentTarget.style.color = "var(--primary)"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = ""; e.currentTarget.style.color = "var(--text-muted)"; }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9c.26.46.4.97.41 1.51.01.4.01.8.01 1.2"/>
+              </svg>
+              Админ
+            </button>
+          )}
+
+          {miniApp && <OpenInBrowserButton />}
+
+          <ThemeToggle />
+
+          {/* Logout */}
+          <button onClick={handleLogout}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer"
+            style={{ color: "var(--text-muted)" }}
+            onMouseEnter={e => { e.currentTarget.style.color = "var(--danger)"; e.currentTarget.style.background = isDark ? "rgba(252,165,165,0.08)" : "rgba(239,68,68,0.05)"; }}
+            onMouseLeave={e => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = ""; }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
             Выйти
           </button>
         </div>
@@ -384,6 +349,26 @@ function Dashboard() {
           onCardClick={handleCardClick}
         />
       </main>
+      )}
+
+      {/* FAB — floating + button */}
+      {!zen && (
+        <motion.button
+          onClick={() => handleSlotClick(new Date(), new Date(Date.now() + 3_600_000))}
+          whileHover={{ scale: 1.1, boxShadow: "0 8px 30px rgba(79,70,229,0.50)" }}
+          whileTap={{ scale: 0.9 }}
+          className="fixed z-40 flex items-center justify-center rounded-2xl text-white cursor-pointer"
+          style={{
+            bottom: 24, right: 24,
+            width: 56, height: 56,
+            background: "linear-gradient(135deg,#4f46e5,#818cf8)",
+            boxShadow: "0 4px 20px rgba(79,70,229,0.40)",
+          }}
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+          </svg>
+        </motion.button>
       )}
 
       <ActiveMeetings

@@ -50,6 +50,8 @@ class BookingBotInfo(BaseModel):
     description: str | None
     start_time: datetime
     end_time: datetime
+    prev_start_time: datetime | None = None
+    prev_end_time: datetime | None = None
     guests: list[str]
     reminder_sent: bool
     created_at: datetime

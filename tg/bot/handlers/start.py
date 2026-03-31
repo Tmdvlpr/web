@@ -17,7 +17,7 @@ router = Router()
 
 def _booking_keyboard() -> InlineKeyboardMarkup:
     buttons = []
-    if WEBAPP_URL:
+    if WEBAPP_URL and WEBAPP_URL.startswith("https://"):
         buttons.append([InlineKeyboardButton(
             text="Open Booking App",
             web_app=WebAppInfo(url=WEBAPP_URL),

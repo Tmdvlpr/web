@@ -75,7 +75,8 @@ function GuestInput({
     const u = username.trim().toLowerCase().replace(/^@/, "");
     if (u && !guests.includes(u)) setGuests(gs => [...gs, u]);
     setInput("");
-    inputRef.current?.focus();
+    setFocused(true);
+    setTimeout(() => inputRef.current?.focus(), 30);
   };
 
   const commitInput = () => {
@@ -98,7 +99,7 @@ function GuestInput({
   return (
     <div>
       <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--text-sec)" }}>
-        Гости <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>(Enter для добавления)</span>
+        Гости
       </label>
       <div ref={wrapRef} className="relative">
         <div
@@ -640,7 +641,7 @@ export function BookingModal({
                   {/* Title */}
                   <div>
                     <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--text-sec)" }}>
-                      Название встречи
+                      Название встречи <span style={{ color: "#ef4444", fontWeight: 400 }}>(*обязательно)</span>
                     </label>
                     <input type="text" autoFocus value={title}
                       onChange={e => { setTitle(e.target.value); if (fieldErrors.title) setFieldErrors(fe => ({ ...fe, title: undefined })); }}

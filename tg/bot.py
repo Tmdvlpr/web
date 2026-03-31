@@ -10,7 +10,7 @@ from aiogram.types import MenuButtonWebApp, WebAppInfo
 from config import BOT_TOKEN, BOT_SECRET, WEBAPP_PORT, WEBAPP_URL
 import api_client
 import bot_api
-from bot.middlewares.auth import GroupMemberMiddleware
+# from bot.middlewares.auth import GroupMemberMiddleware
 from bot.handlers import start, slots, book, mybookings
 from bot.tasks.reminders import run_reminder_task
 from bot.tasks.notifications import run_notification_task
@@ -29,9 +29,9 @@ async def main():
     bot = Bot(token=BOT_TOKEN)
     dp  = Dispatcher(storage=MemoryStorage())
 
-    # register middleware for all private messages and callbacks
-    dp.message.middleware(GroupMemberMiddleware())
-    dp.callback_query.middleware(GroupMemberMiddleware())
+    # Group membership middleware — disabled for dev (bot not in group yet)
+    # dp.message.middleware(GroupMemberMiddleware())
+    # dp.callback_query.middleware(GroupMemberMiddleware())
 
     # register routers
     dp.include_router(start.router)

@@ -306,6 +306,10 @@ async def update_booking(
         booking.title = payload.title
     if payload.description is not None:
         booking.description = payload.description
+    # Save previous time before changing (for notification with old→new)
+    if payload.start_time is not None or payload.end_time is not None:
+        booking.prev_start_time = booking.start_time
+        booking.prev_end_time = booking.end_time
     if payload.start_time is not None:
         booking.start_time = payload.start_time
         booking.reminder_sent = False

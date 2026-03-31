@@ -17,3 +17,5 @@ dist/
 out/
 .next/
 build/
+.vite/
+coverage/

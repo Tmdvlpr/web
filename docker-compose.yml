@@ -30,6 +30,14 @@ services:
         max-file: "3"
     security_opt:
       - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 512M
+        reservations:
+          cpus: "0.5"
+          memory: 256M
 
   # Backend API (FastAPI)
   backend:
@@ -59,10 +67,6 @@ services:
       timeout: 3s
       retries: 3
       start_period: 10s
-    volumes:
-      # Development mode with hot reload
-      - ./web/backend:/app
-      - /app/.venv
     logging:
       driver: "json-file"
       options:
@@ -70,6 +74,14 @@ services:
         max-file: "3"
     security_opt:
       - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 1G
+        reservations:
+          cpus: "1"
+          memory: 512M
 
   # Frontend (React + Nginx)
   frontend:
@@ -103,6 +115,14 @@ services:
         max-file: "3"
     security_opt:
       - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 512M
+        reservations:
+          cpus: "0.5"
+          memory: 256M
 
   # Telegram Bot
   tg-bot:
@@ -138,6 +158,14 @@ services:
         max-file: "3"
     security_opt:
       - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 512M
+        reservations:
+          cpus: "0.5"
+          memory: 256M
 
 volumes:
   pgdata:
