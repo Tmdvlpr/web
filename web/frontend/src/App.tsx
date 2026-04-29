@@ -6,10 +6,6 @@ import LoginPage from "./components/Auth/LoginPage";
 import RegistrationPage from "./components/Auth/RegistrationPage";
 import SessionAuthPage from "./components/Auth/SessionAuthPage";
 import { Calendar } from "./components/Calendar";
-// import { InteractiveStripe } from "./components/Common/InteractiveStripe";
-import { ParticleBackground } from "./components/Common/ParticleBackground";
-import { DotMatrixLogo } from "./components/Common/DotMatrixLogo";
-import { SplashScreen } from "./components/Common/SplashScreen";
 import { ActiveMeetings } from "./components/Dashboard/BookingsList";
 import { BookingModal } from "./components/Dashboard/BookingModal";
 import { NotificationCenter, addNotification, getReminderMinutes } from "./components/Dashboard/NotificationCenter";
@@ -169,32 +165,10 @@ function Dashboard() {
   const { toasts, add: addToast } = useToasts();
   const navigate = useNavigate();
 
-  const [splash, setSplash] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [activeOpen, setActiveOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
-  const [zen, setZen] = useState(false);
-
-  const toggleZen = () => {
-    setZen((z) => {
-      const next = !z;
-      if (next) {
-        document.documentElement.requestFullscreen?.().catch(() => {});
-      } else {
-        if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
-      }
-      return next;
-    });
-  };
-
-  useEffect(() => {
-    const onFsChange = () => {
-      if (!document.fullscreenElement && zen) setZen(false);
-    };
-    document.addEventListener("fullscreenchange", onFsChange);
-    return () => document.removeEventListener("fullscreenchange", onFsChange);
-  }, [zen]);
   const [slotStart, setSlotStart] = useState<Date | undefined>();
   const [slotEnd, setSlotEnd] = useState<Date | undefined>();
   const [editBooking, setEditBooking] = useState<Booking | null>(null);
@@ -224,30 +198,6 @@ function Dashboard() {
 
   return (
     <div className="h-screen flex flex-col" style={{ background: "var(--bg)" }}>
-      {splash && <SplashScreen onFinish={() => setSplash(false)} />}
-      <ParticleBackground />
-
-      {/* Zen mode: exit button */}
-      <AnimatePresence>
-        {zen && (
-          <motion.button
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            onClick={toggleZen}
-            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-2xl text-sm font-medium transition-all duration-300 cursor-pointer"
-            style={{
-              background: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
-              backdropFilter: "blur(20px)",
-              border: isDark ? "1px solid rgba(255,255,255,0.15)" : "1px solid rgba(0,0,0,0.1)",
-              color: isDark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.4)",
-            }}
-          >
-            ESC — выйти
-          </motion.button>
-        )}
-      </AnimatePresence>
-
-      {/* Header — hidden in zen */}
-      {!zen && (
       <header
         className="flex items-center justify-between px-5 shrink-0 relative"
         style={{
@@ -258,14 +208,23 @@ function Dashboard() {
           zIndex: 30,
         }}
       >
-        {/* Left: logo — dot matrix easter egg */}
-        <div className="flex items-center gap-3">
-          <svg viewBox="0 0 184 184" width="30" height="30">
-            <rect x="0" y="0" width="183.477" height="183.476" rx="24" fill={isDark ? "#1e293b" : "#ffffff"} stroke={isDark ? "#334155" : "#e0e0e0"} strokeWidth="1" />
-            <path d="M183.477 -0.000213652H24.1003C10.8448 -0.000213652 0 10.8442 0 24.1002V29.4577C4.35965 30.1241 9.2007 31.4108 14.4453 33.2707C30.9597 39.1299 51.5212 50.7097 73.5983 66.6973C91.5408 53.3303 108.051 43.7672 121.444 39.0204C134.526 34.3831 144.68 34.3293 150.36 39.7837C156.794 45.9587 156.535 58.3064 150.797 74.4786C144.935 90.9937 133.356 111.555 117.37 133.632C130.738 151.575 140.298 168.087 145.045 181.48C145.286 182.154 145.511 182.818 145.725 183.476H159.377C172.632 183.476 183.477 172.634 183.477 159.378V-0.000213652Z" fill="#4f46e5"/>
-            <path d="M0 101.189V159.376C0 168.393 5.01728 176.29 12.3973 180.42C18.0218 180.586 24.8281 179.206 32.5683 176.422C48.3471 170.754 67.9784 159.273 89.4463 143.198C89.6156 143.069 89.8609 143.105 89.9921 143.275C90.1104 143.434 90.0894 143.658 89.949 143.793C83.9014 149.56 77.876 155.016 71.9314 160.131C65.8788 165.336 59.906 170.191 54.0732 174.655L54.0705 174.658L50.6656 177.231L50.6641 177.232L50.6599 177.235L50.6572 177.237C47.73 179.421 44.8397 181.502 41.9898 183.475H116.387C121.896 177.132 121.584 165.949 116.392 151.497C110.722 135.719 99.2405 116.088 83.1656 94.6182C83.0359 94.4481 83.071 94.2006 83.2423 94.0716C83.4017 93.9534 83.6256 93.9747 83.7592 94.1147H83.7611C89.5271 100.163 94.9865 106.19 100.101 112.134C105.16 118.017 109.887 123.825 114.25 129.503C121.803 114.774 126.675 101.709 128.415 91.1596C130.095 80.9622 128.849 73.1332 124.268 68.4527C118.097 62.1511 106.564 62.2476 91.463 67.6745C75.6841 73.3441 56.0556 84.8229 34.5862 100.899C34.4156 101.028 34.1715 100.994 34.0391 100.821C33.9217 100.663 33.943 100.438 34.0842 100.305H34.083C40.1287 94.5412 46.1515 89.0841 52.0938 83.9737C57.9766 78.9107 63.7907 74.1829 69.4702 69.8191C54.7411 62.2655 41.6766 57.3913 31.1279 55.6515C20.9285 53.9692 13.1007 55.2151 8.42024 59.7979C2.11631 65.9691 2.21587 77.5024 7.64207 92.6007C13.3097 108.38 24.7911 128.011 40.8664 149.476C40.9965 149.648 40.9587 149.894 40.7867 150.023C40.6299 150.143 40.4056 150.122 40.2706 149.979V149.982C34.5064 143.936 29.052 137.913 23.9397 131.971C18.7325 125.916 13.8754 119.941 9.4105 114.105L9.40821 114.104L6.83453 110.699L6.83148 110.697L6.83034 110.692L6.8269 110.69C4.42679 107.474 2.15065 104.304 0 101.189Z" fill="#4f46e5"/>
-          </svg>
-          <DotMatrixLogo />
+        <div className="flex items-center gap-2.5">
+          <div className="relative shrink-0" style={{
+            background: "linear-gradient(135deg, rgba(21,101,168,0.12), rgba(21,101,168,0.06))",
+            borderRadius: 10, padding: 3,
+            boxShadow: "0 0 0 1px rgba(21,101,168,0.22)",
+          }}>
+            <svg viewBox="0 0 184 184" width="26" height="26">
+              <rect x="0" y="0" width="183.477" height="183.476" rx="24" fill={isDark ? "#1e293b" : "#ffffff"} stroke={isDark ? "#334155" : "#e0e0e0"} strokeWidth="1" />
+              <path d="M183.477 -0.000213652H24.1003C10.8448 -0.000213652 0 10.8442 0 24.1002V29.4577C4.35965 30.1241 9.2007 31.4108 14.4453 33.2707C30.9597 39.1299 51.5212 50.7097 73.5983 66.6973C91.5408 53.3303 108.051 43.7672 121.444 39.0204C134.526 34.3831 144.68 34.3293 150.36 39.7837C156.794 45.9587 156.535 58.3064 150.797 74.4786C144.935 90.9937 133.356 111.555 117.37 133.632C130.738 151.575 140.298 168.087 145.045 181.48C145.286 182.154 145.511 182.818 145.725 183.476H159.377C172.632 183.476 183.477 172.634 183.477 159.378V-0.000213652Z" fill="#1565a8"/>
+              <path d="M0 101.189V159.376C0 168.393 5.01728 176.29 12.3973 180.42C18.0218 180.586 24.8281 179.206 32.5683 176.422C48.3471 170.754 67.9784 159.273 89.4463 143.198C89.6156 143.069 89.8609 143.105 89.9921 143.275C90.1104 143.434 90.0894 143.658 89.949 143.793C83.9014 149.56 77.876 155.016 71.9314 160.131C65.8788 165.336 59.906 170.191 54.0732 174.655L54.0705 174.658L50.6656 177.231L50.6641 177.232L50.6599 177.235L50.6572 177.237C47.73 179.421 44.8397 181.502 41.9898 183.475H116.387C121.896 177.132 121.584 165.949 116.392 151.497C110.722 135.719 99.2405 116.088 83.1656 94.6182C83.0359 94.4481 83.071 94.2006 83.2423 94.0716C83.4017 93.9534 83.6256 93.9747 83.7592 94.1147H83.7611C89.5271 100.163 94.9865 106.19 100.101 112.134C105.16 118.017 109.887 123.825 114.25 129.503C121.803 114.774 126.675 101.709 128.415 91.1596C130.095 80.9622 128.849 73.1332 124.268 68.4527C118.097 62.1511 106.564 62.2476 91.463 67.6745C75.6841 73.3441 56.0556 84.8229 34.5862 100.899C34.4156 101.028 34.1715 100.994 34.0391 100.821C33.9217 100.663 33.943 100.438 34.0842 100.305H34.083C40.1287 94.5412 46.1515 89.0841 52.0938 83.9737C57.9766 78.9107 63.7907 74.1829 69.4702 69.8191C54.7411 62.2655 41.6766 57.3913 31.1279 55.6515C20.9285 53.9692 13.1007 55.2151 8.42024 59.7979C2.11631 65.9691 2.21587 77.5024 7.64207 92.6007C13.3097 108.38 24.7911 128.011 40.8664 149.476C40.9965 149.648 40.9587 149.894 40.7867 150.023C40.6299 150.143 40.4056 150.122 40.2706 149.979V149.982C34.5064 143.936 29.052 137.913 23.9397 131.971C18.7325 125.916 13.8754 119.941 9.4105 114.105L9.40821 114.104L6.83453 110.699L6.83148 110.697L6.83034 110.692L6.8269 110.69C4.42679 107.474 2.15065 104.304 0 101.189Z" fill="#1565a8"/>
+            </svg>
+          </div>
+          <span style={{
+            fontFamily: "Manrope, sans-serif", fontWeight: 800, fontSize: 26,
+            lineHeight: 1, color: "#1565a8", letterSpacing: "0.05em",
+            textTransform: "uppercase",
+          }}>Corpmeet</span>
         </div>
 
         {/* Right: labeled buttons */}
@@ -284,18 +243,6 @@ function Dashboard() {
           </button>
 
           <div className="w-px h-4 mx-1" style={{ background: "var(--border)" }} />
-
-          {/* Zen */}
-          <button onClick={toggleZen}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer"
-            style={{ color: "var(--text-muted)" }}
-            onMouseEnter={e => { e.currentTarget.style.background = "var(--elevated)"; e.currentTarget.style.color = "var(--text)"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = ""; e.currentTarget.style.color = "var(--text-muted)"; }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <circle cx="12" cy="12" r="9"/><rect x="9" y="9" width="6" height="6" rx="0.5"/>
-            </svg>
-            Zen
-          </button>
 
           {/* Notifications */}
           <button onClick={() => setNotifOpen(true)}
@@ -339,9 +286,7 @@ function Dashboard() {
           </button>
         </div>
       </header>
-      )}
 
-      {!zen && (
       <main className="flex-1 overflow-hidden">
         <Calendar
           currentUser={user ?? null}
@@ -349,14 +294,10 @@ function Dashboard() {
           onCardClick={handleCardClick}
         />
       </main>
-      )}
 
       {/* FAB — floating + button */}
-      {!zen && (
-        <motion.button
+        <button
           onClick={() => handleSlotClick(new Date(), new Date(Date.now() + 3_600_000))}
-          whileHover={{ scale: 1.1, boxShadow: "0 8px 30px rgba(79,70,229,0.50)" }}
-          whileTap={{ scale: 0.9 }}
           className="fixed z-40 flex items-center justify-center rounded-2xl text-white cursor-pointer"
           style={{
             bottom: 24, right: 24,
@@ -368,8 +309,7 @@ function Dashboard() {
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
             <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
           </svg>
-        </motion.button>
-      )}
+        </button>
 
       <ActiveMeetings
         isOpen={activeOpen}

@@ -1,8 +1,9 @@
 import { AnimatePresence, motion, useDragControls } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { DateTimePicker } from "../Common/DateTimePicker";
-import { InteractiveStripe } from "../Common/InteractiveStripe";
 import { useTheme } from "../../contexts/ThemeContext";
+
+
 import { useBookings, useCreateBooking, useDeleteBooking, useUpdateBooking, useUsers } from "../../hooks/useBookings";
 import type { Booking } from "../../types";
 
@@ -286,7 +287,7 @@ export function BookingModal({
           const dist = Math.sqrt(dist2);
 
           // base alpha: fades with distance
-          const baseA = (1 - dist / MAX_CONN) * (dark ? 0.32 : 0.38);
+          const baseA = (1 - dist / MAX_CONN) * (dark ? 0.32 : 0.52);
 
           // highlight: how close is card center to the midpoint of this line?
           const mx = (a.x + b.x) * 0.5, my = (a.y + b.y) * 0.5;
@@ -295,12 +296,12 @@ export function BookingModal({
           const hl = Math.max(0, 1 - cardDist / HL_RADIUS);
           const hlPulse = Math.max(0, 1 - Math.sqrt((mx-cx)**2+(my-cy)**2) / (HL_RADIUS * 1.5)) * pulse;
 
-          const alpha = baseA + hl * (dark ? 0.70 : 0.58) + hlPulse * 0.45;
+          const alpha = baseA + hl * (dark ? 0.70 : 0.65) + hlPulse * 0.45;
           if (alpha < 0.005) continue;
 
-          const hue = dark ? 220 + hl * 50 : (a.hue + b.hue) * 0.5;
-          const sat = dark ? 60 + hl * 30  : 65 + hl * 25;
-          const lit = dark ? 65 + hl * 25  : 45 + hl * 20;
+          const hue = dark ? 220 + hl * 50 : 220;
+          const sat = dark ? 60 + hl * 30  : 8 + hl * 10;
+          const lit = dark ? 65 + hl * 25  : 12 + hl * 10;
 
           ctx.globalAlpha = alpha;
           ctx.lineWidth   = 0.8 + hl * 1.4;
@@ -319,16 +320,16 @@ export function BookingModal({
         const hl = Math.max(0, 1 - cardDist / HL_RADIUS);
         const hlPulse = Math.max(0, 1 - cardDist / (HL_RADIUS * 1.5)) * pulse;
 
-        const baseA = dark ? 0.38 : 0.45;
-        const alpha = baseA + hl * (dark ? 0.72 : 0.60) + hlPulse * 0.45;
+        const baseA = dark ? 0.38 : 0.55;
+        const alpha = baseA + hl * (dark ? 0.72 : 0.68) + hlPulse * 0.45;
         const r     = n.size * (1 + hl * 1.4 + hlPulse * 0.8);
-        const hue   = dark ? 220 + hl * 60 : n.hue;
-        const sat   = dark ? 50 + hl * 40  : 70 + hl * 25;
-        const lit   = dark ? 70 + hl * 22  : 48 + hl * 20;
+        const hue   = dark ? 220 + hl * 60 : 220;
+        const sat   = dark ? 50 + hl * 40  : 8 + hl * 10;
+        const lit   = dark ? 70 + hl * 22  : 10 + hl * 10;
 
         // glow for highlighted nodes
         if (hl > 0.05) {
-          ctx.globalAlpha = (hl + hlPulse) * (dark ? 0.35 : 0.28);
+          ctx.globalAlpha = (hl + hlPulse) * (dark ? 0.35 : 0.38);
           ctx.fillStyle   = `hsl(${hue},${sat}%,${lit + 15}%)`;
           ctx.beginPath();
           ctx.arc(n.x, n.y, r * 3.5, 0, Math.PI * 2);
@@ -482,7 +483,7 @@ export function BookingModal({
         <>
           <motion.div key="bd" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-40" onClick={onClose}
-            style={{ background: isDark ? "rgba(0,0,0,0.75)" : "rgba(15,23,42,0.4)", backdropFilter: "blur(6px)" }} />
+            style={{ background: isDark ? "rgba(0,0,0,0.72)" : "rgba(15,23,42,0.55)" }} />
 
           <div className="fixed inset-0 flex items-center justify-center z-50 px-4 pointer-events-none">
             <motion.div
@@ -499,7 +500,6 @@ export function BookingModal({
               dragElastic={0.06}
               whileDrag={{
                 scale: 1.018,
-                boxShadow: "0 0 0 1px rgba(148,163,255,0.4), 0 12px 80px rgba(100,120,255,0.3), 0 0 120px rgba(168,139,250,0.12)",
               }}
               onDragStart={() => {}}
               onDragEnd={() => {}}
@@ -509,14 +509,12 @@ export function BookingModal({
                 background: "var(--modal)",
                 border: "1px solid var(--border)",
                 boxShadow: isDark
-                  ? "0 32px 80px rgba(0,0,0,0.8), 0 0 60px rgba(139,92,246,0.1)"
-                  : "0 20px 60px rgba(0,0,0,0.15)",
+                  ? "0 32px 80px rgba(0,0,0,0.8)"
+                  : "0 8px 16px rgba(0,0,0,0.10), 0 24px 64px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.06)",
                 maxHeight: "90vh",
                 overflowY: "auto",
                 cursor: "default",
               }}>
-
-              <InteractiveStripe />
 
               {/* Header — drag handle (only this area initiates drag) */}
               <div className="flex items-center justify-between px-6 pt-4 pb-3"

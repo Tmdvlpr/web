@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { memo, useState } from "react";
 import { useCalendarDrag } from "../../contexts/CalendarDragContext";
 import { useTheme } from "../../contexts/ThemeContext";
 import type { Booking, User } from "../../types";
@@ -36,7 +36,7 @@ const DARK_PALETTES = [
   { bg: "rgba(251,146,60,0.14)", border: "#fb923c", text: "#ffedd5", accent: "#fdba74", tint: "rgba(251,146,60,0.07)" },
 ];
 
-export function BookingCard({ booking, topPercent, heightPercent, currentUser, onClick }: BookingCardProps) {
+export const BookingCard = memo(function BookingCard({ booking, topPercent, heightPercent, currentUser, onClick }: BookingCardProps) {
   const { isDark } = useTheme();
   const { setDrag } = useCalendarDrag();
   const [isDragging, setIsDragging] = useState(false);
@@ -56,8 +56,13 @@ export function BookingCard({ booking, topPercent, heightPercent, currentUser, o
     const offsetFraction = (e.clientY - rect.top) / rect.height;
     e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData("bookingId", String(booking.id));
+    // Transparent drag image — removes browser ghost flash, our DayColumn ghost handles visuals
+    const blank = document.createElement("div");
+    blank.style.cssText = "position:fixed;pointer-events:none;opacity:0;width:1px;height:1px";
+    document.body.appendChild(blank);
+    e.dataTransfer.setDragImage(blank, 0, 0);
+    requestAnimationFrame(() => { blank.remove(); setIsDragging(true); });
     setDrag({ booking, offsetFraction });
-    requestAnimationFrame(() => setIsDragging(true));
   };
 
   const handleDragEnd = () => {
@@ -67,11 +72,10 @@ export function BookingCard({ booking, topPercent, heightPercent, currentUser, o
 
   return (
     <motion.div
-      layoutId={`booking-${booking.id}`}
-      initial={{ opacity: 0, scale: 0.9, y: 4 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.9 }}
-      transition={{ duration: 0.18, type: "spring", stiffness: 340, damping: 22 }}
+      initial={{ opacity: 0, y: 6, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -6, scale: 0.97 }}
+      transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
       onClick={(e) => { e.stopPropagation(); onClick(); }}
       whileHover={{ scale: canDrag ? 1.015 : 1.02, zIndex: 10 }}
       draggable={canDrag}
@@ -96,7 +100,6 @@ export function BookingCard({ booking, topPercent, heightPercent, currentUser, o
       }}
       className="px-2 py-1"
     >
-      {/* Background tint */}
       <div className="absolute inset-0 pointer-events-none" style={{ background: p.tint }} />
 
       {isShort ? (
@@ -124,4 +127,4 @@ export function BookingCard({ booking, topPercent, heightPercent, currentUser, o
       )}
     </motion.div>
   );
-}
+});
