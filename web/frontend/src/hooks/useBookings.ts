@@ -81,7 +81,58 @@ export function useUpdateBooking() {
   return useMutation({
     mutationFn: ({ id, payload }: { id: number; payload: BookingUpdate }) =>
       bookingsApi.update(id, payload),
-    onSuccess: () => {
+    onMutate: async ({ id, payload }) => {
+      const newDateStr = payload.start_time?.split("T")[0];
+
+      // Find booking in date-keyed caches only (skip "active" and other non-date keys)
+      const allEntries = queryClient.getQueriesData<Booking[]>({ queryKey: ["bookings"] });
+      let oldDateStr: string | undefined;
+      let oldBooking: Booking | undefined;
+      const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+      for (const [key, data] of allEntries) {
+        const k = key[1] as string;
+        if (!ISO_DATE.test(k)) continue;
+        if (Array.isArray(data)) {
+          const found = data.find((b) => b.id === id);
+          if (found) { oldBooking = found; oldDateStr = k; break; }
+        }
+      }
+      if (!oldBooking) return {};
+
+      await queryClient.cancelQueries({ queryKey: ["bookings", oldDateStr] });
+      if (newDateStr && newDateStr !== oldDateStr)
+        await queryClient.cancelQueries({ queryKey: ["bookings", newDateStr] });
+
+      const previousOld = queryClient.getQueryData<Booking[]>(["bookings", oldDateStr]);
+      const previousNew = newDateStr && newDateStr !== oldDateStr
+        ? queryClient.getQueryData<Booking[]>(["bookings", newDateStr]) : undefined;
+
+      const optimistic: Booking = { ...oldBooking, ...payload } as Booking;
+
+      // Remove from old date
+      queryClient.setQueryData<Booking[]>(["bookings", oldDateStr], (old = []) =>
+        old.filter((b) => b.id !== id));
+
+      // Insert into new date (or update in same date)
+      if (newDateStr) {
+        if (newDateStr === oldDateStr) {
+          queryClient.setQueryData<Booking[]>(["bookings", oldDateStr], (old = []) =>
+            old.map((b) => b.id === id ? optimistic : b));
+        } else {
+          queryClient.setQueryData<Booking[]>(["bookings", newDateStr], (old = []) =>
+            [...(old ?? []), optimistic]);
+        }
+      }
+
+      return { previousOld, previousNew, oldDateStr, newDateStr };
+    },
+    onError: (_err, _vars, ctx: any) => {
+      if (ctx?.previousOld && ctx?.oldDateStr)
+        queryClient.setQueryData(["bookings", ctx.oldDateStr], ctx.previousOld);
+      if (ctx?.previousNew && ctx?.newDateStr)
+        queryClient.setQueryData(["bookings", ctx.newDateStr], ctx.previousNew);
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["bookings"] });
       queryClient.invalidateQueries({ queryKey: ["slots"] });
     },

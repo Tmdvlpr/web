@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     INTERNAL_API_URL: str = "http://127.0.0.1:8000"
     # Username бота (без @) для QR-авторизации
     TG_BOT_USERNAME: str = ""
+    # Включить dev-login (только для локальной разработки)
+    CORPMEET_DEV: bool = False
 
     class Config:
         env_file = ".env"

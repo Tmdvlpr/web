@@ -1,89 +1,233 @@
-#!/usr/bin/env bash
-# Quick commands for the CorpMeet Docker setup
+#!/bin/bash
+
+# CorpMeet Docker Commands Reference
+# ==================================
+
+# ========== BUILD ==========
 
 # Build all images
-build-all() {
-    docker compose build --no-cache
-}
+docker compose build --pull
 
-# Start all services
-start() {
-    docker compose up -d
-}
+# Build specific service
+docker compose build backend
 
-# Stop all services
-stop() {
-    docker compose down
-}
+# Build and rebuild from scratch
+docker compose build --no-cache backend
 
-# View logs
-logs() {
-    docker compose logs -f "$@"
-}
+# Build with custom args
+docker compose build --build-arg VITE_API_URL=http://api.example.com frontend
 
-# Rebuild and start fresh
-rebuild() {
-    docker compose down -v
-    docker compose build --no-cache
-    docker compose up -d
-}
 
-# Clean up all Docker artifacts (images, containers, volumes)
-clean() {
-    docker compose down -v
-    docker system prune -af
-}
+# ========== RUN & MANAGE ==========
 
-# Database shell
-db-shell() {
-    docker compose exec db psql -U ${POSTGRES_USER:-corpmeet} -d ${POSTGRES_DB:-corpmeet}
-}
+# Start all services in foreground
+docker compose up
 
-# Backend shell
-backend-shell() {
-    docker compose exec backend /bin/bash
-}
+# Start in background
+docker compose up -d
 
-# View resource usage
-stats() {
-    docker stats corpmeet-db corpmeet-backend corpmeet-frontend corpmeet-tg-bot
-}
+# Start and pull latest images
+docker compose up --pull always
 
-# Health check all services
-health() {
-    echo "=== Database ==="
-    docker compose exec db pg_isready -U ${POSTGRES_USER:-corpmeet}
-    echo "=== Backend ==="
-    docker compose exec backend curl -s http://localhost:8001/docs > /dev/null && echo "Backend: OK" || echo "Backend: FAILED"
-    echo "=== Frontend ==="
-    docker compose exec frontend curl -s http://localhost:80/ > /dev/null && echo "Frontend: OK" || echo "Frontend: FAILED"
-    echo "=== Bot ==="
-    docker compose exec tg-bot curl -s http://localhost:8080/health > /dev/null && echo "Bot: OK" || echo "Bot: FAILED"
-}
+# Restart services
+docker compose restart
 
-# Show usage
-usage() {
-    cat << EOF
-CorpMeet Docker Commands:
-  build-all        Build all Docker images
-  start            Start all services
-  stop             Stop all services
-  rebuild          Rebuild from scratch and start
-  clean            Remove all Docker artifacts
-  logs [service]   View logs (optional: specify service)
-  stats            Show resource usage
-  health           Check health of all services
-  db-shell         Open PostgreSQL shell
-  backend-shell    Open backend shell
-  usage            Show this message
-EOF
-}
+# Restart specific service
+docker compose restart backend
 
-# Show usage if no command provided
-if [[ $# -eq 0 ]]; then
-    usage
-    exit 0
-fi
+# Stop services
+docker compose stop
 
-# Execute command
-"$@"
+# Stop and remove containers (volumes persist)
+docker compose down
+
+# Stop and remove everything including volumes
+docker compose down -v
+
+# Remove stopped containers
+docker compose rm -f
+
+
+# ========== LOGS & DEBUG ==========
+
+# View all logs
+docker compose logs
+
+# Follow logs in real-time
+docker compose logs -f
+
+# Tail last 100 lines
+docker compose logs --tail=100
+
+# View logs for specific service
+docker compose logs -f backend
+
+# View logs since specific time
+docker compose logs --since 2024-01-01
+
+
+# ========== EXECUTE COMMANDS ==========
+
+# Run command in running container
+docker compose exec backend python -m pytest
+
+# Interactive shell in backend
+docker compose exec backend /bin/bash
+
+# Interactive PostgreSQL shell
+docker compose exec db psql -U corpmeet -d corpmeet
+
+# Execute command without allocating TTY (non-interactive)
+docker compose exec -T db pg_dump -U corpmeet corpmeet > backup.sql
+
+
+# ========== INSPECT & MONITOR ==========
+
+# Show status of all services
+docker compose ps
+
+# Show extended status
+docker compose ps --all
+
+# View real-time resource usage
+docker compose stats
+
+# Inspect specific container
+docker inspect corpmeet-backend
+
+# Check service health
+docker compose exec backend curl http://localhost:8001/docs
+
+# Validate compose file
+docker compose config
+
+# Show image size
+docker images | grep corpmeet
+
+
+# ========== DATABASE ==========
+
+# Backup database
+docker compose exec db pg_dump -U corpmeet corpmeet > backup.sql
+
+# Backup with custom options
+docker compose exec db pg_dump -U corpmeet -Fc corpmeet > backup.dump
+
+# Restore database
+docker compose exec -T db psql -U corpmeet corpmeet < backup.sql
+
+# Restore from custom format
+docker compose exec -T db pg_restore -U corpmeet -d corpmeet backup.dump
+
+# Connect to database
+docker compose exec db psql -U corpmeet -d corpmeet
+
+# Run SQL query
+docker compose exec db psql -U corpmeet -d corpmeet -c "SELECT version();"
+
+# Execute SQL file
+docker compose exec -T db psql -U corpmeet -d corpmeet < script.sql
+
+
+# ========== CLEANUP ==========
+
+# Remove dangling images
+docker image prune -f
+
+# Remove dangling volumes
+docker volume prune -f
+
+# Remove unused networks
+docker network prune -f
+
+# Remove all unused Docker resources
+docker system prune -a
+
+# Show disk space usage
+docker system df
+
+
+# ========== ENVIRONMENT ==========
+
+# Create .env from template
+cp .env.example .env
+
+# View environment variables for service
+docker compose config | grep -A 20 "backend:"
+
+# Update environment variable
+# Edit .env file and run:
+docker compose up -d
+
+
+# ========== DEVELOPMENT ==========
+
+# Develop with file watching
+docker compose watch
+
+# Run tests
+docker compose exec backend python -m pytest -v
+
+# Run linting
+docker compose exec backend python -m pylint app
+
+# Install new Python package
+docker compose exec backend pip install requests
+
+# Rebuild after dependency changes
+docker compose up -d --build
+
+
+# ========== PRODUCTION TASKS ==========
+
+# Pull latest images and restart
+docker compose pull && docker compose up -d
+
+# Scale backend (avoid for frontend/db)
+docker compose up -d --scale backend=3
+
+# Tag images for registry
+docker tag corpmeet-backend:latest myregistry.azurecr.io/corpmeet-backend:v1.0.0
+
+# Push to registry
+docker push myregistry.azurecr.io/corpmeet-backend:v1.0.0
+
+# Save image as tar
+docker save corpmeet-backend:latest > corpmeet-backend.tar
+
+# Load image from tar
+docker load < corpmeet-backend.tar
+
+
+# ========== TROUBLESHOOTING ==========
+
+# Check health status
+docker compose ps
+
+# View detailed error logs
+docker compose logs backend | grep -i error
+
+# Inspect container configuration
+docker compose exec backend env
+
+# Check network connectivity
+docker compose exec backend ping db
+
+# Test database connection
+docker compose exec backend python -c "import psycopg2; print('DB OK')"
+
+# Find port conflicts
+netstat -tulpn | grep 8001
+
+# Kill process on port
+# Linux/Mac: lsof -ti:8001 | xargs kill -9
+# Windows: netstat -ano | findstr :8001
+
+# Verify all services are healthy
+docker compose ps --format "table {{.Service}}\t{{.Status}}"
+
+# Check resource limits
+docker inspect corpmeet-backend | grep -A 10 "Resources"
+
+# View network details
+docker network inspect tg_corpmeet

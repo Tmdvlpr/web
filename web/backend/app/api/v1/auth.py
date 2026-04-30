@@ -1,5 +1,3 @@
-import os
-
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -149,7 +147,7 @@ async def get_me(current_user: User = Depends(get_current_user)) -> UserResponse
     return current_user
 
 
-if os.environ.get("CORPMEET_DEV"):
+if settings.CORPMEET_DEV:
     @router.post("/dev-login", response_model=TokenResponse)
     async def dev_login(db: AsyncSession = Depends(get_db)) -> TokenResponse:
         """Dev-only: instant login as a test user (no Telegram required)."""
