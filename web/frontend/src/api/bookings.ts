@@ -1,7 +1,7 @@
 import { apiClient } from "./axios";
 import type { Booking, BookingCreate, BookingUpdate } from "../types";
 
-const API_BASE = (import.meta as { env: Record<string, string> }).env.VITE_API_URL || "http://localhost:8000";
+const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
 export const bookingsApi = {
   getActive: async (): Promise<Booking[]> => {
