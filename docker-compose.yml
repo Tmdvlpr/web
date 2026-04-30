@@ -1,3 +1,5 @@
+version: '3.9'
+
 services:
   # PostgreSQL Database - Persistent data store
   db:
@@ -81,7 +83,7 @@ services:
           cpus: "1"
           memory: 512M
 
-  # Frontend - React + Nginx SPA
+  # Frontend - React + Vite + Nginx SPA
   frontend:
     build:
       context: ./web/frontend
@@ -105,7 +107,7 @@ services:
       interval: 30s
       timeout: 3s
       retries: 3
-      start_period: 10s
+      start_period: 5s
     logging:
       driver: "json-file"
       options:

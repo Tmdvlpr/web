@@ -1,27 +1,54 @@
-__pycache__
+# Version control
+.git
+.gitignore
+.gitattributes
+
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Documentation
+*.md
+README*
+docs/
+*.pdf
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.circleci/
+.travis.yml
+
+# Development
+.env
+.env.local
+.env.*.local
+.venv/
+venv/
+env/
+__pycache__/
 *.pyc
 *.pyo
 *.pyd
 .Python
-env/
-.venv/
-venv/
-.env
-.env.local
-.git
-.gitignore
-.dockerignore
-.DS_Store
-*.log
-.pytest_cache
+.pytest_cache/
 .coverage
 htmlcov/
+coverage/
+.mypy_cache/
+
+# Build
 dist/
 build/
 *.egg-info/
-.mypy_cache/
-.vscode/
-.idea/
-node_modules/
-.pytest_cache/
-.ruff_cache/
+
+# Logs
+*.log
+
+# OS files
+Thumbs.db
+.DS_Store

@@ -3,7 +3,7 @@ FROM python:3.12-slim AS builder
 
 WORKDIR /app
 
-# Install build dependencies
+# Install build dependencies only (removed for production layer)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
@@ -36,7 +36,8 @@ ENV PATH=/opt/venv/bin:$PATH \
     PYTHONPATH=/app
 
 # Create non-root user
-RUN useradd -m -u 1000 appuser
+RUN useradd -m -u 1000 appuser && \
+    chown -R appuser:appuser /app
 
 # Copy application code
 COPY --chown=appuser:appuser . .

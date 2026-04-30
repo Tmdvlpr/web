@@ -31,10 +31,8 @@ COPY --from=builder /app/dist /usr/share/nginx/html
 # Copy custom nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Add non-root user (nginx already runs as www-data by default in alpine)
-RUN chown -R 101:101 /usr/share/nginx/html && \
-    chown -R 101:101 /var/cache/nginx && \
-    chown -R 101:101 /var/log/nginx
+# Fix permissions for nginx (runs as www-data, uid 101)
+RUN chown -R 101:101 /usr/share/nginx/html /var/cache/nginx /var/log/nginx
 
 EXPOSE 80
 
