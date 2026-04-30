@@ -15,6 +15,12 @@ declare global {
 
 export const tg = window.Telegram?.WebApp;
 
+// Expand to full height immediately — Telegram opens Mini Apps at ~80% by default
+if (tg) {
+  tg.ready();
+  tg.expand();
+}
+
 export function isMiniApp(): boolean {
   return !!(tg?.initData && tg.initData.length > 0);
 }
