@@ -368,11 +368,13 @@ export function BookingModal({
   const [deleteSeries,setDelSeries] = useState(false);
   const [error,       setError]     = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{ title?: string; time?: string; days?: string }>({});
+  const [formReady,   setFormReady] = useState(false);
 
   // Conflict preview: load bookings for the selected date
   const dateStr = startTime ? startTime.split("T")[0] : undefined;
   const { data: dayBookings = [] } = useBookings(dateStr);
-  const conflicts = !isEdit
+  // Only check conflicts after the form has been initialized from props (not stale defaults)
+  const conflicts = !isEdit && formReady
     ? dayBookings.filter((b) => {
         const bStart = new Date(b.start_time).getTime();
         const bEnd   = new Date(b.end_time).getTime();
@@ -387,8 +389,8 @@ export function BookingModal({
   const { mutateAsync: deleteBooking, isPending: isDeleting } = useDeleteBooking();
 
   useEffect(() => {
-    if (!isOpen) return;
-    setView("form"); setError(null); setDelSeries(false);
+    if (!isOpen) { setFormReady(false); return; }
+    setView("form"); setError(null); setDelSeries(false); setFormReady(false);
     if (editBooking) {
       setTitle(editBooking.title);
       setDesc(editBooking.description ?? "");
@@ -403,6 +405,7 @@ export function BookingModal({
       setStart(toLocal(initialStart ?? now));
       setEnd(toLocal(initialEnd ?? later));
     }
+    setFormReady(true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, editBooking?.id]);
 
