@@ -5,7 +5,8 @@ import secrets
 from datetime import datetime, timedelta, timezone
 from urllib.parse import unquote
 
-from jose import jwt
+import pyseto
+from pyseto import Key
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -62,10 +63,26 @@ def verify_telegram_init_data(init_data: str) -> dict | None:
         return None
 
 
+try:
+    _PRIVATE_KEY = Key.new(
+        version=4,
+        purpose="public",
+        key=settings.PASETO_PRIVATE_KEY_PEM.encode("utf-8"),
+    )
+except Exception as e:
+    raise RuntimeError(
+        f"PASETO_PRIVATE_KEY_PEM is missing or invalid — check .env. Underlying error: {e}"
+    ) from e
+
+
 def create_access_token(user_id: int) -> str:
-    expire = datetime.now(timezone.utc) + timedelta(days=settings.JWT_EXPIRE_DAYS)
-    payload = {"sub": str(user_id), "exp": expire}
-    return jwt.encode(payload, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
+    expire = datetime.now(timezone.utc) + timedelta(days=settings.TOKEN_EXPIRE_DAYS)
+    payload = json.dumps({
+        "sub": str(user_id),
+        "exp": expire.strftime("%Y-%m-%dT%H:%M:%SZ"),
+    }).encode("utf-8")
+    token = pyseto.encode(_PRIVATE_KEY, payload)
+    return token.decode("utf-8")
 
 
 async def register_user(

@@ -76,14 +76,16 @@ async def public_ical_feed(
     )
 
 
+ADMIN_ROLES = {Role.admin, Role.superadmin}
+
+
 @router.get("/admin/all", response_model=list[BookingResponse])
 async def admin_list_bookings(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> list[BookingResponse]:
-    if current_user.role != Role.admin:
-        from fastapi import HTTPException as _HTTPException
-        raise _HTTPException(403, "Admin only")
+    if current_user.role not in ADMIN_ROLES:
+        raise HTTPException(403, "Admin only")
     result = await db.execute(
         select(Booking)
         .options(selectinload(Booking.user))
@@ -283,7 +285,7 @@ async def update_booking(
     booking = result.scalar_one_or_none()
     if not booking:
         raise HTTPException(404, "Booking not found")
-    if booking.user_id != current_user.id and current_user.role != Role.admin:
+    if booking.user_id != current_user.id and current_user.role not in ADMIN_ROLES:
         raise HTTPException(403, "Not allowed")
 
     new_start = payload.start_time or booking.start_time
@@ -334,11 +336,13 @@ async def delete_booking(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> None:
-    result = await db.execute(select(Booking).where(Booking.id == booking_id))
+    result = await db.execute(
+        select(Booking).where(Booking.id == booking_id, Booking.deleted_at.is_(None))
+    )
     booking = result.scalar_one_or_none()
     if not booking:
         raise HTTPException(404, "Booking not found")
-    if booking.user_id != current_user.id and current_user.role != Role.admin:
+    if booking.user_id != current_user.id and current_user.role not in ADMIN_ROLES:
         raise HTTPException(403, "Not allowed")
 
     now_utc = datetime.now(timezone.utc)

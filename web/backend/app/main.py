@@ -65,12 +65,18 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             "ALTER TABLE users ALTER COLUMN name DROP NOT NULL",
             "ALTER TABLE users ALTER COLUMN telegram_id DROP NOT NULL",
             "CREATE UNIQUE INDEX IF NOT EXISTS idx_users_feed_token ON users(feed_token) WHERE feed_token IS NOT NULL",
+            # superadmin role
+            "ALTER TYPE role ADD VALUE IF NOT EXISTS 'superadmin'",
         ]
         for sql in migrations:
             try:
                 await conn.execute(text(sql))
-            except Exception:
-                pass
+            except Exception as e:
+                # Most migrations are idempotent (IF NOT EXISTS / IF EXISTS),
+                # so duplicate-object errors are expected. Log other failures.
+                msg = str(e).lower()
+                if not any(s in msg for s in ("already exists", "duplicate", "does not exist")):
+                    logger.warning(f"Migration skipped: {sql[:80]!r} → {e}")
 
     # ── 2. TG Bot polling запускается отдельно (tg/tg/bot.py) ─────────────────
     # Бэкенд НЕ делает polling — это зона ответственности коллеги (tg-bot контейнер).

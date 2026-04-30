@@ -14,6 +14,8 @@ from app.schemas.user import UserResponse
 
 router = APIRouter(prefix="/users", tags=["users"])
 
+ADMIN_ROLES = {Role.admin, Role.superadmin}
+
 
 @router.get("/me", response_model=UserResponse)
 async def get_me(current_user: User = Depends(get_current_user)) -> UserResponse:
@@ -65,7 +67,7 @@ async def admin_list_users(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> list[UserResponse]:
-    if current_user.role != Role.admin:
+    if current_user.role not in ADMIN_ROLES:
         raise HTTPException(403, "Admin only")
     result = await db.execute(select(User).order_by(User.created_at.desc()))
     return result.scalars().all()
@@ -78,8 +80,8 @@ async def admin_set_role(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> dict:
-    if current_user.role != Role.admin:
-        raise HTTPException(403, "Admin only")
+    if current_user.role != Role.superadmin:
+        raise HTTPException(403, "Superadmin only")
     new_role = body.get("role")
     if new_role not in ("user", "admin"):
         raise HTTPException(400, "role must be 'user' or 'admin'")
@@ -89,6 +91,8 @@ async def admin_set_role(
         raise HTTPException(404, "User not found")
     if target.id == current_user.id:
         raise HTTPException(400, "Cannot change your own role")
+    if target.role == Role.superadmin:
+        raise HTTPException(403, "Cannot change superadmin role")
     target.role = Role(new_role)
     await db.commit()
     return {"id": target.id, "role": new_role}
@@ -106,7 +110,7 @@ async def admin_create_user(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> UserResponse:
-    if current_user.role != Role.admin:
+    if current_user.role not in ADMIN_ROLES:
         raise HTTPException(403, "Admin only")
     if body.role not in ("user", "admin"):
         raise HTTPException(400, "role must be 'user' or 'admin'")
@@ -132,7 +136,7 @@ async def admin_delete_user(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> None:
-    if current_user.role != Role.admin:
+    if current_user.role not in ADMIN_ROLES:
         raise HTTPException(403, "Admin only")
     result = await db.execute(select(User).where(User.id == user_id))
     target = result.scalar_one_or_none()
@@ -140,14 +144,18 @@ async def admin_delete_user(
         raise HTTPException(404, "User not found")
     if target.id == current_user.id:
         raise HTTPException(400, "Cannot delete yourself")
-    # Soft-delete all user bookings
+    if target.role == Role.superadmin:
+        raise HTTPException(403, "Cannot delete superadmin")
+    # Soft-delete: deactivate the user and cancel future bookings.
+    # Hard-deleting via db.delete() would trigger FK CASCADE on bookings.user_id,
+    # destroying soft-delete metadata and breaking cancellation notifications.
     now_utc = datetime.now(timezone.utc)
     bookings_result = await db.execute(
         select(Booking).where(Booking.user_id == user_id, Booking.deleted_at.is_(None))
     )
     for b in bookings_result.scalars().all():
         b.deleted_at = now_utc
-    await db.delete(target)
+    target.is_active = False
     await db.commit()
 
 
@@ -156,7 +164,7 @@ async def admin_stats(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> dict:
-    if current_user.role != Role.admin:
+    if current_user.role not in ADMIN_ROLES:
         raise HTTPException(403, "Admin only")
     total_users = (await db.execute(select(func.count(User.id)))).scalar_one()
     total_bookings = (await db.execute(

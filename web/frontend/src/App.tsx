@@ -27,7 +27,8 @@ function useWebReminders(isAuthenticated: boolean) {
     }
     const check = async () => {
       if (Notification.permission !== "granted") return;
-      const today = new Date().toISOString().split("T")[0];
+      const n = new Date();
+      const today = `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,"0")}-${String(n.getDate()).padStart(2,"0")}`;
       const reminderMins = getReminderMinutes();
       try {
         const bookings = await bookingsApi.getByDate(today);
@@ -192,8 +193,9 @@ function Dashboard() {
     setModalOpen(true);
   };
 
+  const isAdmin = user?.role === "admin" || user?.role === "superadmin";
   const canEdit = editBooking
-    ? user?.id === editBooking.user_id || user?.role === "admin"
+    ? user?.id === editBooking.user_id || isAdmin
     : false;
 
   return (
@@ -256,7 +258,7 @@ function Dashboard() {
           </button>
 
           {/* Admin */}
-          {user?.role === "admin" && (
+          {isAdmin && (
             <button onClick={() => setAdminOpen(true)}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer"
               style={{ color: "var(--text-muted)" }}
@@ -322,7 +324,7 @@ function Dashboard() {
         onClose={() => setNotifOpen(false)}
       />
 
-      {user?.role === "admin" && (
+      {isAdmin && (
         <AdminPanel
           isOpen={adminOpen}
           onClose={() => setAdminOpen(false)}

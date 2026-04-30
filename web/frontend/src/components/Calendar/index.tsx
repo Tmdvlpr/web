@@ -205,12 +205,18 @@ function MonthView({ anchorDate, today, onNavigate, onCardClick, searchQuery, on
   const days = getMonthDays(anchorDate);
   const currentMonth = anchorDate.getMonth();
   const wheelLock = useRef(false);
+  const wheelTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => {
+    if (wheelTimeoutRef.current) clearTimeout(wheelTimeoutRef.current);
+  }, []);
 
   const handleWheel = (e: React.WheelEvent) => {
     if (wheelLock.current) return;
     wheelLock.current = true;
     if (e.deltaY > 0) onNext(); else onPrev();
-    setTimeout(() => { wheelLock.current = false; }, 600);
+    if (wheelTimeoutRef.current) clearTimeout(wheelTimeoutRef.current);
+    wheelTimeoutRef.current = setTimeout(() => { wheelLock.current = false; }, 600);
   };
 
   return (
@@ -433,7 +439,7 @@ export function Calendar({ currentUser, onSlotClick, onCardClick }: CalendarProp
           dragBaseAnchor.current = null;
         }
       };
-      el.addEventListener("transitionend", onEnd);
+      el.addEventListener("transitionend", onEnd, { once: true });
     } else {
       dragBaseAnchor.current = null;
     }
@@ -453,12 +459,11 @@ export function Calendar({ currentUser, onSlotClick, onCardClick }: CalendarProp
     el.style.transition = `transform ${duration}s cubic-bezier(0.16,1,0.3,1)`;
     el.style.transform = `translateX(${-BUFFER * colW + snapDx}px)`;
     const onEnd = () => {
-      el.removeEventListener("transitionend", onEnd);
       el.style.transition = "";
       dragBaseAnchor.current = null;
       setAnchorDate(targetDate);
     };
-    el.addEventListener("transitionend", onEnd);
+    el.addEventListener("transitionend", onEnd, { once: true });
   };
 
   const handleHeaderPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {

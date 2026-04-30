@@ -109,19 +109,14 @@ export function useUpdateBooking() {
 
       const optimistic: Booking = { ...oldBooking, ...payload } as Booking;
 
-      // Remove from old date
-      queryClient.setQueryData<Booking[]>(["bookings", oldDateStr], (old = []) =>
-        old.filter((b) => b.id !== id));
-
-      // Insert into new date (or update in same date)
-      if (newDateStr) {
-        if (newDateStr === oldDateStr) {
-          queryClient.setQueryData<Booking[]>(["bookings", oldDateStr], (old = []) =>
-            old.map((b) => b.id === id ? optimistic : b));
-        } else {
-          queryClient.setQueryData<Booking[]>(["bookings", newDateStr], (old = []) =>
-            [...(old ?? []), optimistic]);
-        }
+      if (newDateStr && newDateStr !== oldDateStr) {
+        queryClient.setQueryData<Booking[]>(["bookings", oldDateStr], (old = []) =>
+          old.filter((b) => b.id !== id));
+        queryClient.setQueryData<Booking[]>(["bookings", newDateStr], (old = []) =>
+          [...(old ?? []), optimistic]);
+      } else {
+        queryClient.setQueryData<Booking[]>(["bookings", oldDateStr], (old = []) =>
+          old.map((b) => b.id === id ? optimistic : b));
       }
 
       return { previousOld, previousNew, oldDateStr, newDateStr };

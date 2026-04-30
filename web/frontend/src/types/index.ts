@@ -4,7 +4,7 @@ export interface User {
   first_name: string | null;
   last_name: string | null;
   username: string | null;
-  role: "user" | "admin";
+  role: "user" | "admin" | "superadmin";
   display_name: string;
 }
 

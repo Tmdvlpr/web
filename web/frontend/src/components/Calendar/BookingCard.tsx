@@ -45,7 +45,7 @@ export const BookingCard = memo(function BookingCard({ booking, topPercent, heig
   const startLabel = new Date(booking.start_time).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
   const endLabel   = new Date(booking.end_time).toLocaleTimeString("ru-RU",   { hour: "2-digit", minute: "2-digit" });
   const isShort    = heightPercent < 6;
-  const canDrag    = !!currentUser && (currentUser.id === booking.user_id || currentUser.role === "admin");
+  const canDrag    = !!currentUser && (currentUser.id === booking.user_id || currentUser.role === "admin" || currentUser.role === "superadmin");
 
   const shadow = isDark
     ? `0 0 0 1px ${p.border}50, 0 4px 20px ${p.accent}30, inset 0 1px 0 rgba(255,255,255,0.07)`
@@ -114,11 +114,11 @@ export const BookingCard = memo(function BookingCard({ booking, topPercent, heig
               {booking.recurrence !== "none" && (
                 <span className="text-xs font-semibold px-1 rounded" style={{ background: `${p.border}20`, color: p.accent }}>🔄</span>
               )}
-              {booking.guests?.length > 0 && (
+              {booking.guests?.length ? (
                 <span className="text-xs font-semibold px-1 rounded" style={{ background: `${p.border}20`, color: p.accent }}>
                   👥{booking.guests.length}
                 </span>
-              )}
+              ) : null}
             </div>
           </div>
           <p className="text-xs font-semibold" style={{ color: p.accent }}>{startLabel}–{endLabel}</p>

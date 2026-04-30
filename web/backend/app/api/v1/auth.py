@@ -16,7 +16,7 @@ from app.services.auth_service import (
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-_EXPIRE_IN = settings.JWT_EXPIRE_DAYS * 86400
+_EXPIRE_IN = settings.TOKEN_EXPIRE_DAYS * 86400
 
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
@@ -102,11 +102,12 @@ async def consume_session(session_token: str, db: AsyncSession = Depends(get_db)
         from fastapi.responses import JSONResponse
         return JSONResponse(status_code=202, content={"status": "pending"})
 
-    # Session has user — consume and return JWT
-    if not session.used:
-        session.used = True
-        session.used_at = datetime.now(timezone.utc)
-        await db.commit()
+    # Session has user — consume once and return token. Reject replay.
+    if session.used:
+        raise HTTPException(status_code=410, detail="Session already consumed")
+    session.used = True
+    session.used_at = datetime.now(timezone.utc)
+    await db.commit()
 
     from app.services.auth_service import create_access_token
     token = create_access_token(session.user_id)
@@ -115,7 +116,9 @@ async def consume_session(session_token: str, db: AsyncSession = Depends(get_db)
 
 @router.post("/web-register")
 async def web_register(body: WebRegisterRequest, db: AsyncSession = Depends(get_db)) -> dict:
-    """Register directly from web (no Telegram required). Creates user + returns JWT."""
+    """Register directly from web (no Telegram required). Dev-only — gated by CORPMEET_DEV."""
+    if not settings.CORPMEET_DEV:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Web registration disabled")
     from sqlalchemy import select
     from app.models.user import User
     from app.services.auth_service import create_access_token
@@ -139,7 +142,7 @@ async def web_register(body: WebRegisterRequest, db: AsyncSession = Depends(get_
     await db.refresh(user)
 
     token = create_access_token(user.id)
-    return {"access_token": token, "expires_in": settings.JWT_EXPIRE_DAYS * 86400, "user_id": user.id}
+    return {"access_token": token, "expires_in": settings.TOKEN_EXPIRE_DAYS * 86400, "user_id": user.id}
 
 
 @router.get("/me", response_model=UserResponse)

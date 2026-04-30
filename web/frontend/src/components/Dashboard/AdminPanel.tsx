@@ -6,6 +6,7 @@ import { MeetingListSkeleton } from "../Common/Skeleton";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useAdminBookings, useAdminStats, useAdminUsers } from "../../hooks/useBookings";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { bookingsApi } from "../../api/bookings";
 import { usersApi } from "../../api/users";
 import { useAuth } from "../../hooks/useAuth";
 
@@ -30,13 +31,15 @@ export function AdminPanel({ isOpen, onClose }: Props) {
   const [tab, setTab] = useState<Tab>("stats");
 
   const { user: currentUser } = useAuth();
+  const isSuperadmin = currentUser?.role === "superadmin";
   const queryClient = useQueryClient();
   const { data: stats, isLoading: statsLoading } = useAdminStats();
   const { data: bookings = [], isLoading: bookingsLoading } = useAdminBookings();
   const { data: users = [], isLoading: usersLoading } = useAdminUsers();
 
   const [showAddForm, setShowAddForm] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null);
+  const [deleteUserTarget, setDeleteUserTarget] = useState<{ id: number; name: string } | null>(null);
+  const [deleteBookingTarget, setDeleteBookingTarget] = useState<{ id: number; title: string } | null>(null);
   const [newName, setNewName] = useState("");
   const [newUsername, setNewUsername] = useState("");
 
@@ -63,11 +66,26 @@ export function AdminPanel({ isOpen, onClose }: Props) {
     },
   });
 
+  const { mutate: deleteBooking } = useMutation({
+    mutationFn: (bookingId: number) => bookingsApi.delete(bookingId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "bookings"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "stats"] });
+      queryClient.invalidateQueries({ queryKey: ["bookings"] });
+    },
+  });
+
   const statCards = stats ? [
     { label: "Пользователей", value: stats.total_users, icon: "👤", color: "#7c3aed", goTo: "users" as Tab },
     { label: "Всего встреч", value: stats.total_bookings, icon: "📅", color: "#0891b2", goTo: "bookings" as Tab },
     { label: "Сейчас активно", value: stats.active_bookings, icon: "🟢", color: "#16a34a", goTo: "bookings" as Tab },
   ] : [];
+
+  const roleBadge = (role: string) => {
+    if (role === "superadmin") return { label: "superadmin", bg: "rgba(239,68,68,0.12)", color: "#ef4444" };
+    if (role === "admin") return { label: "admin", bg: "rgba(124,58,237,0.12)", color: "var(--primary)" };
+    return null;
+  };
 
   return (
     <AnimatePresence>
@@ -95,7 +113,9 @@ export function AdminPanel({ isOpen, onClose }: Props) {
               style={{ borderBottom: "1px solid var(--border)" }}>
               <div>
                 <h3 className="font-bold text-sm" style={{ color: "var(--text)" }}>Панель администратора</h3>
-                <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>Управление системой</p>
+                <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+                  {isSuperadmin ? "Суперадминистратор" : "Управление системой"}
+                </p>
               </div>
               <button onClick={onClose}
                 className="w-8 h-8 flex items-center justify-center rounded-full text-xl transition-all"
@@ -167,11 +187,26 @@ export function AdminPanel({ isOpen, onClose }: Props) {
                       return (
                         <div key={b.id} className="rounded-xl p-3" style={{ background: "var(--elevated)", border: "1px solid var(--border)" }}>
                           <div className="flex items-start justify-between gap-2 mb-1">
-                            <p className="text-xs font-bold" style={{ color: "var(--text)" }}>{b.title}</p>
-                            <div className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
-                              style={{ background: c }}>{b.user.display_name[0]}</div>
+                            <p className="text-xs font-bold flex-1 min-w-0 truncate" style={{ color: "var(--text)" }}>{b.title}</p>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <div className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white"
+                                style={{ background: c }}>{b.user.display_name[0]}</div>
+                              <button
+                                onClick={() => setDeleteBookingTarget({ id: b.id, title: b.title })}
+                                className="w-6 h-6 flex items-center justify-center rounded-lg transition-all"
+                                style={{ color: "var(--text-muted)" }}
+                                onMouseEnter={e => { e.currentTarget.style.color = "#ef4444"; e.currentTarget.style.background = "rgba(239,68,68,0.1)"; }}
+                                onMouseLeave={e => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = ""; }}
+                                title="Удалить встречу"
+                              >
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                                  <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                                </svg>
+                              </button>
+                            </div>
                           </div>
                           <p className="text-xs font-semibold" style={{ color: c }}>{fmtRange(b.start_time, b.end_time)}</p>
+                          <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{b.user.display_name}</p>
                           {b.guests.length > 0 && (
                             <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
                               Гости: {b.guests.map(g => `@${g}`).join(", ")}
@@ -221,6 +256,7 @@ export function AdminPanel({ isOpen, onClose }: Props) {
 
                     {users.map(u => {
                       const c = color(u.id);
+                      const badge = roleBadge(u.role);
                       return (
                         <div key={u.id} className="rounded-xl p-3 flex items-center gap-3"
                           style={{ background: "var(--elevated)", border: "1px solid var(--border)" }}>
@@ -232,24 +268,32 @@ export function AdminPanel({ isOpen, onClose }: Props) {
                               {u.username && (
                                 <span className="text-xs" style={{ color: "var(--text-muted)" }}>@{u.username}</span>
                               )}
+                              {badge && (
+                                <span className="text-xs font-semibold px-1.5 py-0.5 rounded"
+                                  style={{ background: badge.bg, color: badge.color }}>
+                                  {badge.label}
+                                </span>
+                              )}
                             </div>
                           </div>
-                          {u.id !== currentUser?.id && (
+                          {u.id !== currentUser?.id && u.role !== "superadmin" && (
                             <div className="flex items-center gap-1 shrink-0">
+                              {isSuperadmin && (
+                                <button
+                                  onClick={() => setRole({ userId: u.id, role: u.role === "admin" ? "user" : "admin" })}
+                                  disabled={roleVars?.userId === u.id}
+                                  className="text-xs px-2 py-1 rounded-lg font-semibold transition-all disabled:opacity-40"
+                                  style={u.role === "admin"
+                                    ? { background: "rgba(124,58,237,0.12)", color: "var(--primary)", border: "1px solid var(--primary-border)" }
+                                    : { background: "var(--elevated)", color: "var(--text-muted)", border: "1px solid var(--border)" }
+                                  }
+                                  title={u.role === "admin" ? "Снять admin" : "Дать admin"}
+                                >
+                                  {u.role === "admin" ? "admin ✕" : "+ admin"}
+                                </button>
+                              )}
                               <button
-                                onClick={() => setRole({ userId: u.id, role: u.role === "admin" ? "user" : "admin" })}
-                                disabled={roleVars?.userId === u.id}
-                                className="text-xs px-2 py-1 rounded-lg font-semibold transition-all disabled:opacity-40"
-                                style={u.role === "admin"
-                                  ? { background: "rgba(124,58,237,0.12)", color: "var(--primary)", border: "1px solid var(--primary-border)" }
-                                  : { background: "var(--elevated)", color: "var(--text-muted)", border: "1px solid var(--border)" }
-                                }
-                                title={u.role === "admin" ? "Снять admin" : "Дать admin"}
-                              >
-                                {u.role === "admin" ? "admin ✕" : "+ admin"}
-                              </button>
-                              <button
-                                onClick={() => setDeleteTarget({ id: u.id, name: u.display_name })}
+                                onClick={() => setDeleteUserTarget({ id: u.id, name: u.display_name })}
                                 className="w-7 h-7 flex items-center justify-center rounded-lg text-xs transition-all"
                                 style={{ color: "var(--text-muted)" }}
                                 onMouseEnter={e => { e.currentTarget.style.color = "#ef4444"; e.currentTarget.style.background = "rgba(239,68,68,0.1)"; }}
@@ -274,14 +318,25 @@ export function AdminPanel({ isOpen, onClose }: Props) {
       )}
 
       <ConfirmDialog
-        open={!!deleteTarget}
+        open={!!deleteUserTarget}
         title="Удаление пользователя"
-        message={`Вы уверены, что хотите удалить ${deleteTarget?.name ?? ""}? Все встречи этого пользователя будут отменены.`}
+        message={`Вы уверены, что хотите удалить ${deleteUserTarget?.name ?? ""}? Все встречи этого пользователя будут отменены.`}
         confirmText="Удалить"
         cancelText="Отмена"
         danger
-        onConfirm={() => { if (deleteTarget) deleteUser(deleteTarget.id); setDeleteTarget(null); }}
-        onCancel={() => setDeleteTarget(null)}
+        onConfirm={() => { if (deleteUserTarget) deleteUser(deleteUserTarget.id); setDeleteUserTarget(null); }}
+        onCancel={() => setDeleteUserTarget(null)}
+      />
+
+      <ConfirmDialog
+        open={!!deleteBookingTarget}
+        title="Удаление встречи"
+        message={`Удалить встречу "${deleteBookingTarget?.title ?? ""}"?`}
+        confirmText="Удалить"
+        cancelText="Отмена"
+        danger
+        onConfirm={() => { if (deleteBookingTarget) deleteBooking(deleteBookingTarget.id); setDeleteBookingTarget(null); }}
+        onCancel={() => setDeleteBookingTarget(null)}
       />
     </AnimatePresence>
   );
