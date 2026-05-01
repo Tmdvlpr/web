@@ -1,24 +1,21 @@
-version: '3.9'
-
 services:
-  # PostgreSQL Database - Persistent data store
   db:
     image: postgres:16-alpine
     container_name: corpmeet-db
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-corpmeet}
-      POSTGRES_USER: ${POSTGRES_USER:-corpmeet}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-eW3lA7lU1j}
-      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
-    ports:
-      - "${DB_PORT:-5432}:5432"
+      POSTGRES_DB: ${POSTGRES_DB:?required}
+      POSTGRES_USER: ${POSTGRES_USER:?required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?required}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C.UTF-8"
+    expose:
+      - "5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     networks:
       - corpmeet
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-corpmeet}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -35,27 +32,20 @@ services:
         limits:
           cpus: "1"
           memory: 512M
-        reservations:
-          cpus: "0.5"
-          memory: 256M
 
-  # Backend API - FastAPI microservice
   backend:
     build:
       context: ./web/backend
       dockerfile: Dockerfile
-      cache_from:
-        - type=registry,ref=corpmeet-backend:latest
     image: corpmeet-backend:latest
     container_name: corpmeet-backend
     restart: unless-stopped
     ports:
-      - "${BACKEND_PORT:-8001}:8001"
+      - "127.0.0.1:8050:8001"
     env_file:
-      - ./web/backend/.env
+      - web/backend/app/.env
     environment:
-      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-corpmeet}:${POSTGRES_PASSWORD:-eW3lA7lU1j}@db:5432/${POSTGRES_DB:-corpmeet}
-      INTERNAL_API_URL: http://backend:8001
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
     depends_on:
       db:
         condition: service_healthy
@@ -79,31 +69,25 @@ services:
         limits:
           cpus: "2"
           memory: 1G
-        reservations:
-          cpus: "1"
-          memory: 512M
 
-  # Frontend - React + Vite + Nginx SPA
   frontend:
     build:
       context: ./web/frontend
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:8001/api/v1}
-      cache_from:
-        - type=registry,ref=corpmeet-frontend:latest
+        VITE_API_URL: ${VITE_API_URL:?required}
     image: corpmeet-frontend:latest
     container_name: corpmeet-frontend
     restart: unless-stopped
     ports:
-      - "${FRONTEND_PORT:-80}:80"
+      - "127.0.0.1:3050:80"
     depends_on:
       backend:
         condition: service_healthy
     networks:
       - corpmeet
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/"]
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1/ || exit 1"]
       interval: 30s
       timeout: 3s
       retries: 3
@@ -120,52 +104,6 @@ services:
         limits:
           cpus: "1"
           memory: 512M
-        reservations:
-          cpus: "0.5"
-          memory: 256M
-
-  # Telegram Bot - Async webhook handler
-  tg-bot:
-    build:
-      context: ./tg
-      dockerfile: Dockerfile
-      cache_from:
-        - type=registry,ref=corpmeet-tg-bot:latest
-    image: corpmeet-tg-bot:latest
-    container_name: corpmeet-tg-bot
-    restart: unless-stopped
-    ports:
-      - "${BOT_PORT:-8080}:8080"
-    env_file:
-      - ./tg/.env
-    environment:
-      INTERNAL_API_URL: http://backend:8001
-    depends_on:
-      backend:
-        condition: service_healthy
-    networks:
-      - corpmeet
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 3s
-      retries: 3
-      start_period: 15s
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-    security_opt:
-      - no-new-privileges:true
-    deploy:
-      resources:
-        limits:
-          cpus: "1"
-          memory: 512M
-        reservations:
-          cpus: "0.5"
-          memory: 256M
 
 volumes:
   pgdata:

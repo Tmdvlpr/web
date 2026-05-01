@@ -24,7 +24,7 @@ docs/
 .travis.yml
 
 # Development
-.env
+web/backend/app/.env
 .env.local
 .env.*.local
 node_modules/

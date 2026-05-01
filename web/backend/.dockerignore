@@ -24,7 +24,7 @@ docs/
 .travis.yml
 
 # Development
-.env
+app/.env
 .env.local
 .env.*.local
 .venv/
