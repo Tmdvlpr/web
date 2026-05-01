@@ -142,7 +142,7 @@ function QrAuth() {
       </div>
 
       <p className="text-xs text-center" style={{ color: "rgba(37,99,235,0.55)", maxWidth: 240, lineHeight: 1.6 }}>
-        Отсканируйте камерой телефона для авторизации через Telegram
+        Отсканируйте QR-код для авторизации через Telegram
       </p>
 
       {/* Direct link */}
