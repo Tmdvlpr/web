@@ -218,8 +218,8 @@ export function BookingModal({
     window.addEventListener("resize", resize);
 
     const W0 = window.innerWidth, H0 = window.innerHeight;
-    const N_NODES   = 180;
-    const MAX_CONN  = 200;
+    const N_NODES   = 120;
+    const MAX_CONN  = 220;
     const HL_RADIUS = 380;
 
     nodesRef.current = Array.from({ length: N_NODES }, () => {
@@ -320,12 +320,12 @@ export function BookingModal({
         const hl = Math.max(0, 1 - cardDist / HL_RADIUS);
         const hlPulse = Math.max(0, 1 - cardDist / (HL_RADIUS * 1.5)) * pulse;
 
-        const baseA = dark ? 0.38 : 0.55;
-        const alpha = baseA + hl * (dark ? 0.72 : 0.68) + hlPulse * 0.45;
+        const baseA = dark ? 0.34 : 0.44;
+        const alpha = baseA + hl * (dark ? 0.68 : 0.62) + hlPulse * 0.42;
         const r     = n.size * (1 + hl * 1.4 + hlPulse * 0.8);
         const hue   = dark ? 220 + hl * 60 : 220;
-        const sat   = dark ? 50 + hl * 40  : 8 + hl * 10;
-        const lit   = dark ? 70 + hl * 22  : 10 + hl * 10;
+        const sat   = dark ? 48 + hl * 40  : 7 + hl * 10;
+        const lit   = dark ? 68 + hl * 22  : 22 + hl * 9;
 
         // glow for highlighted nodes
         if (hl > 0.05) {
@@ -373,9 +373,10 @@ export function BookingModal({
   // Conflict preview: load bookings for the selected date
   const dateStr = startTime ? startTime.split("T")[0] : undefined;
   const { data: dayBookings = [] } = useBookings(dateStr);
-  // Only check conflicts after the form has been initialized from props (not stale defaults)
+  // Skip optimistic placeholders (negative ID) — those are the booking being saved right now
   const conflicts = !isEdit && formReady
     ? dayBookings.filter((b) => {
+        if (b.id < 0) return false;
         const bStart = new Date(b.start_time).getTime();
         const bEnd   = new Date(b.end_time).getTime();
         const sStart = new Date(startTime).getTime();
