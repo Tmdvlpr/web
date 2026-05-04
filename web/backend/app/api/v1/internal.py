@@ -344,9 +344,8 @@ async def consume_session_bot(
             await db.flush()
         session.user_id = user.id
 
-    # Сжигаем токен
-    session.used = True
-    session.used_at = datetime.now(timezone.utc)
+    # Токен НЕ сжигаем здесь — это делает фронт при опросе
+    # /api/v1/auth/session/{token} в обмен на JWT. Иначе фронт получает 410.
     await db.commit()
 
     return {"ok": True}
