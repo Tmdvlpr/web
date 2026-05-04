@@ -23,6 +23,7 @@ export default function SessionAuthPage() {
       try {
         const res = await authApi.consumeSession(sessionToken);
         storage.setToken(res.access_token);
+        sessionStorage.setItem("__corpmeet_replay_splash", "1");
         navigate("/bookings", { replace: true });
       } catch {
         navigate("/login", { replace: true });

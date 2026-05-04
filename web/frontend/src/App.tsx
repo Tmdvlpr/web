@@ -385,12 +385,11 @@ export default function App() {
   useWebReminders(isAuthenticated);
 
   const [splashDone, setSplashDone] = useState(false);
-  const prevAuthRef = useRef<boolean | null>(null);
 
   useEffect(() => {
-    const wasFalse = prevAuthRef.current === false;
-    prevAuthRef.current = isAuthenticated;
-    if (wasFalse && isAuthenticated && splashDone) {
+    if (!isAuthenticated || !splashDone) return;
+    if (sessionStorage.getItem("__corpmeet_replay_splash")) {
+      sessionStorage.removeItem("__corpmeet_replay_splash");
       setSplashDone(false);
     }
   }, [isAuthenticated, splashDone]);
