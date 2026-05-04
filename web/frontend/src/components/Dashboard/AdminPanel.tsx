@@ -39,9 +39,22 @@ export function AdminPanel({ isOpen, onClose }: Props) {
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [deleteUserTarget, setDeleteUserTarget] = useState<{ id: number; name: string } | null>(null);
-  const [deleteBookingTarget, setDeleteBookingTarget] = useState<{ id: number; title: string } | null>(null);
+  const [deleteBookingTarget, setDeleteBookingTarget] = useState<{ id: number; title: string; seriesId: number | null } | null>(null);
   const [newName, setNewName] = useState("");
   const [newUsername, setNewUsername] = useState("");
+
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+
+  const toggleSelected = (id: number) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const exitSelection = () => { setSelectionMode(false); setSelectedIds(new Set()); };
 
   const { mutate: setRole, variables: roleVars } = useMutation({
     mutationFn: ({ userId, role }: { userId: number; role: "user" | "admin" }) =>
@@ -67,7 +80,8 @@ export function AdminPanel({ isOpen, onClose }: Props) {
   });
 
   const { mutate: deleteBooking } = useMutation({
-    mutationFn: (bookingId: number) => bookingsApi.delete(bookingId),
+    mutationFn: ({ id, deleteSeries }: { id: number; deleteSeries?: boolean }) =>
+      bookingsApi.delete(id, deleteSeries),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "bookings"] });
       queryClient.invalidateQueries({ queryKey: ["admin", "stats"] });
@@ -75,8 +89,23 @@ export function AdminPanel({ isOpen, onClose }: Props) {
     },
   });
 
+  const { mutate: bulkDelete, isPending: bulkDeleting } = useMutation({
+    mutationFn: async (ids: number[]) => {
+      await Promise.all(ids.map(id => bookingsApi.delete(id)));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "bookings"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "stats"] });
+      queryClient.invalidateQueries({ queryKey: ["bookings"] });
+      setBulkDeleteOpen(false);
+      exitSelection();
+    },
+  });
+
   const statCards = stats ? [
-    { label: "Пользователей", value: stats.total_users, icon: "👤", color: "#7c3aed", goTo: "users" as Tab },
+    ...(isSuperadmin
+      ? [{ label: "Пользователей", value: stats.total_users, icon: "👤", color: "#7c3aed", goTo: "users" as Tab }]
+      : []),
     { label: "Всего встреч", value: stats.total_bookings, icon: "📅", color: "#0891b2", goTo: "bookings" as Tab },
     { label: "Сейчас активно", value: stats.active_bookings, icon: "🟢", color: "#16a34a", goTo: "bookings" as Tab },
   ] : [];
@@ -126,7 +155,7 @@ export function AdminPanel({ isOpen, onClose }: Props) {
 
             {/* Tabs */}
             <div className="flex px-4 pt-3 gap-2" style={{ borderBottom: "1px solid var(--border)", paddingBottom: "0.75rem" }}>
-              {(["stats", "bookings", "users"] as Tab[]).map(t => (
+              {(isSuperadmin ? (["stats", "bookings", "users"] as Tab[]) : (["stats", "bookings"] as Tab[])).map(t => (
                 <button key={t} onClick={() => setTab(t)}
                   className="flex-1 py-1.5 rounded-lg text-xs font-bold transition-all"
                   style={{
@@ -178,31 +207,79 @@ export function AdminPanel({ isOpen, onClose }: Props) {
               {/* Bookings tab */}
               {tab === "bookings" && (
                 bookingsLoading ? <MeetingListSkeleton /> : (
-                  <div className="space-y-2">
-                    <p className="text-xs font-semibold mb-2" style={{ color: "var(--text-muted)" }}>
-                      Последние {bookings.length} встреч
-                    </p>
+                  <div className="space-y-2 pb-20">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>
+                        {selectionMode ? `Выбрано: ${selectedIds.size}` : `Последние ${bookings.length} встреч`}
+                      </p>
+                      {bookings.length > 0 && (
+                        selectionMode ? (
+                          <div className="flex items-center gap-1.5">
+                            <button onClick={() => setSelectedIds(new Set(bookings.map(b => b.id)))}
+                              className="text-xs px-2 py-1 rounded-lg font-semibold transition-all"
+                              style={{ background: "var(--elevated)", color: "var(--text-sec)", border: "1px solid var(--border)" }}>
+                              Все
+                            </button>
+                            <button onClick={exitSelection}
+                              className="text-xs px-2.5 py-1 rounded-lg font-semibold transition-all"
+                              style={{ background: "var(--elevated)", color: "var(--text-muted)", border: "1px solid var(--border)" }}>
+                              Готово
+                            </button>
+                          </div>
+                        ) : (
+                          <button onClick={() => setSelectionMode(true)}
+                            className="text-xs px-2.5 py-1 rounded-lg font-semibold transition-all"
+                            style={{ background: "var(--primary)", color: "#fff" }}>
+                            Выбрать
+                          </button>
+                        )
+                      )}
+                    </div>
                     {bookings.map(b => {
                       const c = color(b.user_id);
+                      const isSelected = selectedIds.has(b.id);
                       return (
-                        <div key={b.id} className="rounded-xl p-3" style={{ background: "var(--elevated)", border: "1px solid var(--border)" }}>
-                          <div className="flex items-start justify-between gap-2 mb-1">
+                        <div key={b.id}
+                          onClick={selectionMode ? () => toggleSelected(b.id) : undefined}
+                          className="rounded-xl p-3 transition-all"
+                          style={{
+                            background: "var(--elevated)",
+                            border: `1px solid ${isSelected ? "var(--primary)" : "var(--border)"}`,
+                            cursor: selectionMode ? "pointer" : "default",
+                            boxShadow: isSelected ? "0 0 0 2px var(--primary-border) inset" : undefined,
+                          }}>
+                          <div className="flex items-start gap-2 mb-1">
+                            {selectionMode && (
+                              <div className="shrink-0 mt-0.5 w-4 h-4 rounded flex items-center justify-center transition-all"
+                                style={{
+                                  background: isSelected ? "var(--primary)" : "transparent",
+                                  border: `1.5px solid ${isSelected ? "var(--primary)" : "var(--border)"}`,
+                                }}>
+                                {isSelected && (
+                                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                    <polyline points="20 6 9 17 4 12"/>
+                                  </svg>
+                                )}
+                              </div>
+                            )}
                             <p className="text-xs font-bold flex-1 min-w-0 truncate" style={{ color: "var(--text)" }}>{b.title}</p>
                             <div className="flex items-center gap-1 shrink-0">
                               <div className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white"
                                 style={{ background: c }}>{b.user.display_name[0]}</div>
-                              <button
-                                onClick={() => setDeleteBookingTarget({ id: b.id, title: b.title })}
-                                className="w-6 h-6 flex items-center justify-center rounded-lg transition-all"
-                                style={{ color: "var(--text-muted)" }}
-                                onMouseEnter={e => { e.currentTarget.style.color = "#ef4444"; e.currentTarget.style.background = "rgba(239,68,68,0.1)"; }}
-                                onMouseLeave={e => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = ""; }}
-                                title="Удалить встречу"
-                              >
-                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                                  <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
-                                </svg>
-                              </button>
+                              {!selectionMode && (
+                                <button
+                                  onClick={() => setDeleteBookingTarget({ id: b.id, title: b.title, seriesId: b.recurrence_group_id })}
+                                  className="w-6 h-6 flex items-center justify-center rounded-lg transition-all"
+                                  style={{ color: "var(--text-muted)" }}
+                                  onMouseEnter={e => { e.currentTarget.style.color = "#ef4444"; e.currentTarget.style.background = "rgba(239,68,68,0.1)"; }}
+                                  onMouseLeave={e => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = ""; }}
+                                  title="Удалить встречу"
+                                >
+                                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                                    <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                                  </svg>
+                                </button>
+                              )}
                             </div>
                           </div>
                           <p className="text-xs font-semibold" style={{ color: c }}>{fmtRange(b.start_time, b.end_time)}</p>
@@ -220,7 +297,7 @@ export function AdminPanel({ isOpen, onClose }: Props) {
               )}
 
               {/* Users tab */}
-              {tab === "users" && (
+              {tab === "users" && isSuperadmin && (
                 usersLoading ? <MeetingListSkeleton /> : (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between mb-2">
@@ -313,6 +390,36 @@ export function AdminPanel({ isOpen, onClose }: Props) {
                 )
               )}
             </div>
+
+            <AnimatePresence>
+              {selectionMode && tab === "bookings" && selectedIds.size > 0 && (
+                <motion.div
+                  key="bulk-bar"
+                  initial={{ y: 80, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: 80, opacity: 0 }}
+                  transition={{ type: "spring", damping: 22, stiffness: 320 }}
+                  className="absolute left-0 right-0 bottom-0 px-4 py-3 flex items-center gap-2"
+                  style={{
+                    background: "var(--panel)",
+                    borderTop: "1px solid var(--border)",
+                    boxShadow: isDark ? "0 -8px 24px rgba(0,0,0,0.4)" : "0 -8px 24px rgba(15,23,42,0.08)",
+                  }}>
+                  <button onClick={exitSelection}
+                    className="text-xs px-3 py-2 rounded-lg font-semibold transition-all"
+                    style={{ background: "var(--elevated)", color: "var(--text-sec)", border: "1px solid var(--border)" }}>
+                    Отмена
+                  </button>
+                  <button
+                    onClick={() => setBulkDeleteOpen(true)}
+                    disabled={bulkDeleting}
+                    className="flex-1 text-xs px-3 py-2 rounded-lg font-bold text-white transition-all disabled:opacity-50"
+                    style={{ background: "#ef4444" }}>
+                    Удалить выбранные ({selectedIds.size})
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         </>
       )}
@@ -329,13 +436,36 @@ export function AdminPanel({ isOpen, onClose }: Props) {
       />
 
       <ConfirmDialog
-        open={!!deleteBookingTarget}
-        title="Удаление встречи"
-        message={`Удалить встречу "${deleteBookingTarget?.title ?? ""}"?`}
+        open={bulkDeleteOpen}
+        title="Массовое удаление"
+        message={`Удалить ${selectedIds.size} ${selectedIds.size === 1 ? "встречу" : "встреч"}? Действие необратимо.`}
         confirmText="Удалить"
         cancelText="Отмена"
         danger
-        onConfirm={() => { if (deleteBookingTarget) deleteBooking(deleteBookingTarget.id); setDeleteBookingTarget(null); }}
+        onConfirm={() => bulkDelete(Array.from(selectedIds))}
+        onCancel={() => setBulkDeleteOpen(false)}
+      />
+
+      <ConfirmDialog
+        open={!!deleteBookingTarget}
+        title={deleteBookingTarget?.seriesId ? "Удаление серии встреч" : "Удаление встречи"}
+        message={
+          deleteBookingTarget?.seriesId
+            ? `Удалить всю серию повторяющихся встреч "${deleteBookingTarget?.title ?? ""}"?`
+            : `Удалить встречу "${deleteBookingTarget?.title ?? ""}"?`
+        }
+        confirmText="Удалить"
+        cancelText="Отмена"
+        danger
+        onConfirm={() => {
+          if (deleteBookingTarget) {
+            deleteBooking({
+              id: deleteBookingTarget.id,
+              deleteSeries: !!deleteBookingTarget.seriesId,
+            });
+          }
+          setDeleteBookingTarget(null);
+        }}
         onCancel={() => setDeleteBookingTarget(null)}
       />
     </AnimatePresence>

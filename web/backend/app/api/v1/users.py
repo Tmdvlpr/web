@@ -110,8 +110,8 @@ async def admin_create_user(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> UserResponse:
-    if current_user.role not in ADMIN_ROLES:
-        raise HTTPException(403, "Admin only")
+    if current_user.role != Role.superadmin:
+        raise HTTPException(403, "Superadmin only")
     if body.role not in ("user", "admin"):
         raise HTTPException(400, "role must be 'user' or 'admin'")
     user = User(
@@ -136,8 +136,8 @@ async def admin_delete_user(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> None:
-    if current_user.role not in ADMIN_ROLES:
-        raise HTTPException(403, "Admin only")
+    if current_user.role != Role.superadmin:
+        raise HTTPException(403, "Superadmin only")
     result = await db.execute(select(User).where(User.id == user_id))
     target = result.scalar_one_or_none()
     if not target:
