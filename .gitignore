@@ -71,3 +71,4 @@ volumes/
 .vscode/
 *.swp
 *.swo
+docker-compose.yml
