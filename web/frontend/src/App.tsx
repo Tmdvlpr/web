@@ -381,7 +381,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 // ── App ───────────────────────────────────────────────────────────────────────
 export default function App() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   useWebReminders(isAuthenticated);
 
   const [splashDone, setSplashDone] = useState(false);
@@ -403,7 +403,7 @@ export default function App() {
 
   return (
     <>
-      {!splashDone && <SplashScreen onFinish={() => setSplashDone(true)} />}
+      {!splashDone && <SplashScreen onFinish={() => setSplashDone(true)} userName={user?.display_name} />}
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegistrationPage />} />

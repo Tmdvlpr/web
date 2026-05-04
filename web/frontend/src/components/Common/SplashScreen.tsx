@@ -4,13 +4,14 @@ import { useTheme } from "../../contexts/ThemeContext";
 
 interface SplashScreenProps {
   onFinish: () => void;
+  userName?: string | null;
 }
 
 const WORD = "CORPMEET";
 const ACCENT_FROM = 4;
 const BRAND = "#1565a8";
 
-export function SplashScreen({ onFinish }: SplashScreenProps) {
+export function SplashScreen({ onFinish, userName }: SplashScreenProps) {
   const { isDark } = useTheme();
   const [visible, setVisible] = useState(true);
   const [fading, setFading] = useState(false);
@@ -154,6 +155,27 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
               </motion.span>
             ))}
           </div>
+
+          {/* Personal greeting after wordmark */}
+          {userName && (
+            <motion.p
+              initial={{ opacity: 0, y: 8 }}
+              animate={revealed >= WORD.length ? { opacity: 1, y: 0 } : { opacity: 0, y: 8 }}
+              transition={{ duration: 0.45, delay: 0.15, ease: [0.25, 0.46, 0.45, 0.94] }}
+              style={{
+                marginTop: 24,
+                fontFamily: "Manrope, sans-serif",
+                fontWeight: 500,
+                fontSize: 16,
+                letterSpacing: "0.02em",
+                color: isDark ? "rgba(248,250,252,0.78)" : "rgba(26,26,26,0.72)",
+                textAlign: "center",
+                padding: "0 24px",
+              }}
+            >
+              Добро пожаловать, <span style={{ fontWeight: 700, color: BRAND }}>{userName}</span>!
+            </motion.p>
+          )}
         </motion.div>
       )}
     </AnimatePresence>
