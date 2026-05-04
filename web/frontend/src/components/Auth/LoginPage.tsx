@@ -61,6 +61,23 @@ function QrAuth() {
   const [botUrl, setBotUrl] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [expired, setExpired] = useState(false);
+  const popupRef = useRef<Window | null>(null);
+
+  const openTgPopup = () => {
+    if (!botUrl) return;
+    if (popupRef.current && !popupRef.current.closed) {
+      popupRef.current.focus();
+      return;
+    }
+    const w = 520, h = 700;
+    const left = Math.max(0, (window.screen.width - w) / 2);
+    const top  = Math.max(0, (window.screen.height - h) / 2);
+    popupRef.current = window.open(
+      botUrl,
+      "corpmeet_tg_auth",
+      `popup,width=${w},height=${h},left=${left},top=${top}`
+    );
+  };
 
   const createSession = useCallback(async () => {
     setExpired(false);
@@ -88,6 +105,9 @@ function QrAuth() {
           if ("access_token" in res) {
             storage.setToken(res.access_token);
             sessionStorage.setItem("__corpmeet_replay_splash", "1"); window.dispatchEvent(new CustomEvent("corpmeet:replay-splash"));
+            if (popupRef.current && !popupRef.current.closed) {
+              try { popupRef.current.close(); } catch {}
+            }
             navigate("/bookings", { replace: true });
             return;
           }
@@ -147,8 +167,8 @@ function QrAuth() {
         Отсканируйте QR-код для авторизации через Telegram
       </p>
 
-      {/* Direct link */}
-      <a href={botUrl} target="_blank" rel="noreferrer"
+      {/* Open Telegram in a popup so the user stays on this tab */}
+      <button onClick={openTgPopup}
         className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all"
         style={{
           background: "rgba(37,99,235,0.06)",
@@ -159,8 +179,8 @@ function QrAuth() {
         onMouseLeave={e => { e.currentTarget.style.background = "rgba(37,99,235,0.06)"; e.currentTarget.style.borderColor = "rgba(37,99,235,0.2)"; }}
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.03-1.99 1.27-5.62 3.72-.53.36-1.01.54-1.44.53-.47-.01-1.38-.27-2.06-.49-.83-.27-1.49-.42-1.43-.88.03-.24.37-.49 1.02-.75 3.97-1.73 6.62-2.87 7.94-3.44 3.79-1.58 4.57-1.85 5.08-1.86.11 0 .37.03.54.17.14.12.18.28.2.47-.01.06.01.24 0 .38z"/></svg>
-        Открыть бота в Telegram
-      </a>
+        Перейти в Telegram
+      </button>
 
       {/* Polling indicator */}
       <div className="flex items-center gap-2">

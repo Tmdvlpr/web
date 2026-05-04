@@ -22,7 +22,8 @@ jobs:
         key: ${{ secrets.SSH_KEY }}
         script: |
           cd /var/www/www-root/data/www/corpmeet.uz
-          git pull origin main
+          git fetch origin main
+          git reset --hard origin/main
           docker compose build
           docker compose up -d --remove-orphans
           sleep 5
