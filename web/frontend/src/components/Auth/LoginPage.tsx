@@ -19,7 +19,7 @@ function DevLoginButton() {
     try {
       const { access_token } = await authApi.devLogin();
       storage.setToken(access_token);
-      sessionStorage.setItem("__corpmeet_replay_splash", "1");
+      sessionStorage.setItem("__corpmeet_replay_splash", "1"); window.dispatchEvent(new CustomEvent("corpmeet:replay-splash"));
       navigate("/bookings", { replace: true });
     } catch {
       setLoading(false);
@@ -87,7 +87,7 @@ function QrAuth() {
           const res = await authApi.pollSession(token);
           if ("access_token" in res) {
             storage.setToken(res.access_token);
-            sessionStorage.setItem("__corpmeet_replay_splash", "1");
+            sessionStorage.setItem("__corpmeet_replay_splash", "1"); window.dispatchEvent(new CustomEvent("corpmeet:replay-splash"));
             navigate("/bookings", { replace: true });
             return;
           }
@@ -415,7 +415,7 @@ export default function LoginPage() {
   useEffect(() => {
     if (!isMiniApp) return;
     authApi.login(initData)
-      .then(res => { storage.setToken(res.access_token); sessionStorage.setItem("__corpmeet_replay_splash", "1"); navigate("/bookings", { replace: true }); })
+      .then(res => { storage.setToken(res.access_token); sessionStorage.setItem("__corpmeet_replay_splash", "1"); window.dispatchEvent(new CustomEvent("corpmeet:replay-splash")); navigate("/bookings", { replace: true }); })
       .catch(() => navigate("/register", { replace: true }));
   }, [isMiniApp, initData, navigate]);
 

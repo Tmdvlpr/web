@@ -24,6 +24,7 @@ export default function SessionAuthPage() {
         const res = await authApi.consumeSession(sessionToken);
         storage.setToken(res.access_token);
         sessionStorage.setItem("__corpmeet_replay_splash", "1");
+        window.dispatchEvent(new CustomEvent("corpmeet:replay-splash"));
         navigate("/bookings", { replace: true });
       } catch {
         navigate("/login", { replace: true });

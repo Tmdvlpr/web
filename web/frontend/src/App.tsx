@@ -387,12 +387,19 @@ export default function App() {
   const [splashDone, setSplashDone] = useState(false);
 
   useEffect(() => {
-    if (!isAuthenticated || !splashDone) return;
+    const replay = () => setSplashDone(false);
+    window.addEventListener("corpmeet:replay-splash", replay);
+    return () => window.removeEventListener("corpmeet:replay-splash", replay);
+  }, []);
+
+  // Also catch sessionStorage flag (set before navigate to /bookings)
+  useEffect(() => {
+    if (!isAuthenticated) return;
     if (sessionStorage.getItem("__corpmeet_replay_splash")) {
       sessionStorage.removeItem("__corpmeet_replay_splash");
       setSplashDone(false);
     }
-  }, [isAuthenticated, splashDone]);
+  }, [isAuthenticated]);
 
   return (
     <>
