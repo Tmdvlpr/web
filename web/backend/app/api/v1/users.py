@@ -31,18 +31,22 @@ async def search_users(
     order = func.coalesce(User.first_name, User.name, User.username)
     if not q.strip():
         result = await db.execute(
-            select(User).where(User.id != current_user.id).order_by(order).limit(50)
+            select(User)
+            .where(User.id != current_user.id, User.is_active == True)  # noqa: E712
+            .order_by(order)
+            .limit(50)
         )
     else:
         term = f"%{q.strip().lstrip('@')}%"
         result = await db.execute(
             select(User).where(
+                User.is_active == True,  # noqa: E712
                 or_(
                     User.name.ilike(term),
                     User.first_name.ilike(term),
                     User.last_name.ilike(term),
                     User.username.ilike(term),
-                )
+                ),
             ).order_by(order).limit(20)
         )
     return result.scalars().all()
@@ -69,7 +73,11 @@ async def admin_list_users(
 ) -> list[UserResponse]:
     if current_user.role not in ADMIN_ROLES:
         raise HTTPException(403, "Admin only")
-    result = await db.execute(select(User).order_by(User.created_at.desc()))
+    result = await db.execute(
+        select(User)
+        .where(User.is_active == True)  # noqa: E712 — exclude soft-deleted users
+        .order_by(User.created_at.desc())
+    )
     return result.scalars().all()
 
 
@@ -166,7 +174,9 @@ async def admin_stats(
 ) -> dict:
     if current_user.role not in ADMIN_ROLES:
         raise HTTPException(403, "Admin only")
-    total_users = (await db.execute(select(func.count(User.id)))).scalar_one()
+    total_users = (await db.execute(
+        select(func.count(User.id)).where(User.is_active == True)  # noqa: E712
+    )).scalar_one()
     total_bookings = (await db.execute(
         select(func.count(Booking.id)).where(Booking.deleted_at.is_(None))
     )).scalar_one()
