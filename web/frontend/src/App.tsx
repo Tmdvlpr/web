@@ -10,6 +10,7 @@ import { ActiveMeetings } from "./components/Dashboard/BookingsList";
 import { BookingModal } from "./components/Dashboard/BookingModal";
 import { NotificationCenter, addNotification, getReminderMinutes } from "./components/Dashboard/NotificationCenter";
 import { AdminPanel } from "./components/Dashboard/AdminPanel";
+import { SplashScreen } from "./components/Common/SplashScreen";
 import OpenInBrowserButton from "./components/MiniApp/OpenInBrowserButton";
 import { useTheme } from "./contexts/ThemeContext";
 import { useAuth } from "./hooks/useAuth";
@@ -383,23 +384,28 @@ export default function App() {
   const { isAuthenticated } = useAuth();
   useWebReminders(isAuthenticated);
 
+  const [splashDone, setSplashDone] = useState(false);
+
   return (
-    <Routes>
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegistrationPage />} />
-      <Route path="/auth/session/:sessionToken" element={<SessionAuthPage />} />
-      <Route
-        path="/bookings"
-        element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/"
-        element={<Navigate to={isAuthenticated ? "/bookings" : "/login"} replace />}
-      />
-    </Routes>
+    <>
+      {!splashDone && <SplashScreen onFinish={() => setSplashDone(true)} />}
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegistrationPage />} />
+        <Route path="/auth/session/:sessionToken" element={<SessionAuthPage />} />
+        <Route
+          path="/bookings"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/"
+          element={<Navigate to={isAuthenticated ? "/bookings" : "/login"} replace />}
+        />
+      </Routes>
+    </>
   );
 }
