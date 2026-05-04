@@ -77,6 +77,10 @@ export function AdminPanel({ isOpen, onClose }: Props) {
       queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
       queryClient.invalidateQueries({ queryKey: ["admin", "stats"] });
     },
+    onError: (err: any) => {
+      const detail = err?.response?.data?.detail ?? err?.message ?? "Неизвестная ошибка";
+      alert(`Не удалось удалить пользователя: ${detail}`);
+    },
   });
 
   const { mutate: deleteBooking } = useMutation({

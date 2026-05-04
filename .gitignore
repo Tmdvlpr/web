@@ -72,3 +72,5 @@ volumes/
 *.swp
 *.swo
 docker-compose.yml
+.github/workflows/deploy.yml
+.github

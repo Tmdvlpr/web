@@ -61,6 +61,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             "ALTER TABLE bookings ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ",
             "ALTER TABLE bookings ADD COLUMN IF NOT EXISTS prev_start_time TIMESTAMPTZ",
             "ALTER TABLE bookings ADD COLUMN IF NOT EXISTS prev_end_time TIMESTAMPTZ",
+            "ALTER TABLE bookings ADD COLUMN IF NOT EXISTS notified_at TIMESTAMPTZ",
+            "ALTER TABLE bookings ADD COLUMN IF NOT EXISTS cancel_notified_at TIMESTAMPTZ",
             "ALTER TABLE browser_sessions ALTER COLUMN user_id DROP NOT NULL",
             "ALTER TABLE users ALTER COLUMN name DROP NOT NULL",
             "ALTER TABLE users ALTER COLUMN telegram_id DROP NOT NULL",
@@ -102,7 +104,9 @@ app.add_middleware(
         "http://localhost:5174",
         "http://localhost:5175",
         "http://localhost",
-        "http://localhost:80"
+        "http://localhost:80",
+        "https://tg.corpmeet.uz",
+        "https://corpmeet.uz"
     ],
     allow_credentials=True,
     allow_methods=["*"],

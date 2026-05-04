@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, Header, HTTPException, status
 from pydantic import BaseModel
-from sqlalchemy import and_, select
+from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -93,16 +93,31 @@ async def bookings_since(
     _: None = Depends(verify_bot_secret),
 ) -> list[BookingBotInfo]:
     """
-    Возвращает встречи у которых updated_at >= updated_at.
+    Возвращает встречи требующие уведомления (updated_at позже notified_at).
     Бот использует для отправки уведомлений в группу и гостям.
+    Идемпотентно: после возврата помечает notified_at = updated_at, чтобы
+    повторный вызов не вернул ту же встречу до следующего изменения.
     """
     result = await db.execute(
         select(Booking)
         .options(selectinload(Booking.user))
-        .where(and_(Booking.updated_at >= updated_at, Booking.deleted_at.is_(None)))
+        .where(and_(
+            Booking.updated_at >= updated_at,
+            Booking.deleted_at.is_(None),
+            or_(
+                Booking.notified_at.is_(None),
+                Booking.updated_at > Booking.notified_at,
+            ),
+        ))
         .order_by(Booking.updated_at)
     )
     bookings = result.scalars().all()
+
+    # Помечаем как уведомлённые, чтобы не отдавать повторно
+    for b in bookings:
+        b.notified_at = b.updated_at
+    if bookings:
+        await db.commit()
 
     return [
         BookingBotInfo(
@@ -209,10 +224,21 @@ async def bookings_deleted_since(
     result = await db.execute(
         select(Booking)
         .options(selectinload(Booking.user))
-        .where(and_(Booking.deleted_at.isnot(None), Booking.deleted_at >= since))
+        .where(and_(
+            Booking.deleted_at.isnot(None),
+            Booking.deleted_at >= since,
+            Booking.cancel_notified_at.is_(None),
+        ))
         .order_by(Booking.deleted_at)
     )
     bookings = result.scalars().all()
+
+    # Помечаем отменённые встречи как уведомлённые
+    for b in bookings:
+        b.cancel_notified_at = datetime.now(timezone.utc)
+    if bookings:
+        await db.commit()
+
     return [
         BookingBotInfo(
             id=b.id, title=b.title, description=b.description,

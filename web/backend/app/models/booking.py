@@ -20,6 +20,8 @@ class Booking(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
     reminder_sent: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    notified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    cancel_notified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     prev_start_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     prev_end_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
