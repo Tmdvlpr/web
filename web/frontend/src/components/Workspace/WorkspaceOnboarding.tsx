@@ -324,6 +324,11 @@ export function WorkspaceOnboarding({ onCreated }: WorkspaceOnboardingProps) {
         workspaceId={setupState.workspaceId}
         myMemberId={setupState.myMemberId}
         onComplete={async () => { setSetupState(null); await refetchWorkspaces(); onCreated(); }}
+        onCancel={async () => {
+          try { await workspacesApi.archive(setupState.workspaceId); } catch { /* ignore */ }
+          setSetupState(null);
+          await refetchWorkspaces();
+        }}
       />
     )}
     </>

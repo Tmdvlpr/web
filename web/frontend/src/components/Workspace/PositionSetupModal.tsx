@@ -16,6 +16,7 @@ interface Props {
   workspaceId: number;
   myMemberId: number;
   onComplete: () => void;
+  onCancel?: () => void;
   initialStep?: Step;
 }
 
@@ -34,27 +35,32 @@ const MODAL_ANIMATE = { opacity: 1, scale: 1 } as const;
 const MODAL_TRANSITION = { duration: 0.25, ease: [0.22, 1, 0.36, 1] as const } as const;
 
 function PosInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
-  const [focused, setFocused] = useState(false);
   return (
     <input
       {...props}
       className="w-full text-sm rounded-md px-3 py-2"
       style={{
         background: "var(--input-bg)",
-        borderWidth: "1.5px",
-        borderStyle: "solid",
-        borderColor: focused ? "var(--primary)" : "var(--input-border)",
+        border: "1.5px solid var(--input-border)",
         color: "var(--text)",
         outline: "none",
-        transition: "border-color 0.15s ease",
+        boxShadow: "none",
       }}
-      onFocus={e => { setFocused(true); props.onFocus?.(e); }}
-      onBlur={e => { setFocused(false); props.onBlur?.(e); }}
+      onFocus={e => {
+        e.currentTarget.style.setProperty("border-color", "var(--input-border)", "important");
+        e.currentTarget.style.setProperty("outline", "none", "important");
+        e.currentTarget.style.setProperty("box-shadow", "none", "important");
+        props.onFocus?.(e);
+      }}
+      onBlur={e => {
+        e.currentTarget.style.removeProperty("border-color");
+        props.onBlur?.(e);
+      }}
     />
   );
 }
 
-export function PositionSetupModal({ workspaceId, myMemberId, onComplete, initialStep = "create" }: Props) {
+export function PositionSetupModal({ workspaceId, myMemberId, onComplete, onCancel, initialStep = "create" }: Props) {
   const { t, locale, setLocale } = useLocale();
   const { isDark } = useTheme();
   const { logout } = useAuth();
@@ -151,7 +157,7 @@ export function PositionSetupModal({ workspaceId, myMemberId, onComplete, initia
                 {t("pos.setupSubtitle")}
               </p>
             </div>
-            {/* Language + logout controls */}
+            {/* Language + logout + cancel controls */}
             <div className="flex items-center gap-2 shrink-0 ml-4">
               <button
                 type="button"
@@ -178,6 +184,19 @@ export function PositionSetupModal({ workspaceId, myMemberId, onComplete, initia
                   <line x1="21" y1="12" x2="9" y2="12"/>
                 </svg>
               </button>
+              {onCancel && (
+                <button
+                  type="button"
+                  onClick={onCancel}
+                  className="w-7 h-7 flex items-center justify-center rounded transition-all"
+                  style={{ background: "var(--elevated)", border: "1px solid var(--border)", color: "var(--text-muted)" }}
+                  title={t("common.cancel")}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                  </svg>
+                </button>
+              )}
             </div>
           </div>
 
