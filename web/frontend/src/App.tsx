@@ -319,7 +319,6 @@ function Dashboard() {
   useEffect(() => {
     if (!activeWorkspace || !myMember) return;
     if (myMember.role !== "owner") return;
-    // Check if workspace has any positions
     workspacesApi.listPositions(activeWorkspace.id).then(positions => {
       if (positions.length === 0 && myMember.position_id == null) {
         setPositionSetupForWs({ workspaceId: activeWorkspace.id, myMemberId: myMember.id });
