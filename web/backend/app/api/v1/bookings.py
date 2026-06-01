@@ -405,6 +405,17 @@ async def create_booking(
     if start_aware < now_utc - timedelta(minutes=2):
         raise HTTPException(400, "Нельзя бронировать время в прошлом")
 
+    if payload.workspace_id is not None and current_user.role != Role.superadmin:
+        mem = await db.scalar(
+            select(WorkspaceMember).where(
+                WorkspaceMember.workspace_id == payload.workspace_id,
+                WorkspaceMember.user_id == current_user.id,
+                WorkspaceMember.status == WorkspaceMemberStatus.active,
+            )
+        )
+        if mem is not None and mem.position_id is None:
+            raise HTTPException(403, detail={"error": "position_required"})
+
     # Enforce type-specific overrides
     effective_room_id = payload.room_id
     effective_video = payload.video_enabled

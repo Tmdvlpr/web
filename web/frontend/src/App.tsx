@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
-import React, { Suspense, useEffect, useRef, useState } from "react";
+import React, { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Navigate, Route, Routes, useNavigate, useParams } from "react-router-dom";
 const MeetingRoom = React.lazy(() =>
   import("./components/Video/MeetingRoom").then((m) => ({ default: m.MeetingRoom }))
@@ -34,6 +35,8 @@ import { useTelegram } from "./hooks/useTelegram";
 import { WorkspaceOnboarding } from "./components/Workspace/WorkspaceOnboarding";
 import { WorkspaceSelector } from "./components/Workspace/WorkspaceSelector";
 import { WorkspaceSettingsModal } from "./components/Workspace/WorkspaceSettingsModal";
+import { PositionRequiredBanner } from "./components/Workspace/PositionRequiredBanner";
+import { PositionSetupModal } from "./components/Workspace/PositionSetupModal";
 import type { Booking } from "./types";
 
 // ── Web notification reminders ──────────────────────────────────────────────
@@ -278,7 +281,7 @@ function Dashboard() {
   useWorkspaceJoinRequestNotifications(user?.id);
   const { t, locale, setLocale } = useLocale();
   const { toasts, add: addToast } = useToasts();
-  const { workspaces, isLoading: wsLoading, wsFetched } = useWorkspace();
+  const { workspaces, activeWorkspace, isLoading: wsLoading, wsFetched } = useWorkspace();
   const navigate = useNavigate();
 
   const [modalOpen,      setModalOpen]      = useState(false);
@@ -295,6 +298,36 @@ function Dashboard() {
   const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
   const [profileOpen,    setProfileOpen]    = useState(false);
   const needsOnboarding = wsFetched && !wsLoading && workspaces.length === 0;
+
+  // ── Workspace detail for position banner ─────────────────────────────────
+  const { data: wsDetail, refetch: refetchWsDetail } = useQuery({
+    queryKey: ["workspace", activeWorkspace?.id],
+    queryFn: () => workspacesApi.get(activeWorkspace!.id),
+    enabled: !!activeWorkspace,
+    staleTime: 30_000,
+  });
+
+  const myMember = useMemo(
+    () => wsDetail?.members.find(m => m.user_id === user?.id) ?? null,
+    [wsDetail, user]
+  );
+
+  const showPositionBanner = !!(activeWorkspace && myMember && myMember.position_id == null);
+
+  const [positionSetupForWs, setPositionSetupForWs] = useState<{ workspaceId: number; myMemberId: number } | null>(null);
+
+  useEffect(() => {
+    if (!activeWorkspace || !myMember) return;
+    if (myMember.role !== "owner") return;
+    // Check if workspace has any positions
+    workspacesApi.listPositions(activeWorkspace.id).then(positions => {
+      if (positions.length === 0 && myMember.position_id == null) {
+        setPositionSetupForWs({ workspaceId: activeWorkspace.id, myMemberId: myMember.id });
+      }
+    }).catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeWorkspace?.id, myMember?.id]);
+  // ─────────────────────────────────────────────────────────────────────────
 
   const handleLogout = () => { logout(); navigate("/login", { replace: true }); };
 
@@ -370,6 +403,17 @@ function Dashboard() {
           </div>
         </div>
       </header>
+
+      {showPositionBanner && activeWorkspace && myMember && user && (
+        <div className="px-4 pt-2 pb-0 shrink-0">
+          <PositionRequiredBanner
+            workspaceId={activeWorkspace.id}
+            myMemberId={myMember.id}
+            user={user}
+            onPositionSet={() => { refetchWsDetail(); }}
+          />
+        </div>
+      )}
 
       <main className="flex-1 overflow-hidden">
         <Calendar currentUser={user ?? null} onSlotClick={handleSlotClick} onCardClick={handleCardClick} />
@@ -539,6 +583,14 @@ function Dashboard() {
         <ProfileEditModal open={profileOpen} user={user}
           onClose={() => setProfileOpen(false)} onSaved={() => addToast(t("profile.saved"))}
           onBack={() => { setProfileOpen(false); setSidebarOpen(true); }} />
+      )}
+
+      {positionSetupForWs && (
+        <PositionSetupModal
+          workspaceId={positionSetupForWs.workspaceId}
+          myMemberId={positionSetupForWs.myMemberId}
+          onComplete={() => { setPositionSetupForWs(null); refetchWsDetail(); }}
+        />
       )}
 
       <WorkspaceSettingsModal open={wsSettingsOpen} onClose={() => setWsSettingsOpen(false)} />

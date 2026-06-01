@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { workspacesApi } from "../../api/workspaces";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
+import { useAuth } from "../../hooks/useAuth";
+import { PositionSetupModal } from "./PositionSetupModal";
 import type { Workspace } from "../../types";
 
 interface WorkspaceOnboardingProps {
@@ -75,10 +77,12 @@ const BackIcon = () => (
 export function WorkspaceOnboarding({ onCreated }: WorkspaceOnboardingProps) {
   const { isDark } = useTheme();
   const { refetchWorkspaces } = useWorkspace();
+  const { user } = useAuth();
   const [flow, setFlow] = useState<Flow>("menu");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [setupState, setSetupState] = useState<{ workspaceId: number; myMemberId: number } | null>(null);
 
   const [name, setName] = useState("");
   const [tz, setTz] = useState("Europe/Moscow");
@@ -110,8 +114,19 @@ export function WorkspaceOnboarding({ onCreated }: WorkspaceOnboardingProps) {
     if (!name.trim()) { setError("Введите название"); return; }
     setBusy(true);
     try {
-      await workspacesApi.create({ name: name.trim(), timezone: tz });
+      const ws = await workspacesApi.create({ name: name.trim(), timezone: tz });
       await refetchWorkspaces();
+      // Find this user's member record to pass to PositionSetupModal
+      try {
+        const detail = await workspacesApi.get(ws.id);
+        const myMember = detail.members.find(m => m.user_id === user?.id);
+        if (myMember) {
+          setSetupState({ workspaceId: ws.id, myMemberId: myMember.id });
+          return;
+        }
+      } catch {
+        // If detail fetch fails, proceed without setup modal
+      }
       onCreated();
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
@@ -144,6 +159,7 @@ export function WorkspaceOnboarding({ onCreated }: WorkspaceOnboardingProps) {
   const overlayBg = isDark ? "rgba(2,6,23,0.92)" : "rgba(248,250,252,0.96)";
 
   return (
+    <>
     <div
       className="fixed inset-0 z-[60] flex items-center justify-center px-4 overflow-y-auto py-10"
       style={{ background: overlayBg, backdropFilter: "blur(8px)" }}
@@ -302,6 +318,15 @@ export function WorkspaceOnboarding({ onCreated }: WorkspaceOnboardingProps) {
         </div>
       </motion.div>
     </div>
+
+    {setupState && (
+      <PositionSetupModal
+        workspaceId={setupState.workspaceId}
+        myMemberId={setupState.myMemberId}
+        onComplete={() => { setSetupState(null); onCreated(); }}
+      />
+    )}
+    </>
   );
 }
 

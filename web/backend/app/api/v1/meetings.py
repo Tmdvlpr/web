@@ -149,6 +149,22 @@ async def _is_workspace_owner(workspace_id: int | None, user_id: int, db: AsyncS
     return res.scalar_one_or_none() is not None
 
 
+async def _get_workspace_member(
+    workspace_id: int | None, user_id: int, db: AsyncSession
+) -> WorkspaceMember | None:
+    """Return the active WorkspaceMember for (workspace, user), or None."""
+    if not workspace_id:
+        return None
+    res = await db.execute(
+        select(WorkspaceMember).where(
+            WorkspaceMember.workspace_id == workspace_id,
+            WorkspaceMember.user_id == user_id,
+            WorkspaceMember.status == WorkspaceMemberStatus.active,
+        )
+    )
+    return res.scalar_one_or_none()
+
+
 async def _check_meeting_access(booking: Booking, user: User, db: AsyncSession) -> None:
     """Allow organizer, superadmin, workspace owner, invited guest, or past participant."""
     if booking.user_id == user.id:
@@ -228,6 +244,12 @@ async def join_meeting(
     if not is_organizer and not is_privileged and not _is_invited_guest(booking, current_user):
         raise HTTPException(403, "Not invited to this meeting")
     # ─────────────────────────────────────────────────────────────────────────
+
+    # Position check: workspace members must have a position set (superadmin exempt)
+    if not is_superadmin and booking.workspace_id:
+        ws_member = await _get_workspace_member(booking.workspace_id, current_user.id, db)
+        if ws_member is not None and ws_member.position_id is None:
+            raise HTTPException(403, detail={"error": "position_required"})
 
     # Guests may not enter before the organizer (privileged users bypass this check)
     if not is_organizer and not is_privileged:

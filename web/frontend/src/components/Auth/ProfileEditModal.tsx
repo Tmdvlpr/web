@@ -1,7 +1,8 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { authApi } from "../../api/auth";
+import { workspacesApi } from "../../api/workspaces";
 import { useLocale } from "../../contexts/LocaleContext";
 import { useTheme } from "../../contexts/ThemeContext";
 import type { User } from "../../types";
@@ -28,17 +29,28 @@ interface Props {
   onClose: () => void;
   onSaved: () => void;
   onBack?: () => void;
+  workspaceId?: number;
+  myMemberId?: number;
 }
 
-export function ProfileEditModal({ open, user, onClose, onSaved, onBack }: Props) {
-  const { t } = useLocale();
+export function ProfileEditModal({ open, user, onClose, onSaved, onBack, workspaceId, myMemberId }: Props) {
+  const { t, locale } = useLocale();
   const { isDark } = useTheme();
   const qc = useQueryClient();
 
   const [first, setFirst] = useState(user.first_name ?? "");
   const [last, setLast] = useState(user.last_name ?? "");
   const [position, setPosition] = useState<string | null>(user.position ?? null);
+  const [selectedPositionId, setSelectedPositionId] = useState<number | null>(null);
   const [error, setError] = useState("");
+
+  const { data: wsPositions } = useQuery({
+    queryKey: ["wsPositions", workspaceId],
+    queryFn: () => workspacesApi.listPositions(workspaceId!),
+    enabled: !!workspaceId && open,
+  });
+
+  const isWorkspaceMode = !!workspaceId && !!myMemberId && (wsPositions?.length ?? 0) > 0;
 
   // ── Meeting preferences (stored in localStorage) ───────────────────────────
   const [noiseFilter, setNoiseFilter] = useState(
@@ -61,8 +73,14 @@ export function ProfileEditModal({ open, user, onClose, onSaved, onBack }: Props
   };
 
   const { mutate, isPending } = useMutation({
-    mutationFn: () =>
-      authApi.updateMe({ first_name: first.trim(), last_name: last.trim() || undefined, position }),
+    mutationFn: async () => {
+      const updated = await authApi.updateMe({ first_name: first.trim(), last_name: last.trim() || undefined, position: isWorkspaceMode ? undefined : position });
+      if (isWorkspaceMode && myMemberId && selectedPositionId) {
+        await workspacesApi.updateMemberProfile(workspaceId!, myMemberId, { position_id: selectedPositionId });
+        qc.invalidateQueries({ queryKey: ["workspace", workspaceId] });
+      }
+      return updated;
+    },
     onSuccess: (updated) => {
       qc.setQueryData<User>(["me"], updated);
       qc.invalidateQueries({ queryKey: ["me"] });
@@ -144,21 +162,38 @@ export function ProfileEditModal({ open, user, onClose, onSaved, onBack }: Props
               {t("profile.position")}
             </label>
             <div className="flex flex-col gap-1.5 mb-4">
-              {POSITIONS.map(pos => (
-                <button
-                  key={pos}
-                  type="button"
-                  onClick={() => setPosition(pos)}
-                  className="w-full text-left px-3 py-2 rounded text-xs font-medium transition-all"
-                  style={{
-                    background: position === pos ? "var(--primary)" : "var(--elevated)",
-                    border: `1.5px solid ${position === pos ? "var(--primary)" : "var(--border)"}`,
-                    color: position === pos ? "#fff" : isDark ? "var(--text)" : "var(--text-sec)",
-                  }}
-                >
-                  {t(POSITION_T_KEYS[pos] as Parameters<typeof t>[0])}
-                </button>
-              ))}
+              {isWorkspaceMode
+                ? wsPositions!.map(pos => (
+                    <button
+                      key={pos.id}
+                      type="button"
+                      onClick={() => setSelectedPositionId(pos.id)}
+                      className="w-full text-left px-3 py-2 rounded text-xs font-medium transition-all"
+                      style={{
+                        background: selectedPositionId === pos.id ? "var(--primary)" : "var(--elevated)",
+                        border: `1.5px solid ${selectedPositionId === pos.id ? "var(--primary)" : "var(--border)"}`,
+                        color: selectedPositionId === pos.id ? "#fff" : isDark ? "var(--text)" : "var(--text-sec)",
+                      }}
+                    >
+                      {locale === "ru" ? pos.name_ru : pos.name_uz}
+                    </button>
+                  ))
+                : POSITIONS.map(pos => (
+                    <button
+                      key={pos}
+                      type="button"
+                      onClick={() => setPosition(pos)}
+                      className="w-full text-left px-3 py-2 rounded text-xs font-medium transition-all"
+                      style={{
+                        background: position === pos ? "var(--primary)" : "var(--elevated)",
+                        border: `1.5px solid ${position === pos ? "var(--primary)" : "var(--border)"}`,
+                        color: position === pos ? "#fff" : isDark ? "var(--text)" : "var(--text-sec)",
+                      }}
+                    >
+                      {t(POSITION_T_KEYS[pos] as Parameters<typeof t>[0])}
+                    </button>
+                  ))
+              }
             </div>
 
             {/* Meeting settings */}
