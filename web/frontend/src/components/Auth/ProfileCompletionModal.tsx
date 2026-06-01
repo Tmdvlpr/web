@@ -43,26 +43,42 @@ export function ProfileCompletionModal({ user }: Props) {
   useEffect(() => {
     if (!token || !isIncomplete) return;
     let active = true;
+    let inflight = false;
+
+    const pollOnce = async () => {
+      if (!active || inflight) return;
+      inflight = true;
+      try {
+        const res = await authApi.pollSession(token);
+        if ("access_token" in res) {
+          active = false;
+          await qc.invalidateQueries({ queryKey: ["me"] });
+        }
+      } catch (e: any) {
+        if (e?.response?.status === 410 || e?.response?.status === 404) {
+          active = false;
+          setExpired(true);
+        }
+      } finally {
+        inflight = false;
+      }
+    };
+
     const poll = async () => {
       while (active) {
         await new Promise((r) => setTimeout(r, 2000));
-        if (!active) break;
-        try {
-          const res = await authApi.pollSession(token);
-          if ("access_token" in res) {
-            await qc.invalidateQueries({ queryKey: ["me"] });
-            return;
-          }
-        } catch (e: any) {
-          if (e?.response?.status === 410 || e?.response?.status === 404) {
-            setExpired(true);
-            return;
-          }
-        }
+        await pollOnce();
       }
     };
+
+    const onVisible = () => { if (document.visibilityState === "visible") pollOnce(); };
+    document.addEventListener("visibilitychange", onVisible);
+
     poll();
-    return () => { active = false; };
+    return () => {
+      active = false;
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, [token, isIncomplete, qc]);
 
   const openTgPopup = () => {

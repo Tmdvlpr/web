@@ -59,30 +59,56 @@ function QrAuth() {
   useEffect(() => {
     if (!token) return;
     let active = true;
+    let inflight = false;
+
+    const handleResult = async (res: any) => {
+      if ("access_token" in res) {
+        active = false;
+        await queryClient.invalidateQueries({ queryKey: ["me"] });
+        sessionStorage.setItem("__corpmeet_replay_splash", "1"); window.dispatchEvent(new CustomEvent("corpmeet:replay-splash"));
+        if (popupRef.current && !popupRef.current.closed) {
+          try { popupRef.current.close(); } catch {}
+        }
+        navigate("/bookings", { replace: true });
+      }
+    };
+
+    const handleError = (e: any) => {
+      if (e?.response?.status === 410 || e?.response?.status === 404) {
+        active = false;
+        setExpired(true);
+      }
+    };
+
+    const pollOnce = async () => {
+      if (!active || inflight) return;
+      inflight = true;
+      try {
+        const res = await authApi.pollSession(token);
+        await handleResult(res);
+      } catch (e: any) {
+        handleError(e);
+      } finally {
+        inflight = false;
+      }
+    };
+
     const poll = async () => {
       while (active) {
         await new Promise(r => setTimeout(r, 2000));
-        if (!active) break;
-        try {
-          const res = await authApi.pollSession(token);
-          if ("access_token" in res) {
-            // Backend sets the httpOnly cookie; invalidate /me so auth state updates
-            await queryClient.invalidateQueries({ queryKey: ["me"] });
-            sessionStorage.setItem("__corpmeet_replay_splash", "1"); window.dispatchEvent(new CustomEvent("corpmeet:replay-splash"));
-            if (popupRef.current && !popupRef.current.closed) {
-              try { popupRef.current.close(); } catch {}
-            }
-            navigate("/bookings", { replace: true });
-            return;
-          }
-        } catch (e: any) {
-          if (e?.response?.status === 410) { setExpired(true); return; }
-          if (e?.response?.status === 404) { setExpired(true); return; }
-        }
+        await pollOnce();
       }
     };
+
+    // Fire immediately when the user returns to this tab after visiting Telegram
+    const onVisible = () => { if (document.visibilityState === "visible") pollOnce(); };
+    document.addEventListener("visibilitychange", onVisible);
+
     poll();
-    return () => { active = false; };
+    return () => {
+      active = false;
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, [token, navigate]);
 
   if (expired) {

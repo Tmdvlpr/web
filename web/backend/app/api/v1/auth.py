@@ -115,8 +115,9 @@ async def consume_session(
     """Check/consume a session token. Returns PASETO token + sets cookie if ready, 202 if pending."""
     from sqlalchemy import select
 
+    # Fast read — no lock needed for the pending check
     result = await db.execute(
-        select(BrowserSession).where(BrowserSession.token == session_token).with_for_update()
+        select(BrowserSession).where(BrowserSession.token == session_token)
     )
     session = result.scalar_one_or_none()
     if not session:
@@ -139,7 +140,12 @@ async def consume_session(
         from fastapi.responses import JSONResponse
         return JSONResponse(status_code=202, content={"status": "pending"})
 
-    if session.used:
+    # Re-fetch with lock only at the moment of mutation to prevent double-issue
+    locked = await db.execute(
+        select(BrowserSession).where(BrowserSession.token == session_token).with_for_update()
+    )
+    session = locked.scalar_one_or_none()
+    if not session or session.used:
         raise HTTPException(status_code=410, detail="Session already consumed")
     session.used = True
     session.used_at = datetime.now(timezone.utc)
