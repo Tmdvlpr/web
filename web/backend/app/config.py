@@ -1,7 +1,8 @@
 from pathlib import Path
 from pydantic_settings import BaseSettings
 
-_ENV_FILE = Path(__file__).parent.parent / ".env"
+# Project root: app/config.py → app/ → backend/ → web/ → root
+_ENV_FILE = Path(__file__).resolve().parents[3] / ".env"
 
 
 class Settings(BaseSettings):
@@ -40,6 +41,7 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = str(_ENV_FILE)
+        extra = "ignore"
 
 
 settings = Settings()
