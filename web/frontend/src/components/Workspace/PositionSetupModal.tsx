@@ -184,19 +184,18 @@ export function PositionSetupModal({ workspaceId, myMemberId, onComplete, onCanc
                   <line x1="21" y1="12" x2="9" y2="12"/>
                 </svg>
               </button>
-              {onCancel && (
-                <button
-                  type="button"
-                  onClick={onCancel}
-                  className="w-7 h-7 flex items-center justify-center rounded transition-all"
-                  style={{ background: "var(--elevated)", border: "1px solid var(--border)", color: "var(--text-muted)" }}
-                  title={t("common.cancel")}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                    <path d="M18 6L6 18M6 6l12 12"/>
-                  </svg>
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={onCancel}
+                className="w-7 h-7 flex items-center justify-center rounded transition-all"
+                style={{ background: "var(--elevated)", border: "1px solid var(--border)", color: "var(--text-muted)", opacity: onCancel ? 1 : 0.3, cursor: onCancel ? "pointer" : "default" }}
+                title={t("common.cancel")}
+                disabled={!onCancel}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+              </button>
             </div>
           </div>
 
