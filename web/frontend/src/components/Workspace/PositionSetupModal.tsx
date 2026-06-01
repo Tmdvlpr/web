@@ -4,6 +4,7 @@ import { roomsApi } from "../../api/rooms";
 import { workspacesApi } from "../../api/workspaces";
 import { useLocale } from "../../contexts/LocaleContext";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useAuth } from "../../hooks/useAuth";
 import type { WorkspacePosition } from "../../types";
 
 interface Draft {
@@ -26,30 +27,37 @@ const STEPS: { key: Step; labelKey: "pos.stepCreate" | "pos.stepSelect" | "pos.s
   { key: "room",   labelKey: "pos.stepRoom" },
 ];
 
-const INPUT_STYLE = {
-  background: "var(--input-bg)",
-  border: "1.5px solid var(--input-border)",
-  color: "var(--text)",
-  outline: "none",
-  transition: "border-color 0.15s ease",
-} as const;
-
-const onFocus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-  e.currentTarget.style.borderColor = "var(--primary)";
-};
-const onBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-  e.currentTarget.style.borderColor = "var(--input-border)";
-};
-
 const OVERLAY_INITIAL = { opacity: 0 } as const;
 const OVERLAY_ANIMATE = { opacity: 1 } as const;
 const MODAL_INITIAL = { opacity: 0, scale: 0.96 } as const;
 const MODAL_ANIMATE = { opacity: 1, scale: 1 } as const;
 const MODAL_TRANSITION = { duration: 0.25, ease: [0.22, 1, 0.36, 1] as const } as const;
 
+function PosInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
+  const [focused, setFocused] = useState(false);
+  return (
+    <input
+      {...props}
+      className="w-full text-sm rounded-md px-3 py-2"
+      style={{
+        background: "var(--input-bg)",
+        borderWidth: "1.5px",
+        borderStyle: "solid",
+        borderColor: focused ? "var(--primary)" : "var(--input-border)",
+        color: "var(--text)",
+        outline: "none",
+        transition: "border-color 0.15s ease",
+      }}
+      onFocus={e => { setFocused(true); props.onFocus?.(e); }}
+      onBlur={e => { setFocused(false); props.onBlur?.(e); }}
+    />
+  );
+}
+
 export function PositionSetupModal({ workspaceId, myMemberId, onComplete, initialStep = "create" }: Props) {
-  const { t, locale } = useLocale();
+  const { t, locale, setLocale } = useLocale();
   const { isDark } = useTheme();
+  const { logout } = useAuth();
 
   const [step, setStep] = useState<Step>(initialStep);
   const [drafts, setDrafts] = useState<Draft[]>([{ ru: "", uz: "" }]);
@@ -62,33 +70,26 @@ export function PositionSetupModal({ workspaceId, myMemberId, onComplete, initia
 
   const filledDrafts = drafts.filter(d => d.ru.trim() && d.uz.trim());
   const canProceedCreate = filledDrafts.length > 0;
-
   const stepIndex = STEPS.findIndex(s => s.key === step);
 
   const updateDraft = (index: number, field: "ru" | "uz", value: string) => {
     setDrafts(prev => prev.map((d, i) => i === index ? { ...d, [field]: value } : d));
   };
-
   const addDraft = () => setDrafts(prev => [...prev, { ru: "", uz: "" }]);
-
-  const removeDraft = (index: number) => {
-    setDrafts(prev => prev.filter((_, i) => i !== index));
-  };
+  const removeDraft = (index: number) => setDrafts(prev => prev.filter((_, i) => i !== index));
 
   const handleCreatePositions = async () => {
     if (!canProceedCreate) return;
-    setSaving(true);
-    setError(null);
+    setSaving(true); setError(null);
     try {
       const created: WorkspacePosition[] = [];
       for (const d of filledDrafts) {
-        const pos = await workspacesApi.createPosition(workspaceId, { name_ru: d.ru.trim(), name_uz: d.uz.trim() });
-        created.push(pos);
+        created.push(await workspacesApi.createPosition(workspaceId, { name_ru: d.ru.trim(), name_uz: d.uz.trim() }));
       }
       setPositions(created);
       setStep("select");
     } catch {
-      setError("Не удалось создать должности. Попробуйте снова.");
+      setError(t("pos.errPositions"));
     } finally {
       setSaving(false);
     }
@@ -96,13 +97,12 @@ export function PositionSetupModal({ workspaceId, myMemberId, onComplete, initia
 
   const handleSelectPosition = async () => {
     if (!selectedPositionId) return;
-    setSaving(true);
-    setError(null);
+    setSaving(true); setError(null);
     try {
       await workspacesApi.updateMemberProfile(workspaceId, myMemberId, { position_id: selectedPositionId });
       setStep("room");
     } catch {
-      setError("Не удалось сохранить должность. Попробуйте снова.");
+      setError(t("pos.errPosition"));
     } finally {
       setSaving(false);
     }
@@ -110,13 +110,12 @@ export function PositionSetupModal({ workspaceId, myMemberId, onComplete, initia
 
   const handleCreateRoom = async () => {
     if (!roomName.trim()) return;
-    setSaving(true);
-    setError(null);
+    setSaving(true); setError(null);
     try {
       await roomsApi.create({ name: roomName.trim(), description: roomDesc.trim() || undefined, workspace_id: workspaceId });
       onComplete();
     } catch {
-      setError("Не удалось создать переговорную. Попробуйте снова.");
+      setError(t("pos.errRoom"));
     } finally {
       setSaving(false);
     }
@@ -143,13 +142,43 @@ export function PositionSetupModal({ workspaceId, myMemberId, onComplete, initia
       >
         <div className="px-7 py-6">
           {/* Header */}
-          <div className="mb-5">
-            <h2 className="text-xl font-bold mb-1" style={{ color: "var(--text)" }}>
-              {t("pos.setupTitle")}
-            </h2>
-            <p className="text-sm" style={{ color: "var(--text-sec)" }}>
-              {t("pos.setupSubtitle")}
-            </p>
+          <div className="flex items-start justify-between mb-5">
+            <div>
+              <h2 className="text-xl font-bold mb-1" style={{ color: "var(--text)" }}>
+                {t("pos.setupTitle")}
+              </h2>
+              <p className="text-sm" style={{ color: "var(--text-sec)" }}>
+                {t("pos.setupSubtitle")}
+              </p>
+            </div>
+            {/* Language + logout controls */}
+            <div className="flex items-center gap-2 shrink-0 ml-4">
+              <button
+                type="button"
+                onClick={() => setLocale(locale === "ru" ? "uz" : "ru")}
+                className="px-2.5 py-1 rounded text-xs font-bold transition-all"
+                style={{
+                  background: "var(--elevated)",
+                  border: "1px solid var(--border)",
+                  color: "var(--text-sec)",
+                }}
+              >
+                {locale === "ru" ? "УЗ" : "РУ"}
+              </button>
+              <button
+                type="button"
+                onClick={logout}
+                className="w-7 h-7 flex items-center justify-center rounded transition-all"
+                style={{ background: "var(--elevated)", border: "1px solid var(--border)", color: "var(--text-muted)" }}
+                title={t("nav.logout")}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                  <polyline points="16 17 21 12 16 7"/>
+                  <line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+              </button>
+            </div>
           </div>
 
           {/* Step indicator */}
@@ -188,25 +217,17 @@ export function PositionSetupModal({ workspaceId, myMemberId, onComplete, initia
                   {drafts.map((draft, idx) => (
                     <div key={idx} className="flex items-start gap-2">
                       <div className="flex-1 flex flex-col gap-2">
-                        <input
+                        <PosInput
                           type="text"
                           value={draft.ru}
                           onChange={e => updateDraft(idx, "ru", e.target.value)}
                           placeholder={t("pos.nameRuLabel")}
-                          className="w-full text-sm rounded-md px-3 py-2"
-                          style={INPUT_STYLE}
-                          onFocus={onFocus}
-                          onBlur={onBlur}
                         />
-                        <input
+                        <PosInput
                           type="text"
                           value={draft.uz}
                           onChange={e => updateDraft(idx, "uz", e.target.value)}
                           placeholder={t("pos.nameUzLabel")}
-                          className="w-full text-sm rounded-md px-3 py-2"
-                          style={INPUT_STYLE}
-                          onFocus={onFocus}
-                          onBlur={onBlur}
                         />
                       </div>
                       {drafts.length > 1 && (
@@ -236,7 +257,7 @@ export function PositionSetupModal({ workspaceId, myMemberId, onComplete, initia
                   className="w-full py-2.5 rounded-md text-sm font-bold text-white disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{ background: "linear-gradient(135deg,#1565a8,#114e85)", boxShadow: "0 4px 16px rgba(21,101,168,0.25)" }}
                 >
-                  {saving ? "Создаём…" : "Далее →"}
+                  {saving ? t("pos.creating") : t("pos.nextStep")}
                 </button>
               </motion.div>
             )}
@@ -271,7 +292,7 @@ export function PositionSetupModal({ workspaceId, myMemberId, onComplete, initia
                   className="w-full py-2.5 rounded-md text-sm font-bold text-white disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{ background: "linear-gradient(135deg,#1565a8,#114e85)", boxShadow: "0 4px 16px rgba(21,101,168,0.25)" }}
                 >
-                  {saving ? "Сохраняем…" : "Далее →"}
+                  {saving ? t("pos.saving") : t("pos.nextStep")}
                 </button>
               </motion.div>
             )}
@@ -280,26 +301,18 @@ export function PositionSetupModal({ workspaceId, myMemberId, onComplete, initia
             {step === "room" && (
               <motion.div key="room" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} transition={{ duration: 0.2 }}>
                 <div className="flex flex-col gap-3 mb-5">
-                  <input
+                  <PosInput
                     type="text"
                     value={roomName}
                     onChange={e => setRoomName(e.target.value)}
                     placeholder={t("ws.rooms.namePh")}
                     autoFocus
-                    className="w-full text-sm rounded-md px-3 py-2"
-                    style={INPUT_STYLE}
-                    onFocus={onFocus}
-                    onBlur={onBlur}
                   />
-                  <input
+                  <PosInput
                     type="text"
                     value={roomDesc}
                     onChange={e => setRoomDesc(e.target.value)}
                     placeholder={t("ws.rooms.descPh")}
-                    className="w-full text-sm rounded-md px-3 py-2"
-                    style={INPUT_STYLE}
-                    onFocus={onFocus}
-                    onBlur={onBlur}
                   />
                 </div>
 
@@ -312,7 +325,7 @@ export function PositionSetupModal({ workspaceId, myMemberId, onComplete, initia
                   className="w-full py-2.5 rounded-md text-sm font-bold text-white disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{ background: "linear-gradient(135deg,#1565a8,#114e85)", boxShadow: "0 4px 16px rgba(21,101,168,0.25)" }}
                 >
-                  {saving ? "Создаём…" : t("pos.createRoom")}
+                  {saving ? t("pos.creating") : t("pos.createRoom")}
                 </button>
               </motion.div>
             )}
