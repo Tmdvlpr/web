@@ -96,10 +96,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # ── 1. Миграции БД ────────────────────────────────────────────────────────
     async with engine.begin() as conn:
         await conn.execute(text(f'CREATE SCHEMA IF NOT EXISTS "{settings.DB_SCHEMA}"'))
-<<<<<<< HEAD
-        await conn.execute(text("CREATE SCHEMA IF NOT EXISTS public"))
-=======
->>>>>>> 42adba8 (refactor(db): move meeting tables from video schema to public)
         await conn.run_sync(Base.metadata.create_all)
         # Safe migrations — add new columns and tables if missing
         migrations = [
