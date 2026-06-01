@@ -25,6 +25,7 @@ from app.dependencies import get_current_user
 from app.models.booking import Booking
 from app.models.meeting import MeetingChatFile, MeetingChatMessage, MeetingInvitation, MeetingParticipantLog, MeetingSession
 from app.models.user import Role, User
+from app.models.workspace import WorkspaceMember, WorkspaceMemberRole, WorkspaceMemberStatus
 from app.schemas.meeting import (
     AdmitGuestBody, ChatFileResponse, ChatMessageCreate, ChatMessageResponse,
     GuestJoinInfo, GuestRequestBody, InviteLinkResponse, InviteStatusResponse,
@@ -119,20 +120,47 @@ async def _get_active_booking(booking_id: int, db: AsyncSession) -> Booking:
     return b
 
 
+def _is_invited_guest(booking: Booking, user: User) -> bool:
+    """Return True if user appears in the booking's guest list."""
+    guests_lower: list[str] = []
+    for g in (booking.guests or []):
+        name = str(g.get("name", "")) if isinstance(g, dict) else str(g)
+        if name:
+            guests_lower.append(name.lower())
+    uname = (user.username or "").lower()
+    if uname and (uname in guests_lower or f"@{uname}" in guests_lower):
+        return True
+    full_name = f"{user.first_name or ''} {user.last_name or ''}".strip().lower()
+    return bool(full_name and full_name in guests_lower)
+
+
+async def _is_workspace_owner(workspace_id: int | None, user_id: int, db: AsyncSession) -> bool:
+    """Return True if user is an active owner of the given workspace."""
+    if not workspace_id:
+        return False
+    res = await db.execute(
+        select(WorkspaceMember).where(
+            WorkspaceMember.workspace_id == workspace_id,
+            WorkspaceMember.user_id == user_id,
+            WorkspaceMember.role == WorkspaceMemberRole.owner,
+            WorkspaceMember.status == WorkspaceMemberStatus.active,
+        )
+    )
+    return res.scalar_one_or_none() is not None
+
+
 async def _check_meeting_access(booking: Booking, user: User, db: AsyncSession) -> None:
-    """Allow organizer, guest by name/username, or actual meeting participant."""
+    """Allow organizer, superadmin, workspace owner, invited guest, or past participant."""
     if booking.user_id == user.id:
         return
     # Pre-authorized via /join endpoint (avoids race with LiveKit webhook)
     if user.id in _join_authorized.get(booking.id, set()):
         return
-    # Check guest list
-    guests = [str(g).lower() for g in (booking.guests or [])]
-    uname = (user.username or "").lower()
-    if uname and (uname in guests or f"@{uname}" in guests):
+    if user.role == Role.superadmin:
         return
-    full_name = f"{user.first_name or ''} {user.last_name or ''}".strip().lower()
-    if full_name and full_name in guests:
+    if await _is_workspace_owner(booking.workspace_id, user.id, db):
+        return
+    if _is_invited_guest(booking, user):
         return
     # Check meeting_participant_logs
     from app.models.meeting import MeetingParticipantLog
@@ -191,9 +219,18 @@ async def join_meeting(
     if now > end + timedelta(hours=2):
         raise HTTPException(403, "Meeting ended more than 2 hours ago")
 
-    # Guests may not enter before the organizer (admins/superadmins bypass this check)
-    is_privileged = current_user.role == Role.superadmin
-    if booking.user_id != current_user.id and not is_privileged:
+    # ── Access control ────────────────────────────────────────────────────────
+    is_organizer = booking.user_id == current_user.id
+    is_superadmin = current_user.role == Role.superadmin
+    is_ws_owner = await _is_workspace_owner(booking.workspace_id, current_user.id, db)
+    is_privileged = is_superadmin or is_ws_owner
+
+    if not is_organizer and not is_privileged and not _is_invited_guest(booking, current_user):
+        raise HTTPException(403, "Not invited to this meeting")
+    # ─────────────────────────────────────────────────────────────────────────
+
+    # Guests may not enter before the organizer (privileged users bypass this check)
+    if not is_organizer and not is_privileged:
         organizer_identity = f"user-{booking.user_id}"
         organizer_present = False
 
@@ -254,7 +291,7 @@ async def join_meeting(
         user_identity=f"user-{current_user.id}",
         start_time=start,
         end_time=end,
-        is_organizer=(booking.user_id == current_user.id or is_privileged),
+        is_organizer=(is_organizer or is_privileged),
         e2ee_key=derive_e2ee_key(booking.video_room_name),
     )
 
