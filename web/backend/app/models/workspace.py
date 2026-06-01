@@ -34,7 +34,7 @@ class Workspace(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(100))
     slug: Mapped[str] = mapped_column(String(60), unique=True, index=True)
-    invite_code: Mapped[str] = mapped_column(String(20), unique=True, index=True)
+    invite_code: Mapped[str] = mapped_column(String(32), unique=True, index=True)
     timezone: Mapped[str] = mapped_column(String(50), default="UTC", server_default="UTC")
     telegram_chat_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     created_by_user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)

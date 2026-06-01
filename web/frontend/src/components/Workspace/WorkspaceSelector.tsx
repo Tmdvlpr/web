@@ -295,9 +295,8 @@ export function WorkspaceSelector({ onSettingsOpen }: WorkspaceSelectorProps) {
                     Отмена
                   </button>
                   <button onClick={handleCreate} disabled={busy}
-                    className="flex-1 py-1.5 text-xs font-bold text-white disabled:opacity-50"
+                    className="flex-1 py-1.5 rounded text-xs font-bold text-white disabled:opacity-50"
                     style={{
-                      borderRadius: 999,
                       background: "linear-gradient(135deg, #2563eb, #6366f1)",
                       border: "none",
                       transition: "opacity 0.15s ease, transform 0.15s ease",
