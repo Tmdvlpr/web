@@ -1,22 +1,56 @@
 services:
+  db:
+    image: postgres:16-alpine
+    container_name: corpmeet-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?required}
+      POSTGRES_USER: ${POSTGRES_USER:?required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?required}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C.UTF-8"
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - corpmeet
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 512M
+
   backend:
     build:
-      context: ./web/backend
+      context: ./backend
       dockerfile: Dockerfile
-    image: corpmeet-backend:dev
-    container_name: corpmeet-backend-dev
+    image: corpmeet-backend:latest
+    container_name: corpmeet-backend
     restart: unless-stopped
     ports:
-      - "127.0.0.1:8051:8001"
+      - "127.0.0.1:8050:8001"
     env_file:
-      - web/backend/app/.env
-    volumes:
-      - ./data/chat-files:/app/data/chat-files
-      - ./data/recordings:/app/data/recordings:ro
+      - backend/app/.env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    depends_on:
+      db:
+        condition: service_healthy
     networks:
-      - corpmeet-dev
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+      - corpmeet
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8001/docs"]
       interval: 30s
@@ -38,20 +72,20 @@ services:
 
   frontend:
     build:
-      context: ./web/frontend
+      context: ./frontend
       dockerfile: Dockerfile
       args:
         VITE_API_URL: ${VITE_API_URL:?required}
-    image: corpmeet-frontend:dev
-    container_name: corpmeet-frontend-dev
+    image: corpmeet-frontend:latest
+    container_name: corpmeet-frontend
     restart: unless-stopped
     ports:
-      - "127.0.0.1:3051:80"
+      - "127.0.0.1:3050:80"
     depends_on:
       backend:
         condition: service_healthy
     networks:
-      - corpmeet-dev
+      - corpmeet
     healthcheck:
       test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1/ || exit 1"]
       interval: 30s
@@ -71,9 +105,10 @@ services:
           cpus: "1"
           memory: 512M
 
+
   livekit:
     image: livekit/livekit-server:latest
-    container_name: corpmeet-livekit-dev
+    container_name: corpmeet-livekit
     restart: unless-stopped
     command: --config /etc/livekit.yaml
     volumes:
@@ -85,7 +120,7 @@ services:
     environment:
       - LIVEKIT_KEYS=${LIVEKIT_API_KEY}:${LIVEKIT_API_SECRET}
     networks:
-      - corpmeet-dev
+      - corpmeet
     logging:
       driver: "json-file"
       options:
@@ -99,7 +134,7 @@ services:
 
   livekit-egress:
     image: livekit/egress:latest
-    container_name: corpmeet-livekit-egress-dev
+    container_name: corpmeet-livekit-egress
     restart: unless-stopped
     environment:
       - EGRESS_CONFIG_FILE=/etc/egress.yaml
@@ -109,7 +144,7 @@ services:
       - ./infra/livekit/egress.yaml:/etc/egress.yaml:ro
       - ./data/recordings:/out
     networks:
-      - corpmeet-dev
+      - corpmeet
     depends_on:
       - livekit
     cap_add:
@@ -120,9 +155,17 @@ services:
         max-size: "10m"
         max-file: "3"
 
+volumes:
+  pgdata:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${PGDATA_PATH:-./pgdata}
+
 networks:
-  corpmeet-dev:
+  corpmeet:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.30.0.0/16
+        - subnet: 172.28.0.0/16
