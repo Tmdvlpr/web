@@ -2,7 +2,7 @@ services:
   backend:
     depends_on: {}
     environment:
-      DB_SCHEMA: "video"
+      DB_SCHEMA: "public"
       LIVEKIT_PUBLIC_URL: "wss://corpmeet.uz/lk"
       FRONTEND_URL: "https://corpmeet.uz"
 
