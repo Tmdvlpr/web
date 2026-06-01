@@ -247,27 +247,11 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
                 END IF;
             END $$
             """,
-<<<<<<< HEAD
             # ── Meeting tables (public schema) ────────────────────────────
-=======
-<<<<<<< HEAD
-            # ── Video schema & tables ─────────────────────────────────────
-            "CREATE SCHEMA IF NOT EXISTS public",
-=======
-            # ── Meeting tables (public schema) ────────────────────────────
->>>>>>> 42adba8 (refactor(db): move meeting tables from video schema to public)
->>>>>>> 6457243
             # Bookings video columns
             "ALTER TABLE bookings ADD COLUMN IF NOT EXISTS video_enabled BOOLEAN NOT NULL DEFAULT false",
             "ALTER TABLE bookings ADD COLUMN IF NOT EXISTS video_room_name VARCHAR(128)",
             "CREATE UNIQUE INDEX IF NOT EXISTS ix_bookings_video_room_name ON bookings(video_room_name) WHERE video_room_name IS NOT NULL",
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
-            # video.meeting_sessions
-            """CREATE TABLE IF NOT EXISTS public.meeting_sessions (
-=======
->>>>>>> 6457243
             # Migrate existing installs: move tables from video schema to public
             "ALTER TABLE video.meeting_invitations SET SCHEMA public",
             "ALTER TABLE video.meeting_sessions SET SCHEMA public",
@@ -276,10 +260,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             "ALTER TABLE video.meeting_chat_messages SET SCHEMA public",
             # meeting_sessions
             """CREATE TABLE IF NOT EXISTS meeting_sessions (
-<<<<<<< HEAD
-=======
->>>>>>> 42adba8 (refactor(db): move meeting tables from video schema to public)
->>>>>>> 6457243
   id SERIAL PRIMARY KEY,
   booking_id INTEGER NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
   room_name VARCHAR(128) NOT NULL,
@@ -289,7 +269,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
   recording_duration_seconds INTEGER,
   egress_id VARCHAR(128)
 )""",
-<<<<<<< HEAD
             "CREATE INDEX IF NOT EXISTS ix_meeting_sessions_booking ON meeting_sessions(booking_id)",
             "CREATE INDEX IF NOT EXISTS ix_meeting_sessions_room ON meeting_sessions(room_name)",
             # meeting_participant_logs
@@ -297,46 +276,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
   id SERIAL PRIMARY KEY,
   session_id INTEGER NOT NULL REFERENCES meeting_sessions(id) ON DELETE CASCADE,
   user_id INTEGER REFERENCES users(id),
-=======
-<<<<<<< HEAD
-            "CREATE INDEX IF NOT EXISTS ix_meeting_sessions_booking ON public.meeting_sessions(booking_id)",
-            "CREATE INDEX IF NOT EXISTS ix_meeting_sessions_room ON public.meeting_sessions(room_name)",
-            # video.meeting_participant_logs
-            """CREATE TABLE IF NOT EXISTS public.meeting_participant_logs (
-  id SERIAL PRIMARY KEY,
-  session_id INTEGER NOT NULL REFERENCES public.meeting_sessions(id) ON DELETE CASCADE,
-  user_id INTEGER REFERENCES public.users(id),
-=======
-            "CREATE INDEX IF NOT EXISTS ix_meeting_sessions_booking ON meeting_sessions(booking_id)",
-            "CREATE INDEX IF NOT EXISTS ix_meeting_sessions_room ON meeting_sessions(room_name)",
-            # meeting_participant_logs
-            """CREATE TABLE IF NOT EXISTS meeting_participant_logs (
-  id SERIAL PRIMARY KEY,
-  session_id INTEGER NOT NULL REFERENCES meeting_sessions(id) ON DELETE CASCADE,
-  user_id INTEGER REFERENCES users(id),
->>>>>>> 42adba8 (refactor(db): move meeting tables from video schema to public)
->>>>>>> 6457243
   participant_identity VARCHAR(128) NOT NULL,
   joined_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   left_at TIMESTAMPTZ
 )""",
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
-            "CREATE INDEX IF NOT EXISTS ix_mpl_session ON public.meeting_participant_logs(session_id)",
-            "CREATE INDEX IF NOT EXISTS ix_mpl_user ON public.meeting_participant_logs(user_id)",
-            # video.meeting_chat_files (before messages — FK dependency)
-            """CREATE TABLE IF NOT EXISTS public.meeting_chat_files (
-=======
->>>>>>> 6457243
             "CREATE INDEX IF NOT EXISTS ix_mpl_session ON meeting_participant_logs(session_id)",
             "CREATE INDEX IF NOT EXISTS ix_mpl_user ON meeting_participant_logs(user_id)",
             # meeting_chat_files (before messages — FK dependency)
             """CREATE TABLE IF NOT EXISTS meeting_chat_files (
-<<<<<<< HEAD
-=======
->>>>>>> 42adba8 (refactor(db): move meeting tables from video schema to public)
->>>>>>> 6457243
   id SERIAL PRIMARY KEY,
   booking_id INTEGER NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
   user_id INTEGER NOT NULL REFERENCES users(id),
@@ -347,55 +294,22 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 )""",
             # migrate existing installs: swap storage_path → content
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
-            "ALTER TABLE public.meeting_chat_files ADD COLUMN IF NOT EXISTS content BYTEA NOT NULL DEFAULT ''",
-            "ALTER TABLE public.meeting_chat_files DROP COLUMN IF EXISTS storage_path",
-            "CREATE INDEX IF NOT EXISTS ix_mcf_booking ON public.meeting_chat_files(booking_id)",
-            # video.meeting_chat_messages
-            """CREATE TABLE IF NOT EXISTS public.meeting_chat_messages (
-=======
->>>>>>> 6457243
             "ALTER TABLE meeting_chat_files ADD COLUMN IF NOT EXISTS content BYTEA NOT NULL DEFAULT ''",
             "ALTER TABLE meeting_chat_files DROP COLUMN IF EXISTS storage_path",
             "CREATE INDEX IF NOT EXISTS ix_mcf_booking ON meeting_chat_files(booking_id)",
             # meeting_chat_messages
             """CREATE TABLE IF NOT EXISTS meeting_chat_messages (
-<<<<<<< HEAD
-=======
->>>>>>> 42adba8 (refactor(db): move meeting tables from video schema to public)
->>>>>>> 6457243
   id SERIAL PRIMARY KEY,
   booking_id INTEGER NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
   user_id INTEGER NOT NULL REFERENCES users(id),
   body TEXT NOT NULL DEFAULT '',
-<<<<<<< HEAD
   file_id INTEGER REFERENCES meeting_chat_files(id),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 )""",
-=======
-<<<<<<< HEAD
-  file_id INTEGER REFERENCES public.meeting_chat_files(id),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-)""",
-            "CREATE INDEX IF NOT EXISTS ix_mcm_booking ON public.meeting_chat_messages(booking_id)",
-            "CREATE INDEX IF NOT EXISTS ix_mcm_created ON public.meeting_chat_messages(created_at)",
-            # video.meeting_invitations — external guest invite links
-            """CREATE TABLE IF NOT EXISTS public.meeting_invitations (
-=======
-  file_id INTEGER REFERENCES meeting_chat_files(id),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-)""",
->>>>>>> 6457243
             "CREATE INDEX IF NOT EXISTS ix_mcm_booking ON meeting_chat_messages(booking_id)",
             "CREATE INDEX IF NOT EXISTS ix_mcm_created ON meeting_chat_messages(created_at)",
             # meeting_invitations — external guest invite links
             """CREATE TABLE IF NOT EXISTS meeting_invitations (
-<<<<<<< HEAD
-=======
->>>>>>> 42adba8 (refactor(db): move meeting tables from video schema to public)
->>>>>>> 6457243
   id SERIAL PRIMARY KEY,
   booking_id INTEGER NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
   token VARCHAR(64) NOT NULL UNIQUE,
@@ -406,18 +320,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
   expires_at TIMESTAMPTZ NOT NULL,
   requested_at TIMESTAMPTZ
 )""",
-<<<<<<< HEAD
             "CREATE INDEX IF NOT EXISTS ix_mi_booking ON meeting_invitations(booking_id)",
             "CREATE INDEX IF NOT EXISTS ix_mi_token ON meeting_invitations(token)",
-=======
-<<<<<<< HEAD
-            "CREATE INDEX IF NOT EXISTS ix_mi_booking ON public.meeting_invitations(booking_id)",
-            "CREATE INDEX IF NOT EXISTS ix_mi_token ON public.meeting_invitations(token)",
-=======
-            "CREATE INDEX IF NOT EXISTS ix_mi_booking ON meeting_invitations(booking_id)",
-            "CREATE INDEX IF NOT EXISTS ix_mi_token ON meeting_invitations(token)",
->>>>>>> 42adba8 (refactor(db): move meeting tables from video schema to public)
->>>>>>> 6457243
             # room invite codes
             "ALTER TABLE rooms ADD COLUMN IF NOT EXISTS invite_code VARCHAR(20) UNIQUE",
             "CREATE INDEX IF NOT EXISTS ix_rooms_invite_code ON rooms(invite_code) WHERE invite_code IS NOT NULL",
