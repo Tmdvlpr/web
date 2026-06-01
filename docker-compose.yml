@@ -114,9 +114,9 @@ services:
     volumes:
       - ./infra/livekit/livekit.yaml:/etc/livekit.yaml:ro
     ports:
-      - "7882:7880"
-      - "7883:7881"
-      - "50501-51000:50501-51000/udp"
+      - "7885:7880"
+      - "7886:7881"
+      - "50001-50500:50001-50500/udp"
     environment:
       - LIVEKIT_KEYS=${LIVEKIT_API_KEY}:${LIVEKIT_API_SECRET}
     networks:
