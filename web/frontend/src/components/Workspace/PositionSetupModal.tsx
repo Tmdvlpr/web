@@ -145,8 +145,8 @@ export function PositionSetupModal({ workspaceId, myMemberId, onComplete }: Prop
                           placeholder={t("pos.nameRuLabel")}
                           className="w-full text-sm rounded-md px-3 py-2"
                           style={{ background: "var(--input-bg)", border: "1.5px solid var(--input-border)", color: "var(--text)", outline: "none" }}
-                          onFocus={e => { e.currentTarget.style.border = "1.5px solid var(--primary)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(21,101,168,0.12)"; }}
-                          onBlur={e => { e.currentTarget.style.border = "1.5px solid var(--input-border)"; e.currentTarget.style.boxShadow = "none"; }}
+                          onFocus={e => { e.currentTarget.style.borderColor = "var(--primary)"; }}
+                          onBlur={e => { e.currentTarget.style.borderColor = "var(--input-border)"; }}
                         />
                         <input
                           type="text"
@@ -155,8 +155,8 @@ export function PositionSetupModal({ workspaceId, myMemberId, onComplete }: Prop
                           placeholder={t("pos.nameUzLabel")}
                           className="w-full text-sm rounded-md px-3 py-2"
                           style={{ background: "var(--input-bg)", border: "1.5px solid var(--input-border)", color: "var(--text)", outline: "none" }}
-                          onFocus={e => { e.currentTarget.style.border = "1.5px solid var(--primary)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(21,101,168,0.12)"; }}
-                          onBlur={e => { e.currentTarget.style.border = "1.5px solid var(--input-border)"; e.currentTarget.style.boxShadow = "none"; }}
+                          onFocus={e => { e.currentTarget.style.borderColor = "var(--primary)"; }}
+                          onBlur={e => { e.currentTarget.style.borderColor = "var(--input-border)"; }}
                         />
                       </div>
                       {drafts.length > 1 && (
