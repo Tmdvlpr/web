@@ -143,16 +143,16 @@ export function PositionSetupModal({ workspaceId, myMemberId, onComplete }: Prop
                           value={draft.ru}
                           onChange={e => updateDraft(idx, "ru", e.target.value)}
                           placeholder={t("pos.nameRuLabel")}
-                          className="w-full text-sm rounded px-3 py-2 outline-none"
-                          style={{ background: "var(--input-bg)", border: "1px solid var(--input-border)", color: "var(--text)" }}
+                          className="w-full text-sm rounded-md px-3 py-2 outline-none"
+                          style={{ background: "var(--input-bg)", border: "1.5px solid var(--input-border)", color: "var(--text)" }}
                         />
                         <input
                           type="text"
                           value={draft.uz}
                           onChange={e => updateDraft(idx, "uz", e.target.value)}
                           placeholder={t("pos.nameUzLabel")}
-                          className="w-full text-sm rounded px-3 py-2 outline-none"
-                          style={{ background: "var(--input-bg)", border: "1px solid var(--input-border)", color: "var(--text)" }}
+                          className="w-full text-sm rounded-md px-3 py-2 outline-none"
+                          style={{ background: "var(--input-bg)", border: "1.5px solid var(--input-border)", color: "var(--text)" }}
                         />
                       </div>
                       {drafts.length > 1 && (
