@@ -589,6 +589,7 @@ function Dashboard() {
           workspaceId={positionSetupForWs.workspaceId}
           myMemberId={positionSetupForWs.myMemberId}
           onComplete={() => { setPositionSetupForWs(null); refetchWsDetail(); }}
+          onCancel={() => setPositionSetupForWs(null)}
         />
       )}
 
