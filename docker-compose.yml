@@ -35,7 +35,7 @@ services:
 
   backend:
     build:
-      context: ./backend
+      context: ./web/backend
       dockerfile: Dockerfile
     image: corpmeet-backend:latest
     container_name: corpmeet-backend
@@ -72,7 +72,7 @@ services:
 
   frontend:
     build:
-      context: ./frontend
+      context: ./web/frontend
       dockerfile: Dockerfile
       args:
         VITE_API_URL: ${VITE_API_URL:?required}
