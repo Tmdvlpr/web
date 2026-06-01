@@ -96,7 +96,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # ── 1. Миграции БД ────────────────────────────────────────────────────────
     async with engine.begin() as conn:
         await conn.execute(text(f'CREATE SCHEMA IF NOT EXISTS "{settings.DB_SCHEMA}"'))
-        await conn.execute(text("CREATE SCHEMA IF NOT EXISTS video"))
+        await conn.execute(text("CREATE SCHEMA IF NOT EXISTS public"))
         await conn.run_sync(Base.metadata.create_all)
         # Safe migrations — add new columns and tables if missing
         migrations = [
@@ -249,13 +249,13 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             END $$
             """,
             # ── Video schema & tables ─────────────────────────────────────
-            "CREATE SCHEMA IF NOT EXISTS video",
+            "CREATE SCHEMA IF NOT EXISTS public",
             # Bookings video columns
             "ALTER TABLE bookings ADD COLUMN IF NOT EXISTS video_enabled BOOLEAN NOT NULL DEFAULT false",
             "ALTER TABLE bookings ADD COLUMN IF NOT EXISTS video_room_name VARCHAR(128)",
             "CREATE UNIQUE INDEX IF NOT EXISTS ix_bookings_video_room_name ON bookings(video_room_name) WHERE video_room_name IS NOT NULL",
             # video.meeting_sessions
-            """CREATE TABLE IF NOT EXISTS video.meeting_sessions (
+            """CREATE TABLE IF NOT EXISTS public.meeting_sessions (
   id SERIAL PRIMARY KEY,
   booking_id INTEGER NOT NULL REFERENCES public.bookings(id) ON DELETE CASCADE,
   room_name VARCHAR(128) NOT NULL,
@@ -265,21 +265,21 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
   recording_duration_seconds INTEGER,
   egress_id VARCHAR(128)
 )""",
-            "CREATE INDEX IF NOT EXISTS ix_meeting_sessions_booking ON video.meeting_sessions(booking_id)",
-            "CREATE INDEX IF NOT EXISTS ix_meeting_sessions_room ON video.meeting_sessions(room_name)",
+            "CREATE INDEX IF NOT EXISTS ix_meeting_sessions_booking ON public.meeting_sessions(booking_id)",
+            "CREATE INDEX IF NOT EXISTS ix_meeting_sessions_room ON public.meeting_sessions(room_name)",
             # video.meeting_participant_logs
-            """CREATE TABLE IF NOT EXISTS video.meeting_participant_logs (
+            """CREATE TABLE IF NOT EXISTS public.meeting_participant_logs (
   id SERIAL PRIMARY KEY,
-  session_id INTEGER NOT NULL REFERENCES video.meeting_sessions(id) ON DELETE CASCADE,
+  session_id INTEGER NOT NULL REFERENCES public.meeting_sessions(id) ON DELETE CASCADE,
   user_id INTEGER REFERENCES public.users(id),
   participant_identity VARCHAR(128) NOT NULL,
   joined_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   left_at TIMESTAMPTZ
 )""",
-            "CREATE INDEX IF NOT EXISTS ix_mpl_session ON video.meeting_participant_logs(session_id)",
-            "CREATE INDEX IF NOT EXISTS ix_mpl_user ON video.meeting_participant_logs(user_id)",
+            "CREATE INDEX IF NOT EXISTS ix_mpl_session ON public.meeting_participant_logs(session_id)",
+            "CREATE INDEX IF NOT EXISTS ix_mpl_user ON public.meeting_participant_logs(user_id)",
             # video.meeting_chat_files (before messages — FK dependency)
-            """CREATE TABLE IF NOT EXISTS video.meeting_chat_files (
+            """CREATE TABLE IF NOT EXISTS public.meeting_chat_files (
   id SERIAL PRIMARY KEY,
   booking_id INTEGER NOT NULL REFERENCES public.bookings(id) ON DELETE CASCADE,
   user_id INTEGER NOT NULL REFERENCES public.users(id),
@@ -290,22 +290,22 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 )""",
             # migrate existing installs: swap storage_path → content
-            "ALTER TABLE video.meeting_chat_files ADD COLUMN IF NOT EXISTS content BYTEA NOT NULL DEFAULT ''",
-            "ALTER TABLE video.meeting_chat_files DROP COLUMN IF EXISTS storage_path",
-            "CREATE INDEX IF NOT EXISTS ix_mcf_booking ON video.meeting_chat_files(booking_id)",
+            "ALTER TABLE public.meeting_chat_files ADD COLUMN IF NOT EXISTS content BYTEA NOT NULL DEFAULT ''",
+            "ALTER TABLE public.meeting_chat_files DROP COLUMN IF EXISTS storage_path",
+            "CREATE INDEX IF NOT EXISTS ix_mcf_booking ON public.meeting_chat_files(booking_id)",
             # video.meeting_chat_messages
-            """CREATE TABLE IF NOT EXISTS video.meeting_chat_messages (
+            """CREATE TABLE IF NOT EXISTS public.meeting_chat_messages (
   id SERIAL PRIMARY KEY,
   booking_id INTEGER NOT NULL REFERENCES public.bookings(id) ON DELETE CASCADE,
   user_id INTEGER NOT NULL REFERENCES public.users(id),
   body TEXT NOT NULL DEFAULT '',
-  file_id INTEGER REFERENCES video.meeting_chat_files(id),
+  file_id INTEGER REFERENCES public.meeting_chat_files(id),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 )""",
-            "CREATE INDEX IF NOT EXISTS ix_mcm_booking ON video.meeting_chat_messages(booking_id)",
-            "CREATE INDEX IF NOT EXISTS ix_mcm_created ON video.meeting_chat_messages(created_at)",
+            "CREATE INDEX IF NOT EXISTS ix_mcm_booking ON public.meeting_chat_messages(booking_id)",
+            "CREATE INDEX IF NOT EXISTS ix_mcm_created ON public.meeting_chat_messages(created_at)",
             # video.meeting_invitations — external guest invite links
-            """CREATE TABLE IF NOT EXISTS video.meeting_invitations (
+            """CREATE TABLE IF NOT EXISTS public.meeting_invitations (
   id SERIAL PRIMARY KEY,
   booking_id INTEGER NOT NULL REFERENCES public.bookings(id) ON DELETE CASCADE,
   token VARCHAR(64) NOT NULL UNIQUE,
@@ -316,8 +316,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
   expires_at TIMESTAMPTZ NOT NULL,
   requested_at TIMESTAMPTZ
 )""",
-            "CREATE INDEX IF NOT EXISTS ix_mi_booking ON video.meeting_invitations(booking_id)",
-            "CREATE INDEX IF NOT EXISTS ix_mi_token ON video.meeting_invitations(token)",
+            "CREATE INDEX IF NOT EXISTS ix_mi_booking ON public.meeting_invitations(booking_id)",
+            "CREATE INDEX IF NOT EXISTS ix_mi_token ON public.meeting_invitations(token)",
             # room invite codes
             "ALTER TABLE rooms ADD COLUMN IF NOT EXISTS invite_code VARCHAR(20) UNIQUE",
             "CREATE INDEX IF NOT EXISTS ix_rooms_invite_code ON rooms(invite_code) WHERE invite_code IS NOT NULL",
