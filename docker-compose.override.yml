@@ -3,12 +3,12 @@ services:
     depends_on: {}
     environment:
       DB_SCHEMA: "video"
-      LIVEKIT_PUBLIC_URL: "wss://dev.corpmeet.uz/lk"
-      FRONTEND_URL: "https://dev.corpmeet.uz"
+      LIVEKIT_PUBLIC_URL: "wss://corpmeet.uz/lk"
+      FRONTEND_URL: "https://corpmeet.uz"
 
   livekit:
     volumes:
-      - ./infra/livekit/livekit-dev.yaml:/etc/livekit.yaml:ro
+      - ./infra/livekit/livekit.yaml:/etc/livekit.yaml:ro
     environment:
       LIVEKIT_KEYS: "${LIVEKIT_API_KEY}: ${LIVEKIT_API_SECRET}"
 
@@ -20,7 +20,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: corpmeet-redis-dev
+    container_name: corpmeet-redis
     restart: unless-stopped
     networks:
-      - corpmeet-dev
+      - corpmeet
