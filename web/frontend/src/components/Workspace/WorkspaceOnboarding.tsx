@@ -115,8 +115,7 @@ export function WorkspaceOnboarding({ onCreated }: WorkspaceOnboardingProps) {
     setBusy(true);
     try {
       const ws = await workspacesApi.create({ name: name.trim(), timezone: tz });
-      await refetchWorkspaces();
-      // Find this user's member record to pass to PositionSetupModal
+      // Fetch member ID before refetching workspaces to avoid calendar flash
       try {
         const detail = await workspacesApi.get(ws.id);
         const myMember = detail.members.find(m => m.user_id === user?.id);
@@ -125,8 +124,9 @@ export function WorkspaceOnboarding({ onCreated }: WorkspaceOnboardingProps) {
           return;
         }
       } catch {
-        // If detail fetch fails, proceed without setup modal
+        // fallthrough to normal flow
       }
+      await refetchWorkspaces();
       onCreated();
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
@@ -323,7 +323,7 @@ export function WorkspaceOnboarding({ onCreated }: WorkspaceOnboardingProps) {
       <PositionSetupModal
         workspaceId={setupState.workspaceId}
         myMemberId={setupState.myMemberId}
-        onComplete={() => { setSetupState(null); onCreated(); }}
+        onComplete={async () => { setSetupState(null); await refetchWorkspaces(); onCreated(); }}
       />
     )}
     </>
