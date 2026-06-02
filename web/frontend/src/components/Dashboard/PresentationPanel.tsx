@@ -423,13 +423,6 @@ export function PresentationPanel({ isOpen, onClose }: { isOpen: boolean; onClos
     return () => document.removeEventListener("keydown", fn);
   }, [isOpen, onClose]);
 
-  const StatItem = ({ big, small }: { big: string; small: string }) => (
-    <div>
-      <div style={{ fontSize: "clamp(18px,2.5vw,32px)", fontWeight: 800, background: "linear-gradient(135deg,var(--text),var(--primary))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", lineHeight: 1 }}>{big}</div>
-      <div style={{ fontSize: 11.5, color: "var(--text-muted)", marginTop: 4 }}>{small}</div>
-    </div>
-  );
-
   return createPortal(
     <AnimatePresence>
       {isOpen && (
