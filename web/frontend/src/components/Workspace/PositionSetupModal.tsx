@@ -4,6 +4,7 @@ import { roomsApi } from "../../api/rooms";
 import { workspacesApi } from "../../api/workspaces";
 import { useLocale } from "../../contexts/LocaleContext";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useWorkspace } from "../../contexts/WorkspaceContext";
 import { useAuth } from "../../hooks/useAuth";
 import type { WorkspacePosition } from "../../types";
 
@@ -64,6 +65,7 @@ export function PositionSetupModal({ workspaceId, myMemberId, onComplete, onCanc
   const { t, locale, setLocale } = useLocale();
   const { isDark } = useTheme();
   const { logout } = useAuth();
+  const { refetchRooms } = useWorkspace();
 
   const [step, setStep] = useState<Step>(initialStep);
   const [drafts, setDrafts] = useState<Draft[]>([{ ru: "", uz: "" }]);
@@ -119,6 +121,7 @@ export function PositionSetupModal({ workspaceId, myMemberId, onComplete, onCanc
     setSaving(true); setError(null);
     try {
       await roomsApi.create({ name: roomName.trim(), description: roomDesc.trim() || undefined, workspace_id: workspaceId });
+      refetchRooms();
       onComplete();
     } catch {
       setError(t("pos.errRoom"));
