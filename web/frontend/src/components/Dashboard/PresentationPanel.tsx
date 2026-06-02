@@ -427,8 +427,8 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
     <AnimatePresence>
       {isOpen && (
         <motion.div key="pres"
-          initial={{opacity:0,x:"100%"}} animate={{opacity:1,x:0}} exit={{opacity:0,x:"100%"}}
-          transition={{duration:0.3,ease:[0.22,1,0.36,1]}}
+          initial={{opacity:0,x:"100%",scale:0.98}} animate={{opacity:1,x:0,scale:1}} exit={{opacity:0,x:"60%",scale:0.97}}
+          transition={{duration:0.52,ease:[0.16,1,0.3,1]}}
           style={{position:"fixed",inset:0,zIndex:9990,background:"var(--bg)",display:"flex",flexDirection:"column",
             boxShadow:isDark?"-20px 0 60px rgba(0,0,0,.8)":"-8px 0 40px rgba(15,23,42,.12)"}}>
 
