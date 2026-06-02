@@ -42,8 +42,8 @@ function R({ children, delay = 0, dir = "up" }: { children: React.ReactNode; del
   useEffect(() => {
     const el = ref.current, root = scrollRef.current;
     if (!el || !root) return;
-    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setOn(true); io.disconnect(); } },
-      { root, threshold: 0.05, rootMargin: "0px 0px -16px 0px" });
+    const io = new IntersectionObserver(([e]) => { setOn(e.isIntersecting); },
+      { root, threshold: 0.08, rootMargin: "0px 0px -20px 0px" });
     io.observe(el);
     return () => io.disconnect();
   }, [scrollRef]);
@@ -248,6 +248,79 @@ function Card({icon,title,desc,accent,onClick,children}:{icon:string;title:strin
   );
 }
 
+// ── transitions-dev CSS (avatar-group-hover + digit-pop-in) ───────────────
+const ANIM_CSS = `
+.t-avatar{transform-origin:center;transform:translateY(var(--shift,0px)) scale(var(--scale-active,1));transition:transform 300ms cubic-bezier(0.22,1,0.36,1);will-change:transform;}
+@media(prefers-reduced-motion:reduce){.t-avatar{transition:none!important;transform:none!important;}}
+@keyframes t-digit-pop-in{0%{transform:translateY(14px);opacity:0;filter:blur(3px);}100%{transform:none;opacity:1;filter:none;}}
+.t-digit-group{display:inline-flex;align-items:baseline;}
+.t-digit{display:inline-block;will-change:transform,opacity,filter;}
+.t-digit-group.is-animating .t-digit{animation:t-digit-pop-in 600ms cubic-bezier(0.34,1.45,0.64,1) both;}
+.t-digit-group.is-animating .t-digit[data-s="1"]{animation-delay:70ms;}
+.t-digit-group.is-animating .t-digit[data-s="2"]{animation-delay:140ms;}
+.t-digit-group.is-animating .t-digit[data-s="3"]{animation-delay:210ms;}
+@media(prefers-reduced-motion:reduce){.t-digit-group .t-digit{animation:none!important;}}
+`;
+
+// ── HoverGrid — avatar-group-hover for card grids ──────────────────────────
+function HoverGrid({ items, cols = 4 }: { items: React.ReactNode[]; cols?: number }) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const setShifts = (activeIdx: number | null, phase: "in" | "out") => {
+    const root = rootRef.current; if (!root) return;
+    const lift = -10, falloff = 0.38, scale = 1.04;
+    const tf = phase === "out" ? "cubic-bezier(0.34,3.85,0.64,1)" : "cubic-bezier(0.22,1,0.36,1)";
+    root.querySelectorAll<HTMLElement>(".t-avatar").forEach((el, i) => {
+      el.style.transitionTimingFunction = tf;
+      if (activeIdx === null) { el.style.setProperty("--shift","0px"); el.style.setProperty("--scale-active","1"); return; }
+      const d = Math.abs(i - activeIdx);
+      el.style.setProperty("--shift", (lift * Math.pow(falloff, d)).toFixed(2) + "px");
+      el.style.setProperty("--scale-active", i === activeIdx ? String(scale) : "1");
+    });
+  };
+  return (
+    <div ref={rootRef} onMouseLeave={() => setShifts(null, "out")}
+      className="grid gap-3 mt-5"
+      style={{ gridTemplateColumns: `repeat(${cols}, 1fr)`, gridAutoRows: "1fr" }}>
+      {items.map((child, i) => (
+        <div key={i} className="t-avatar" onMouseEnter={() => setShifts(i, "in")}>{child}</div>
+      ))}
+    </div>
+  );
+}
+
+// ── AnimStat — digit-pop-in for statistics ─────────────────────────────────
+function AnimStat({ big, small, idx = 0 }: { big: string; small: string; idx?: number }) {
+  const scrollRef = useContext(ScrollCtx);
+  const ref = useRef<HTMLDivElement>(null);
+  const groupRef = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    const el = ref.current, root = scrollRef.current, group = groupRef.current;
+    if (!el || !root || !group) return;
+    const io = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) {
+        group.classList.remove("is-animating");
+        void group.offsetHeight;
+        group.classList.add("is-animating");
+      } else { group.classList.remove("is-animating"); }
+    }, { root, threshold: 0.1 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [scrollRef]);
+  const chars = big.split("");
+  return (
+    <div ref={ref} style={{ transitionDelay: `${idx * 80}ms` }}>
+      <span ref={groupRef} className="t-digit-group is-animating"
+        style={{ fontSize: "clamp(18px,2.3vw,28px)", fontWeight: 800, color: "var(--text)", lineHeight: 1 }}>
+        {chars.map((ch, i) => (
+          <span key={i} className="t-digit"
+            data-s={i >= chars.length - 2 ? String(chars.length - i) : undefined}>{ch}</span>
+        ))}
+      </span>
+      <div style={{ fontSize: 11.5, color: "var(--text-muted)", marginTop: 4 }}>{small}</div>
+    </div>
+  );
+}
+
 // ── Layout helpers ─────────────────────────────────────────────────────────
 const PAD = "0 clamp(32px,5vw,72px)";
 
@@ -261,9 +334,9 @@ const Div = () => <div style={{height:1,background:"var(--border)",margin:`0 cla
 
 function Eyebrow({n,label}:{n:string;label:string}) {
   return (
-    <div className="flex items-center gap-2 mb-2">
-      <span className="text-[10px] font-bold px-2 py-0.5 rounded" style={{background:"var(--primary)",color:"#fff",letterSpacing:"0.1em"}}>{n}</span>
-      <span className="text-[11px] font-bold uppercase tracking-[0.13em]" style={{color:"var(--primary)"}}>{label}</span>
+    <div className="flex items-center gap-2.5 mb-2">
+      <span className="font-extrabold px-2.5 py-1 rounded" style={{background:"var(--primary)",color:"#fff",letterSpacing:"0.08em",fontSize:13}}>{n}</span>
+      <span className="font-bold uppercase tracking-[0.13em]" style={{color:"var(--primary)",fontSize:12}}>{label}</span>
     </div>
   );
 }
@@ -310,6 +383,14 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
     el.addEventListener("scroll",fn,{passive:true});
     return ()=>el.removeEventListener("scroll",fn);
   },[isOpen]);
+
+  // Inject transitions-dev CSS once
+  useEffect(() => {
+    let el = document.getElementById("pres-anim") as HTMLStyleElement | null;
+    if (!el) { el = document.createElement("style"); el.id = "pres-anim"; document.head.appendChild(el); }
+    el.textContent = ANIM_CSS;
+    return () => { document.getElementById("pres-anim")?.remove(); };
+  }, []);
 
   const scrollTo = (id: string) => {
     const el = document.getElementById(id);
@@ -372,22 +453,6 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
               <style>{`@keyframes ppb{from{transform:translateY(0)}to{transform:translateY(-22px)}}`}</style>
 
               <div className="relative flex flex-col items-center" style={{zIndex:1,maxWidth:"min(680px,90vw)"}}>
-                <motion.div initial={{opacity:0,y:-14}} animate={{opacity:1,y:0}} transition={{duration:0.5,ease:[0.16,1,0.3,1]}}>
-                  <div className="inline-flex items-center rounded text-xs font-bold px-3 py-1 mb-5"
-                    style={{background:"var(--elevated)",border:"1px solid var(--border)",color:"var(--text-muted)",letterSpacing:"0.04em"}}>
-                    v1.0 · Презентация платформы
-                  </div>
-                </motion.div>
-
-                <motion.div initial={{opacity:0,scale:0.88,y:-10}} animate={{opacity:1,scale:1,y:0}}
-                  transition={{duration:0.55,ease:[0.16,1,0.3,1],delay:0.06}}
-                  className="flex items-center gap-4 mb-5">
-                  <motion.div animate={{y:[0,-7,0]}} transition={{duration:3.5,repeat:Infinity,ease:"easeInOut"}}>
-                    <LogoMark size={56}/>
-                  </motion.div>
-                  <LogoText size={36}/>
-                </motion.div>
-
                 <motion.h1 initial={{opacity:0,y:20}} animate={{opacity:1,y:0}}
                   transition={{duration:0.5,ease:[0.16,1,0.3,1],delay:0.12}}
                   style={{fontSize:"clamp(28px,4.5vw,52px)",fontWeight:800,letterSpacing:"-0.022em",lineHeight:1.07,color:"var(--text)"}}>
@@ -435,8 +500,8 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
             {/* ── 02 Overview ───────────────────────────────────────── */}
             <Sec ch={<>
               <R><Eyebrow n="02" label="Обзор"/><SH ch="Что умеет CorpMeet" accent="CorpMeet"/></R>
-              <div className="grid grid-cols-4 gap-3 mt-5" style={{gridAutoRows:"1fr"}}>
-                {([["calendar","Бронирование","Недельная сетка, drag&drop, повторы, статус комнаты.","sec-07"],
+              <HoverGrid cols={4} items={([
+                  ["calendar","Бронирование","Недельная сетка, drag&drop, повторы, статус комнаты.","sec-07"],
                   ["video","Видеовстречи","LiveKit с E2EE, запись, экран, чат, blur фона, Krisp.","sec-09"],
                   ["building","Комнаты","Общие переговорные с режимами видимости и шерингом.","sec-06"],
                   ["grid","Пространства","Несколько компаний на платформе, роли, invite-коды.","sec-04"],
@@ -449,11 +514,10 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
                   ["globe","Локализация","Два языка (РУ/УЗ), любой часовой пояс.","sec-14"],
                   ["sun","Темы","Тёмная и светлая, синхронизация с системой.","sec-14"],
                 ] as [string,string,string,string][]).map(([ic,t,d,target],i)=>(
-                  <R key={t} delay={i*35}>
+                  <R key={t} delay={i*30}>
                     <Card icon={ic} title={t} desc={d} onClick={()=>scrollTo(target)}/>
                   </R>
-                ))}
-              </div>
+                ))}/>
             </>}/>
 
             <Div/>
@@ -474,6 +538,32 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
                 ))}
               </div>
               <R delay={210}><Note ch={<>Для разработчиков есть <b>Dev-вход</b> без Telegram — для тестирования локально.</>}/></R>
+            </>}/>
+
+            <Div/>
+
+            {/* ── Quickstart ────────────────────────────────────────── */}
+            <Sec id="sec-start" ch={<>
+              <R><Eyebrow n="→" label="Быстрый старт"/><SH ch="Как начать пользоваться платформой" accent="начать"/>
+                <p className="mt-2 text-sm leading-relaxed" style={{color:"var(--text-sec)",maxWidth:560}}>Пять шагов от первого открытия до первой видеовстречи.</p>
+              </R>
+              <div className="grid grid-cols-5 gap-3 mt-5" style={{gridAutoRows:"1fr"}}>
+                {([
+                  ["01","Войдите","Откройте @corpmeetbot в Telegram или отсканируйте QR-код в браузере."],
+                  ["02","Создайте пространство","Введите название компании/команды и invite-код — или присоединитесь к существующему."],
+                  ["03","Заполните профиль","Укажите имя и выберите должность — это нужно для приглашения на встречи."],
+                  ["04","Забронируйте встречу","Нажмите на свободный слот в календаре, заполните форму и добавьте гостей."],
+                  ["05","Начните видеозвонок","Откройте бронирование и нажмите «Подключиться» — встреча стартует в браузере."],
+                ] as [string,string,string][]).map(([num,t,d],i)=>(
+                  <R key={num} delay={i*60}>
+                    <div className="rounded-md p-4 h-full flex flex-col" style={{background:"var(--elevated)",border:"1px solid var(--border)",boxShadow:"var(--card-shadow)"}}>
+                      <div className="font-extrabold mb-3" style={{fontSize:28,color:"var(--primary)",lineHeight:1}}>{num}</div>
+                      <div className="font-bold text-sm mb-1.5" style={{color:"var(--text)"}}>{t}</div>
+                      <div className="text-xs leading-relaxed" style={{color:"var(--text-muted)"}}>{d}</div>
+                    </div>
+                  </R>
+                ))}
+              </div>
             </>}/>
 
             <Div/>
@@ -499,7 +589,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
               <div className="grid grid-cols-3 gap-3 mt-5" style={{gridAutoRows:"1fr"}}>
                 <R delay={60}><Card icon="star" title="Owner — владелец" desc="Создатель пространства. Может всё: настройки, удаление, передача владения. Один на пространство."/></R>
                 <R delay={120}><Card icon="shield" title="Admin" desc="Управляет участниками, комнатами, бронями всех. Назначается владельцем."/></R>
-                <R delay={180}><Card icon="users" title="Member — участник" desc="Бронирует, видит общий календарь и комнаты. Никем не управляет."/></R>
+                <R delay={180}><Card icon="users" title="Member — участник" desc="Бронирует, видит общий календарь пространства и доступные переговорные."/></R>
               </div>
               <div className="grid gap-6 mt-5 items-start" style={{gridTemplateColumns:"1fr 1fr"}}>
                 <R dir="left">
@@ -671,6 +761,35 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
 
             <Div/>
 
+            {/* ── Feedback & Rights ─────────────────────────────────── */}
+            <Sec id="sec-feedback" ch={<>
+              <R><Eyebrow n="i" label="Для пользователя"/><SH ch="Обратная связь и права доступа" accent="права доступа"/></R>
+              <div className="grid gap-6 mt-5 items-start" style={{gridTemplateColumns:"1fr 1fr"}}>
+                <R dir="left">
+                  <div className="font-semibold text-sm mb-3" style={{color:"var(--text)"}}>Как отправить обращение</div>
+                  <BList items={[
+                    {k:"Кнопка в меню",v:"Нажмите «Обратная связь» в боковом меню приложения"},
+                    {k:"Текст обращения",v:"Опишите проблему или предложение в свободной форме"},
+                    {k:"Скриншот",v:"При желании прикрепите снимок экрана — это ускорит решение"},
+                    {k:"Статусы",v:<span>«Новое» → «В работе» → «Закрыто» — вы всегда видите статус своего обращения</span>},
+                  ]}/>
+                </R>
+                <R dir="right">
+                  <div className="font-semibold text-sm mb-3" style={{color:"var(--text)"}}>Что вы можете делать как участник</div>
+                  <BList items={[
+                    {k:"Просматривать",v:"общий календарь пространства и доступные переговорные"},
+                    {k:"Бронировать",v:"встречи в любых доступных комнатах своего пространства"},
+                    {k:"Приглашать",v:"гостей по @username, должностям или гостевой ссылке"},
+                    {k:"Участвовать",v:"в видеозвонках, чате, обмениваться файлами"},
+                    {k:"Экспортировать",v:"свои встречи в Google/Apple/Outlook через iCal-фид"},
+                    {k:"Не можете",v:"удалять чужие встречи, управлять комнатами и пользователями"},
+                  ]}/>
+                </R>
+              </div>
+            </>}/>
+
+            <Div/>
+
             {/* ── 13 Admin ──────────────────────────────────────────── */}
             <Sec id="sec-13" ch={<>
               <R><Eyebrow n="13" label="Управление"/><SH ch="Админка, аналитика и обратная связь" accent="Аналитика"/></R>
@@ -692,16 +811,11 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
             {/* ── 14 Security ───────────────────────────────────────── */}
             <Sec id="sec-14" ch={<>
               <R><Eyebrow n="14" label="Безопасность"/><SH ch="Надёжность и защита данных" accent="защита"/></R>
-              <R delay={60}>
-                <div className="flex gap-7 flex-wrap mt-5">
-                  {[["E2EE","сквозное шифрование видео"],["PASETO","токены вместо JWT"],["15м–8ч","диапазон встреч"],["90","встреч в серии повторов"],["РУ / УЗ","два языка интерфейса"]].map(([b,s])=>(
-                    <div key={b}>
-                      <div style={{fontSize:"clamp(18px,2.3vw,28px)",fontWeight:800,color:"var(--text)",lineHeight:1}}>{b}</div>
-                      <div style={{fontSize:11.5,color:"var(--text-muted)",marginTop:4}}>{s}</div>
-                    </div>
-                  ))}
-                </div>
-              </R>
+              <div className="flex gap-8 flex-wrap mt-5">
+                {[["E2EE","сквозное шифрование видео"],["PASETO","токены вместо JWT"],["15м–8ч","диапазон встреч"],["90","встреч в серии повторов"],["РУ / УЗ","два языка"]].map(([b,s],i)=>(
+                  <AnimStat key={b} big={b} small={s} idx={i}/>
+                ))}
+              </div>
               <div className="grid grid-cols-3 gap-3 mt-5" style={{gridAutoRows:"1fr"}}>
                 <R delay={80}><Card icon="shield" title="Защита доступа" desc="Вход по подписи Telegram, одноразовые ссылки, PASETO-токены с коротким TTL, проверка прав на каждый запрос."/></R>
                 <R delay={140}><Card icon="lock" title="Приватность встреч" desc="E2EE-шифрование видеопотока и режим busy_only скрывают содержание встреч от других арендаторов здания."/></R>
