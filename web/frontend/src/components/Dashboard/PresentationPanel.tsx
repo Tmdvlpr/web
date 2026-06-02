@@ -52,10 +52,10 @@ function R({ children, delay = 0, dir = "up" }: { children: React.ReactNode; del
     io.observe(el);
     return () => io.disconnect();
   }, [scrollRef]);
-  const ini = dir==="left"  ? {opacity:0,x:-40,y:0,scale:0.95,filter:"blur(8px)"} :
-              dir==="right" ? {opacity:0,x:40,y:0,scale:0.95,filter:"blur(8px)"} :
-              dir==="scale" ? {opacity:0,x:0,y:20,scale:0.90,filter:"blur(12px)"} :
-                              {opacity:0,x:0,y:40,scale:0.95,filter:"blur(8px)"};
+  const ini = dir==="left"  ? {opacity:0,x:-16,y:0,scale:1,filter:"blur(3px)"} :
+              dir==="right" ? {opacity:0,x:16,y:0,scale:1,filter:"blur(3px)"} :
+              dir==="scale" ? {opacity:0,x:0,y:8,scale:0.98,filter:"blur(4px)"} :
+                              {opacity:0,x:0,y:16,scale:0.99,filter:"blur(3px)"};
   const ease = [0.16, 1, 0.3, 1] as const;
   return (
     <motion.div ref={ref}
@@ -67,6 +67,7 @@ function R({ children, delay = 0, dir = "up" }: { children: React.ReactNode; del
         filter:{duration:0.22,ease:"easeOut"},
         opacity:{duration:0.22,ease:"easeOut"},
       }}
+      style={{height:"100%"}}
     >{children}</motion.div>
   );
 }
@@ -78,7 +79,7 @@ const Tag = ({ch}:{ch:React.ReactNode}) => (
 );
 
 const Note = ({ch}:{ch:React.ReactNode}) => (
-  <div className="mt-4 rounded-md px-4 py-3 text-sm leading-relaxed"
+  <div className="mt-4 rounded-md px-4 py-3 text-sm leading-relaxed text-center"
     style={{background:"var(--primary-light)",borderLeft:"3px solid var(--primary)",border:"1px solid var(--primary-border)",color:"var(--text-sec)"}}>{ch}</div>
 );
 
@@ -182,7 +183,7 @@ function BookMock() {
         <div><Lbl t="Длительность"/><div className="flex gap-1 flex-wrap"><Chip l="30м"/><Chip l="1ч" on/><Chip l="1.5ч"/><Chip l="2ч"/></div></div>
         <div><Lbl t="Повторение"/><div className="flex gap-1 flex-wrap"><Chip l="Нет" on/><Chip l="Каждый день"/><Chip l="Каждую неделю"/></div></div>
         <div><Lbl t="Гости"/><div className="flex gap-1 flex-wrap"><Pill l="@timur"/><Pill l="Анна П."/></div></div>
-        <button className="rounded-md px-4 py-1.5 text-xs font-bold text-white mt-1"
+        <button className="rounded-md px-4 py-1.5 text-xs font-bold text-white mt-1 self-start"
           style={{background:"linear-gradient(135deg,#1565a8,#114e85)",boxShadow:"0 3px 10px rgba(21,101,168,.28)"}}>Забронировать</button>
       </div>
     </MockShell>
@@ -274,7 +275,7 @@ function HoverGrid({ children, cols = 4 }: { children: React.ReactNode; cols?: n
   const rootRef = useRef<HTMLDivElement>(null);
   const setShifts = (activeIdx: number | null, phase: "in" | "out") => {
     const root = rootRef.current; if (!root) return;
-    const lift = -10, falloff = 0.38, scale = 1.04;
+    const lift = -5, falloff = 0.35, scale = 1.02;
     const tf = phase === "out" ? "cubic-bezier(0.34,3.85,0.64,1)" : "cubic-bezier(0.22,1,0.36,1)";
     root.querySelectorAll<HTMLElement>(".t-avatar").forEach((el, i) => {
       el.style.transitionTimingFunction = tf;
@@ -609,26 +610,23 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
             {/* ── 05 Roles ──────────────────────────────────────────── */}
             <Sec id="sec-05" ch={<>
               <R><Eyebrow n="05" label="Роли"/><SH ch="Кто что может в пространстве" accent="может"/></R>
-              <HoverGrid cols={3}>
+              <HoverGrid cols={4}>
                 <R delay={60}><Card icon="star" title="Owner — владелец" desc="Создатель пространства. Может всё: настройки, удаление, передача владения. Один на пространство."/></R>
-                <R delay={120}><Card icon="shield" title="Admin" desc="Управляет участниками, комнатами, бронями всех. Назначается владельцем."/></R>
-                <R delay={180}><Card icon="users" title="Member — участник" desc="Бронирует, видит общий календарь пространства и доступные переговорные."/></R>
+                <R delay={110}><Card icon="shield" title="Admin" desc="Управляет участниками, комнатами и бронями всех. Назначается владельцем."/></R>
+                <R delay={160}><Card icon="users" title="Member — участник" desc="Бронирует, видит общий календарь пространства и доступные переговорные."/></R>
+                <R delay={210}><Card icon="shield" title="Superadmin платформы" accent desc="Оператор сервиса с доступом ко всему: пользователи, все брони, аналитика, передача владения комнатами."/></R>
               </HoverGrid>
-              <div className="grid gap-6 mt-5 items-start" style={{gridTemplateColumns:"1fr 1fr"}}>
-                <R dir="left">
-                  <div className="font-semibold text-sm mb-2.5" style={{color:"var(--text)"}}>Приглашение коллег</div>
+              <R delay={260}>
+                <div className="mt-4 rounded-md p-4" style={{background:"var(--elevated)",border:"1px solid var(--border)"}}>
+                  <div className="font-semibold mb-2" style={{fontSize:"var(--font-sm)",color:"var(--text)"}}>Приглашение коллег</div>
                   <BList items={[
                     {k:"Персональная ссылка",v:"по Telegram-ссылке, активируется при первом входе"},
                     {k:"По @username",v:"система находит пользователя и шлёт ему приглашение в Telegram"},
                     {k:"По invite-коду",v:"публичный код, любой желающий подаёт заявку"},
                     {k:"Заявки на вступление",v:"owner и admin аппрувят в отдельной вкладке"},
                   ]}/>
-                </R>
-                <R dir="right">
-                  <Card icon="shield" title="Superadmin платформы" accent
-                    desc="Оператор сервиса с доступом ко всему: пользователи, все брони, аналитика по всем пространствам, передача владения комнатами."/>
-                </R>
-              </div>
+                </div>
+              </R>
             </>}/>
 
             <Div/>
@@ -730,17 +728,17 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
                 <p className="mt-2 text-sm leading-relaxed" style={{color:"var(--text-sec)",maxWidth:540}}>Для внешних участников организатор создаёт ссылку-приглашение — аккаунт не нужен.</p>
               </R>
               <div className="flex flex-wrap mt-5">
-                {[["🔗","Ссылка","Организатор копирует гостевую ссылку"],
-                  ["🎚️","Превью","Гость вводит имя и видит превью камеры/микро"],
-                  ["⏳","Ожидание","«Ожидание подтверждения» у организатора"],
-                  ["✅","В эфире","Организатор впускает — гость сразу в комнате"],
+                {[["1","Ссылка","Организатор копирует гостевую ссылку"],
+                  ["2","Превью","Гость вводит имя и видит превью камеры/микро"],
+                  ["3","Ожидание","«Ожидание подтверждения» у организатора"],
+                  ["4","В эфире","Организатор впускает — гость сразу в комнате"],
                 ].map(([ic,t,d],i)=>(
                   <React.Fragment key={t}>
                     {i>0 && <div className="flex items-center px-[5px]" style={{color:"var(--primary)",fontSize:14,opacity:.5}}>→</div>}
                     <R delay={i*70}>
                       <div className="flex-1 min-w-[110px] rounded-md border p-3 text-center"
                         style={{background:"var(--elevated)",borderColor:"var(--border)"}}>
-                        <div style={{fontSize:20,marginBottom:5}}>{ic}</div>
+                        <div className="font-extrabold" style={{fontSize:26,color:"var(--primary)",lineHeight:1,marginBottom:6}}>{ic}</div>
                         <div className="font-bold text-xs mb-1" style={{color:"var(--text)"}}>{t}</div>
                         <div style={{fontSize:11,color:"var(--text-muted)",lineHeight:1.5}}>{d}</div>
                       </div>
