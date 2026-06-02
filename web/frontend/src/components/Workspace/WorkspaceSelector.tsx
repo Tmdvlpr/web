@@ -282,27 +282,21 @@ export function WorkspaceSelector({ onSettingsOpen }: WorkspaceSelectorProps) {
                   autoFocus value={name} onChange={e => setName(e.target.value)}
                   onKeyDown={e => { if (e.key === "Enter") handleCreate(); }}
                   placeholder="Название пространства"
-                  className="w-full rounded px-2.5 py-1.5 text-xs outline-none"
+                  className="w-full rounded-md px-2.5 py-1.5 text-xs outline-none font-mono"
                   style={{ background: "var(--input-bg)", border: "1.5px solid var(--input-border)", color: "var(--text)" }}
-                  onFocus={e => { e.currentTarget.style.borderColor = "var(--primary)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(21,101,168,0.12)"; }}
-                  onBlur={e => { e.currentTarget.style.borderColor = "var(--input-border)"; e.currentTarget.style.boxShadow = "none"; }}
+                  onFocus={e => { e.currentTarget.style.borderColor = "var(--primary)"; }}
+                  onBlur={e => { e.currentTarget.style.borderColor = "var(--input-border)"; }}
                 />
                 {error && <p className="text-xs" style={{ color: "#dc2626" }}>{error}</p>}
                 <div className="flex gap-2">
                   <button onClick={() => { setInline("none"); setName(""); setError(null); }}
-                    className="flex-1 py-1.5 rounded text-xs font-semibold"
+                    className="flex-1 py-1.5 rounded-md text-xs font-semibold"
                     style={{ background: "var(--elevated)", border: "1px solid var(--border)", color: "var(--text-sec)" }}>
                     Отмена
                   </button>
                   <button onClick={handleCreate} disabled={busy}
-                    className="flex-1 py-1.5 rounded text-xs font-bold text-white disabled:opacity-50"
-                    style={{
-                      background: "linear-gradient(135deg, #2563eb, #6366f1)",
-                      border: "none",
-                      transition: "opacity 0.15s ease, transform 0.15s ease",
-                    }}
-                    onMouseEnter={e => { e.currentTarget.style.opacity = "0.88"; e.currentTarget.style.transform = "scale(1.02)"; }}
-                    onMouseLeave={e => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.transform = ""; }}>
+                    className="flex-1 py-1.5 rounded-md text-xs font-bold text-white disabled:opacity-50"
+                    style={{ background: "linear-gradient(135deg,#1565a8,#114e85)", border: "none" }}>
                     {busy ? "…" : "Создать"}
                   </button>
                 </div>
