@@ -285,6 +285,7 @@ const LiveVideoTile = React.memo(function LiveVideoTile({
   const participant = trackRef.participant as Participant | undefined;
   const isSpeaking = useIsSpeaking(participant);
   if (!participant) return null;
+  const hasPublication = !!trackRef.publication;
   const hasVideo = !!(trackRef.publication?.isEnabled && trackRef.publication?.track);
   const isLocal = participant.identity === localIdentity;
   const color = colorFromIdentity(participant.identity);
@@ -298,12 +299,14 @@ const LiveVideoTile = React.memo(function LiveVideoTile({
       onClick={onClick}
     >
       <div className="vtile__bg" />
-      {hasVideo ? (
+      {/* Always render VideoTrack when publication exists so LiveKit can subscribe the track */}
+      {hasPublication && (
         <VideoTrack
           trackRef={trackRef as TrackReference}
           className={`vtile__video${isLocal ? " vtile__video--mirror" : ""}`}
         />
-      ) : (
+      )}
+      {!hasVideo && (
         <div className="vtile__avwrap">
           <div className="vtile__av" style={{ background: `${color}1a`, border: `2px solid ${color}44`, color }}>
             {initials}
@@ -375,10 +378,20 @@ const FocusLayout = React.memo(({
   );
 });
 
+function galleryColumns(n: number): number {
+  if (n <= 1) return 1;
+  if (n <= 2) return 2;
+  if (n <= 4) return 2;
+  if (n <= 9) return 3;
+  if (n <= 16) return 4;
+  return 5;
+}
+
 const GalleryLayout = React.memo(({ camTracks, localIdentity, raisedHands }: { camTracks: TrackReferenceOrPlaceholder[]; localIdentity: string; raisedHands?: Map<number, string> }) => {
+  const cols = galleryColumns(camTracks.length);
   return (
-    <div className="gallerygrid">
-      {camTracks.slice(0, 6).map((t) => (
+    <div className="gallerygrid" style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
+      {camTracks.map((t) => (
         <LiveVideoTile key={t.participant.identity} trackRef={t} isActive={false} localIdentity={localIdentity} size="md"
           handRaised={raisedHands?.has(parseInt(t.participant.identity.replace(/^user-/, ""), 10))} />
       ))}
@@ -703,11 +716,12 @@ function ParticipantsPanel({
     [deduped, search],
   );
 
-  const handleCreateInvite = async () => {
+  const handleCreateInvite = async (force = false) => {
     setInviteLoading(true);
     try {
-      const res = await meetingsApi.createInvite(bookingId);
+      const res = await meetingsApi.createInvite(bookingId, force);
       setInviteUrl(res.invite_url);
+      if (force) setCopied(false);
     } catch (e) {
       alert(t("conf.inviteError"));
     } finally {
@@ -815,13 +829,15 @@ function ParticipantsPanel({
               onClick={handleCreateInvite}
               disabled={inviteLoading}
               style={{
-                width: "100%", padding: "8px 12px", borderRadius: 6,
-                background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.3)",
-                color: "#60a5fa", fontSize: 13, fontWeight: 600, cursor: "pointer",
-                transition: "background-color 0.15s ease, border-color 0.15s ease",
+                width: "100%", padding: "10px 14px", borderRadius: 4, border: "none",
+                background: "linear-gradient(135deg,#1565a8,#114e85)",
+                boxShadow: "0 4px 14px rgba(21,101,168,0.28)",
+                color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer",
+                opacity: inviteLoading ? 0.6 : 1,
+                transition: "opacity 0.15s ease",
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(59,130,246,0.22)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(59,130,246,0.12)"; }}
+              onMouseEnter={(e) => { if (!inviteLoading) e.currentTarget.style.opacity = "0.88"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.opacity = inviteLoading ? "0.6" : "1"; }}
             >
               {inviteLoading ? t("conf.inviteCreating") : t("conf.inviteGuest")}
             </button>
@@ -832,8 +848,8 @@ function ParticipantsPanel({
               </p>
               <div style={{
                 display: "flex", gap: 6, alignItems: "center",
-                background: "var(--bg)", borderRadius: 6, padding: "6px 8px",
-                border: "1px solid var(--brd)",
+                background: "var(--elev)", borderRadius: 4, padding: "6px 8px",
+                border: "1px solid var(--brd2)",
               }}>
                 <span style={{
                   flex: 1, fontSize: 11, color: "var(--tx2)", overflow: "hidden",
@@ -844,11 +860,13 @@ function ParticipantsPanel({
                 <button
                   onClick={handleCopy}
                   style={{
-                    flexShrink: 0, padding: "4px 8px", borderRadius: 6,
-                    background: copied ? "rgba(34,197,94,0.15)" : "rgba(59,130,246,0.15)",
-                    border: "none", color: copied ? "#4ade80" : "#60a5fa",
+                    flexShrink: 0, padding: "5px 10px", borderRadius: 4,
+                    background: copied ? "rgba(34,197,94,0.15)" : "var(--elev2)",
+                    border: `1px solid ${copied ? "rgba(34,197,94,0.4)" : "var(--brd)"}`,
+                    color: copied ? "#22c55e" : "var(--tx2)",
                     fontSize: 11, fontWeight: 600, cursor: "pointer",
-                    transition: "background-color 0.2s ease, color 0.2s ease",
+                    display: "flex", alignItems: "center", gap: 4,
+                    transition: "background 0.2s ease, color 0.2s ease, border-color 0.2s ease",
                   }}
                 >
                   <span className="t-icon-swap" data-state={copied ? "b" : "a"}>
@@ -858,14 +876,14 @@ function ParticipantsPanel({
                 </button>
               </div>
               <button
-                onClick={() => { setInviteUrl(null); setCopied(false); }}
+                onClick={() => handleCreateInvite(true)}
                 style={{
-                  marginTop: 6, width: "100%", padding: "6px", borderRadius: 6,
+                  marginTop: 6, width: "100%", padding: "8px", borderRadius: 4,
                   background: "transparent", border: "1px solid var(--brd)",
-                  color: "var(--tx3)", fontSize: 11, cursor: "pointer",
-                  transition: "background-color 0.15s ease, color 0.15s ease",
+                  color: "var(--tx3)", fontSize: 11, fontWeight: 500, cursor: "pointer",
+                  transition: "background 0.15s ease, color 0.15s ease",
                 }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = "var(--bg)"; e.currentTarget.style.color = "var(--tx2)"; }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = "var(--elev)"; e.currentTarget.style.color = "var(--tx2)"; }}
                 onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--tx3)"; }}
               >
                 {t("conf.inviteNewLink")}
@@ -1930,28 +1948,32 @@ function ConferenceUI({
                 <button
                   onClick={() => handleAdmit(req.invite_token, "approve")}
                   style={{
-                    flex: 1, padding: "8px", borderRadius: 6, border: "none",
+                    flex: 1, padding: "10px 12px", borderRadius: 4, border: "none",
                     background: "linear-gradient(135deg,#16a34a,#22c55e)",
+                    boxShadow: "0 4px 12px rgba(22,163,74,0.28)",
                     color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
                     transition: "opacity 0.15s ease",
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.opacity = "0.85"; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.opacity = "0.88"; }}
                   onMouseLeave={(e) => { e.currentTarget.style.opacity = "1"; }}
                 >
-                  ✓ Разрешить
+                  <Ic.Check sz={14} /> Разрешить
                 </button>
                 <button
                   onClick={() => handleAdmit(req.invite_token, "reject")}
                   style={{
-                    flex: 1, padding: "8px", borderRadius: 6,
-                    background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.3)",
-                    color: "#f87171", fontSize: 13, fontWeight: 700, cursor: "pointer",
-                    transition: "background-color 0.15s ease",
-                  } as React.CSSProperties}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(239,68,68,0.28)"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(239,68,68,0.15)"; }}
+                    flex: 1, padding: "10px 12px", borderRadius: 4,
+                    background: "rgba(255,255,255,0.07)",
+                    border: "1px solid rgba(255,255,255,0.14)",
+                    color: "#cbd5e1", fontSize: 13, fontWeight: 600, cursor: "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                    transition: "background 0.15s ease",
+                  }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.13)"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.07)"; }}
                 >
-                  ✕ Отклонить
+                  <Ic.Close sz={13} /> Отклонить
                 </button>
               </div>
             </div>
@@ -2095,8 +2117,9 @@ export function MeetingRoom({
   const intentionalLeaveRef = useRef(false);
   const lkRoom = useMemo(() => new Room({
     publishDefaults: {
-      simulcast: false,
+      simulcast: true,
       videoCodec: 'h264',           // VP9 AMD GPU decoder produces pink/magenta artifacts
+      videoSimulcastLayers: [VideoPresets.h180, VideoPresets.h360],
       videoEncoding: {
         maxBitrate: 1_500_000,
         maxFramerate: 30,
@@ -2115,7 +2138,7 @@ export function MeetingRoom({
       autoGainControl: true,
     },
     adaptiveStream: true,
-    dynacast: false,                 // dynacast needs simulcast to work
+    dynacast: true,
     reconnectPolicy: {
       nextRetryDelayInMs: (context) => {
         if (context.retryCount > 8) return null;

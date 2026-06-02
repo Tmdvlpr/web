@@ -62,8 +62,12 @@ export const meetingsApi = {
 
   // ── Guest invitations ──────────────────────────────────────────────────────
 
-  createInvite: async (bookingId: number): Promise<MeetingInviteLink> => {
-    const res = await apiClient.post<MeetingInviteLink>(`/api/v1/meetings/${bookingId}/invite`);
+  createInvite: async (bookingId: number, force = false): Promise<MeetingInviteLink> => {
+    const res = await apiClient.post<MeetingInviteLink>(
+      `/api/v1/meetings/${bookingId}/invite`,
+      undefined,
+      force ? { params: { force: true } } : undefined,
+    );
     return res.data;
   },
 
@@ -72,8 +76,12 @@ export const meetingsApi = {
     return res.data;
   },
 
-  requestAdmission: async (inviteToken: string, guestName: string): Promise<void> => {
-    await apiClient.post(`/api/v1/meetings/invite/${inviteToken}/request`, { guest_name: guestName });
+  requestAdmission: async (inviteToken: string, guestName: string): Promise<{ guest_token: string }> => {
+    const res = await apiClient.post<{ guest_token: string }>(
+      `/api/v1/meetings/invite/${inviteToken}/request`,
+      { guest_name: guestName },
+    );
+    return res.data;
   },
 
   pollInviteStatus: async (inviteToken: string): Promise<InviteStatus> => {

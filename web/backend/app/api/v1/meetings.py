@@ -600,10 +600,15 @@ async def stop_meeting_recording(
 @router.post("/{booking_id}/invite", response_model=InviteLinkResponse)
 async def create_invite_link(
     booking_id: int,
+    force: bool = Query(False, description="Force creation of a new link even if one already exists"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> InviteLinkResponse:
-    """Organizer generates a one-use invite link for an external (unregistered) guest."""
+    """Return (or create) a reusable guest invite link for this booking.
+
+    Returns the same link on repeated calls so every place in the UI shows a
+    consistent URL.  Pass ?force=true to rotate the link (e.g. "Create new link").
+    """
     booking = await _get_active_booking(booking_id, db)
     is_privileged = current_user.role == Role.superadmin
     if booking.user_id != current_user.id and not is_privileged:
@@ -611,17 +616,37 @@ async def create_invite_link(
     if not booking.video_enabled or not booking.video_room_name:
         raise HTTPException(400, "Video not enabled for this booking")
 
+    now = datetime.now(timezone.utc)
+    frontend_url = settings.FRONTEND_URL.rstrip("/")
+
+    if not force:
+        # Reuse the most recent non-expired "pending" template invite so that
+        # BookingModal and the in-conference panel always show the same link.
+        existing = await db.execute(
+            select(MeetingInvitation)
+            .where(
+                MeetingInvitation.booking_id == booking_id,
+                MeetingInvitation.status == "pending",
+                MeetingInvitation.expires_at > now,
+            )
+            .order_by(MeetingInvitation.created_at.desc())
+            .limit(1)
+        )
+        existing_invite = existing.scalar_one_or_none()
+        if existing_invite:
+            invite_url = f"{frontend_url}/meeting/guest/{existing_invite.token}"
+            return InviteLinkResponse(invite_url=invite_url, token=existing_invite.token)
+
     token = secrets.token_urlsafe(32)
     invite = MeetingInvitation(
         booking_id=booking_id,
         token=token,
         status="pending",
-        expires_at=datetime.now(timezone.utc) + timedelta(hours=24),
+        expires_at=now + timedelta(hours=24),
     )
     db.add(invite)
     await db.commit()
 
-    frontend_url = settings.FRONTEND_URL.rstrip("/")
     invite_url = f"{frontend_url}/meeting/guest/{token}"
     return InviteLinkResponse(invite_url=invite_url, token=token)
 
@@ -663,7 +688,11 @@ async def request_admission(
     body: GuestRequestBody,
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    """Guest submits their name and requests to be admitted. Notifies organizer via WS."""
+    """Guest submits their name and requests to be admitted.
+
+    Creates a per-guest child invitation so the parent link stays reusable for
+    multiple concurrent guests — each gets their own token to poll for approval.
+    """
     result = await db.execute(
         select(MeetingInvitation).where(MeetingInvitation.token == invite_token)
     )
@@ -675,33 +704,30 @@ async def request_admission(
     expires = invite.expires_at if invite.expires_at.tzinfo else invite.expires_at.replace(tzinfo=timezone.utc)
     if now > expires:
         raise HTTPException(410, "Invite link has expired")
-    if invite.status == "used":
-        raise HTTPException(410, "Invite link has already been used")
 
-    # 30-second cooldown after rejection to prevent organizer spam
-    if invite.status == "rejected" and invite.requested_at is not None:
-        last_req = invite.requested_at
-        if last_req.tzinfo is None:
-            last_req = last_req.replace(tzinfo=timezone.utc)
-        if (now - last_req).total_seconds() < 30:
-            raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, "Too many requests. Please wait before requesting again")
-
-    # Reusable link: each new guest resets state (previously admitted guest keeps LiveKit connection)
-    invite.guest_name = body.guest_name
-    invite.status = "requesting"
-    invite.requested_at = now
-    invite.livekit_token = None
+    # Create a unique child invite for this specific guest request.
+    # The parent invite is left untouched so it remains reusable by future guests.
+    child_token = secrets.token_urlsafe(32)
+    child = MeetingInvitation(
+        booking_id=invite.booking_id,
+        token=child_token,
+        status="requesting",
+        guest_name=body.guest_name,
+        requested_at=now,
+        expires_at=expires,
+    )
+    db.add(child)
     await db.commit()
 
-    # Notify all meeting participants (organizer will see the admission popup)
     ws_count = len(manager._rooms.get(invite.booking_id, set()))
     logger.info(f"[admission] booking={invite.booking_id}, guest={body.guest_name!r}, active_ws={ws_count}")
+    # Broadcast the child token — organizer approves/rejects using it
     await manager.broadcast(invite.booking_id, {
         "type": "admission_request",
-        "invite_token": invite_token,
+        "invite_token": child_token,
         "guest_name": body.guest_name,
     })
-    return {"ok": True}
+    return {"ok": True, "guest_token": child_token}
 
 
 @router.get("/invite/{invite_token}/status", response_model=InviteStatusResponse)

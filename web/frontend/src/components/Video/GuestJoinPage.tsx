@@ -103,6 +103,8 @@ export function GuestJoinPage({ inviteToken }: { inviteToken: string }) {
   const [livekitUrl, setLivekitUrl] = useState<string | null>(null);
   const [guestBookingId, setGuestBookingId] = useState(0);
   const [guestSessionToken, setGuestSessionToken] = useState("");
+  // Each admission request creates a unique child token for polling; parent link stays reusable.
+  const [guestPollToken, setGuestPollToken] = useState(inviteToken);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Load meeting info
@@ -113,7 +115,7 @@ export function GuestJoinPage({ inviteToken }: { inviteToken: string }) {
     });
   }, [inviteToken]);
 
-  // Poll for status after requesting
+  // Poll for status after requesting (uses child token returned by requestAdmission)
   useEffect(() => {
     if (phase !== "waiting") {
       if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
@@ -121,7 +123,7 @@ export function GuestJoinPage({ inviteToken }: { inviteToken: string }) {
     }
     pollRef.current = setInterval(async () => {
       try {
-        const s = await meetingsApi.pollInviteStatus(inviteToken);
+        const s = await meetingsApi.pollInviteStatus(guestPollToken);
         if (s.status === "approved" && s.livekit_token) {
           setLivekitToken(s.livekit_token);
           setLivekitUrl(s.livekit_url ?? "");
@@ -134,13 +136,14 @@ export function GuestJoinPage({ inviteToken }: { inviteToken: string }) {
       } catch {}
     }, 4000);
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
-  }, [phase, inviteToken]);
+  }, [phase, guestPollToken]);
 
   const handleRequest = useCallback(async () => {
     if (!name.trim()) return;
     setPhase("requesting");
     try {
-      await meetingsApi.requestAdmission(inviteToken, name.trim());
+      const res = await meetingsApi.requestAdmission(inviteToken, name.trim());
+      setGuestPollToken(res.guest_token);
       setPhase("waiting");
     } catch (err) {
       const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ?? t("guest.sendError");

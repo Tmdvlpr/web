@@ -71,18 +71,25 @@ async def ensure_room_exists(room_name: str) -> None:
     from livekit.api import LiveKitAPI
     from livekit.protocol.room import CreateRoomRequest
 
+    req = CreateRoomRequest(
+        name=room_name,
+        empty_timeout=300,
+        max_participants=settings.VIDEO_MAX_PARTICIPANTS,
+    )
+    # Restrict the room to H264 only. VP9 hardware decoding on AMD GPUs produces
+    # pink/magenta color artifacts; H264 decoding is reliable on all hardware.
+    # video_codecs was added in livekit-server 1.5.8 — gracefully skip on older servers.
+    try:
+        req.video_codecs.append(1)  # 1 = H264 in the VideoCodec enum
+    except AttributeError:
+        pass
+
     async with LiveKitAPI(
         url=_lk_http_url(),
         api_key=settings.LIVEKIT_API_KEY,
         api_secret=settings.LIVEKIT_API_SECRET,
     ) as lkapi:
-        await lkapi.room.create_room(
-            CreateRoomRequest(
-                name=room_name,
-                empty_timeout=300,
-                max_participants=settings.VIDEO_MAX_PARTICIPANTS,
-            )
-        )
+        await lkapi.room.create_room(req)
 
 
 async def kick_participant(room_name: str, identity: str) -> None:
