@@ -295,11 +295,11 @@ function Dashboard() {
   const { user, logout } = useAuth();
   const { isMiniApp: miniApp } = useTelegram();
   const { isDark, toggle } = useTheme();
+  const { workspaces, activeWorkspace, isLoading: wsLoading, wsFetched } = useWorkspace();
   useInviteNotifications(user?.id, workspaces);
   useWorkspaceJoinRequestNotifications(user?.id);
   const { t, locale, setLocale } = useLocale();
   const { toasts, add: addToast } = useToasts();
-  const { workspaces, activeWorkspace, isLoading: wsLoading, wsFetched } = useWorkspace();
   const navigate = useNavigate();
 
   const [modalOpen,      setModalOpen]      = useState(false);

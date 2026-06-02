@@ -529,7 +529,6 @@ export function BookingModal({
                   title: t("overlap.notifTitle"),
                   body: t("overlap.body", { title: overlap.title, workspace: wsName }),
                   time: Date.now(),
-                  type: "info",
                 });
               }
             }
