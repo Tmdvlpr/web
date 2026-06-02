@@ -35,7 +35,7 @@ import { useTelegram } from "./hooks/useTelegram";
 import { WorkspaceOnboarding } from "./components/Workspace/WorkspaceOnboarding";
 import { WorkspaceSelector } from "./components/Workspace/WorkspaceSelector";
 import { WorkspaceSettingsModal } from "./components/Workspace/WorkspaceSettingsModal";
-import { PositionRequiredBanner } from "./components/Workspace/PositionRequiredBanner";
+import { PositionRequiredBanner, type PositionBannerHandle } from "./components/Workspace/PositionRequiredBanner";
 import { PositionSetupModal } from "./components/Workspace/PositionSetupModal";
 import type { Booking } from "./types";
 
@@ -330,7 +330,10 @@ function Dashboard() {
 
   const handleLogout = () => { logout(); navigate("/login", { replace: true }); };
 
+  const bannerRef = useRef<PositionBannerHandle>(null);
+
   const handleSlotClick = (start: Date, end: Date) => {
+    if (showPositionBanner) { bannerRef.current?.shake(); return; }
     setEditBooking(null); setSlotStart(start); setSlotEnd(end); setModalOpen(true);
   };
   const handleCardClick = (booking: Booking) => {
@@ -406,6 +409,7 @@ function Dashboard() {
       {showPositionBanner && activeWorkspace && myMember && user && (
         <div className="px-4 pt-2 pb-0 shrink-0">
           <PositionRequiredBanner
+            ref={bannerRef}
             workspaceId={activeWorkspace.id}
             myMemberId={myMember.id}
             user={user}
@@ -420,7 +424,7 @@ function Dashboard() {
 
       {/* FAB */}
       <button
-        onClick={() => handleSlotClick(new Date(), new Date(Date.now() + 3_600_000))}
+        onClick={() => showPositionBanner ? bannerRef.current?.shake() : handleSlotClick(new Date(), new Date(Date.now() + 3_600_000))}
         className="fixed z-40 flex items-center justify-center rounded-md text-white cursor-pointer"
         style={{ bottom: 24, right: 24, width: 56, height: 56,
           background: "linear-gradient(135deg,#1565a8,#3b82f6)",
