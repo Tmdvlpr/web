@@ -575,7 +575,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
                     </div>
                   </R>
                 ))}
-              </div>
+              </HoverGrid>
             </>}/>
 
             <Div/>
@@ -591,6 +591,17 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
                 <R delay={180}><Step n={3} title="Найти по названию" desc="Начинаете печатать — видите автодополнение и отправляете заявку на вступление."/></R>
               </HoverGrid>
               <R delay={240}><Note ch={<>Те же три кнопки показывает Telegram-бот после команды <b>/start</b>. В шапке приложения всегда есть селектор пространств.</>}/></R>
+              <R delay={300}>
+                <div className="mt-3 rounded-md p-4" style={{background:"var(--elevated)",border:"1px solid var(--border)"}}>
+                  <div className="font-semibold mb-2" style={{fontSize:"var(--font-sm)",color:"var(--text)"}}>🔒 Приватность пространства</div>
+                  <BList items={[
+                    {k:"Только по invite-коду",v:"вступить можно только зная invite-код пространства — ссылка не публичная"},
+                    {k:"Подтверждение администратора",v:"каждая заявка на вступление требует одобрения owner или admin"},
+                    {k:"Привязка к Telegram-группе",v:"пространство привязывается к корпоративной Telegram-группе командой /bind — уведомления идут только в неё"},
+                    {k:"Только участники группы",v:"вступить через бота могут только те, кто состоит в привязанной Telegram-группе компании"},
+                  ]}/>
+                </div>
+              </R>
             </>}/>
 
             <Div/>
@@ -815,7 +826,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
                 ] as [string,string,string|React.ReactNode][]).map(([ic,t,d],i)=>(
                   <R key={t as string} delay={i*40}><Card icon={ic} title={t as string} desc={typeof d==="string"?d:undefined}>{typeof d!=="string"?<div className="text-xs mt-1 leading-relaxed" style={{color:"var(--text-muted)"}}>{d}</div>:null}</Card></R>
                 ))}
-              </div>
+              </HoverGrid>
             </>}/>
 
             <Div/>
