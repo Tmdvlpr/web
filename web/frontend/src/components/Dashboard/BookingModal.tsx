@@ -353,6 +353,8 @@ export function BookingModal({
     ? dayBookings.filter((b) => {
         if (b.id < 0) return false;
         if ((b.booking_type ?? "physical") === "virtual") return false;
+        // Exclude bookings whose end_time is already in the past
+        if (new Date(b.end_time).getTime() < Date.now()) return false;
         // Room-level conflict: only flag if same room selected (or no room info)
         if (selectedRoomId !== "" && b.room_id !== undefined && b.room_id !== null && b.room_id !== selectedRoomId) return false;
         const bStart = new Date(b.start_time).getTime();
@@ -492,7 +494,7 @@ export function BookingModal({
     const endISO   = new Date(endTime).toISOString();
     try {
       if (isEdit && editBooking) {
-        await updateBooking({ id: editBooking.id, payload: { title, description, start_time: startISO, end_time: endISO, guests, video_enabled: videoEnabled } });
+        await updateBooking({ id: editBooking.id, payload: { title, description, start_time: startISO, end_time: endISO, guests, video_enabled: videoEnabled, room_id: selectedRoomId === "" ? undefined : selectedRoomId, booking_type: bookingType, reminder_minutes: undefined } });
         onSuccess?.(t("booking.toastUpdated"));
       } else {
         const created = await createBooking({
@@ -979,14 +981,14 @@ export function BookingModal({
                                   onMouseDown={() => { setSelectedRoomId(opt.id); setRoomDropOpen(false); if (fieldErrors.room) setFieldErrors(fe => ({ ...fe, room: undefined })); }}
                                   className="w-full px-3 py-2.5 text-sm text-left flex items-center gap-2 transition-all"
                                   style={{
-                                    background: selectedRoomId === opt.id ? "var(--primary-light)" : "transparent",
-                                    color: opt.id === "" ? "var(--text-muted)" : "var(--text)",
+                                    background: selectedRoomId === String(opt.id) ? "var(--primary-light)" : "transparent",
+                                    color: "var(--text)",
                                     transition: "background-color 0.15s ease",
                                   }}
-                                  onMouseEnter={e => { if (selectedRoomId !== opt.id) e.currentTarget.style.background = "var(--elevated)"; }}
-                                  onMouseLeave={e => { if (selectedRoomId !== opt.id) e.currentTarget.style.background = "transparent"; }}
+                                  onMouseEnter={e => { if (selectedRoomId !== String(opt.id)) e.currentTarget.style.background = "var(--elevated)"; }}
+                                  onMouseLeave={e => { if (selectedRoomId !== String(opt.id)) e.currentTarget.style.background = "transparent"; }}
                                 >
-                                  {selectedRoomId === opt.id && opt.id !== "" && (
+                                  {selectedRoomId === String(opt.id) && (
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" style={{ color: "var(--primary)", flexShrink: 0 }}><polyline points="20 6 9 17 4 12"/></svg>
                                   )}
                                   <span>{opt.name}{opt.shared ? " (общая)" : ""}</span>
