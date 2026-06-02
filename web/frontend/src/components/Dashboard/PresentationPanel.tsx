@@ -426,11 +426,22 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
   return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <motion.div key="pres"
-          initial={{opacity:0,x:"100%",scale:0.98}} animate={{opacity:1,x:0,scale:1}} exit={{opacity:0,x:"60%",scale:0.97}}
-          transition={{duration:0.52,ease:[0.16,1,0.3,1]}}
-          style={{position:"fixed",inset:0,zIndex:9990,background:"var(--bg)",display:"flex",flexDirection:"column",
-            boxShadow:isDark?"-20px 0 60px rgba(0,0,0,.8)":"-8px 0 40px rgba(15,23,42,.12)"}}>
+        <>
+          {/* Backdrop overlay */}
+          <motion.div key="pres-backdrop"
+            initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
+            transition={{duration:0.4, ease:"easeOut"}}
+            style={{position:"fixed",inset:0,zIndex:9989,background:"rgba(0,0,0,0.25)",backdropFilter:"blur(2px)"}}
+            onClick={onClose}
+          />
+          {/* Panel — smooth fade + scale */}
+          <motion.div key="pres"
+            initial={{opacity:0,scale:0.97,filter:"blur(8px)"}}
+            animate={{opacity:1,scale:1,filter:"blur(0px)"}}
+            exit={{opacity:0,scale:0.98,filter:"blur(4px)"}}
+            transition={{duration:0.5,ease:[0.16,1,0.3,1],filter:{duration:0.35,ease:"easeOut"}}}
+            style={{position:"fixed",inset:0,zIndex:9990,background:"var(--bg)",display:"flex",flexDirection:"column",
+              boxShadow:isDark?"-20px 0 60px rgba(0,0,0,.8)":"-8px 0 40px rgba(15,23,42,.12)"}}>
 
           {/* Topbar */}
           <div className="shrink-0 flex items-center justify-between" style={{height:52,padding:`0 clamp(20px,4vw,48px)`,borderBottom:"1px solid var(--border)",
@@ -863,6 +874,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
           </div>
           </ScrollCtx.Provider>
         </motion.div>
+        </>
       )}
     </AnimatePresence>,
     document.body
