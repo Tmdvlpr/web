@@ -330,6 +330,7 @@ export function BookingModal({
   const [roomDropOpen, setRoomDropOpen] = useState(false);
   const roomDropRef = useRef<HTMLDivElement | null>(null);
   const [deleteSeries,setDelSeries] = useState(false);
+  const bookingTypeUserSetRef = useRef(false);
   const [pendingFiles,setPendingFiles] = useState<File[]>([]);
   const [error,       setError]     = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{ title?: string; time?: string; days?: string; room?: string }>({});
@@ -374,6 +375,7 @@ export function BookingModal({
       weekendShown.current = false;
       importantShown.current = false;
       setEasterMsg(null);
+      bookingTypeUserSetRef.current = false;
       return;
     }
     setView("form"); setError(null); setDelSeries(false); setFormReady(false); setPendingFiles([]);
@@ -447,6 +449,16 @@ export function BookingModal({
         : "Все важные встречи так называются 😏");
     }
   }, [title, locale]);
+
+  // Auto-upgrade virtual→physical when rooms load in after stale cache or slow fetch
+  useEffect(() => {
+    if (!isOpen || isEdit || bookingTypeUserSetRef.current) return;
+    const available = activeWorkspace
+      ? myRooms.filter(wr => wr.workspace_id === activeWorkspace.id)
+      : myRooms;
+    if (available.length > 0) setBookingType("physical");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [myRooms, isOpen]);
 
   const importantTitle = title.toLowerCase().includes("важная встреча") || title.toLowerCase().includes("muhim yig'ilish");
 
@@ -877,7 +889,7 @@ export function BookingModal({
                         <button
                           key={opt.value}
                           type="button"
-                          onClick={() => setBookingType(opt.value)}
+                          onClick={() => { setBookingType(opt.value); bookingTypeUserSetRef.current = true; }}
                           className="flex-1 py-1.5 rounded text-xs font-semibold transition-all"
                           style={{
                             background: bookingType === opt.value ? "var(--primary)" : "var(--elevated)",
