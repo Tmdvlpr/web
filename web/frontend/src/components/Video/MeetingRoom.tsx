@@ -299,11 +299,12 @@ const LiveVideoTile = React.memo(function LiveVideoTile({
       onClick={onClick}
     >
       <div className="vtile__bg" />
-      {/* Always render VideoTrack when publication exists so LiveKit can subscribe the track */}
+      {/* Always render VideoTrack when publication exists so LiveKit can subscribe the track.
+          Mirror only for local camera — screen share must never be mirrored. */}
       {hasPublication && (
         <VideoTrack
           trackRef={trackRef as TrackReference}
-          className={`vtile__video${isLocal ? " vtile__video--mirror" : ""}`}
+          className={`vtile__video${isLocal && trackRef.source !== Track.Source.ScreenShare ? " vtile__video--mirror" : ""}`}
         />
       )}
       {!hasVideo && (
@@ -339,10 +340,11 @@ const FocusLayout = React.memo(({
   raisedHands?: Map<number, string>;
   activeSpeakerId?: string | null;
 }) => {
+  // Priority: screen share → pinned → currently speaking (live) → last active speaker → first
   const mainTrack = screenTrack
     ?? (pinnedId ? camTracks.find((t) => t.participant.identity === pinnedId) : null)
-    ?? (activeSpeakerId ? camTracks.find((t) => t.participant.identity === activeSpeakerId) : null)
     ?? camTracks.find((t) => (t.participant as Participant).isSpeaking)
+    ?? (activeSpeakerId ? camTracks.find((t) => t.participant.identity === activeSpeakerId) : null)
     ?? camTracks[0];
   const thumbs = camTracks.filter((t) => t !== mainTrack);
 
@@ -410,10 +412,11 @@ const CinemaLayout = React.memo(({
   raisedHands?: Map<number, string>;
   activeSpeakerId?: string | null;
 }) => {
+  // Priority: screen share → pinned → currently speaking (live) → last active speaker → first
   const mainTrack = screenTrack
     ?? (pinnedId ? camTracks.find((t) => t.participant.identity === pinnedId) : null)
-    ?? (activeSpeakerId ? camTracks.find((t) => t.participant.identity === activeSpeakerId) : null)
     ?? camTracks.find((t) => (t.participant as Participant).isSpeaking)
+    ?? (activeSpeakerId ? camTracks.find((t) => t.participant.identity === activeSpeakerId) : null)
     ?? camTracks[0];
   const strip = camTracks.filter((t) => t !== mainTrack);
 
