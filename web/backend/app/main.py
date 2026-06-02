@@ -12,7 +12,7 @@ from sqlalchemy import delete, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
-from app.database import Base, engine
+from app.database import AsyncSessionLocal, Base, engine
 from app.limiter import limiter
 from app.api.v1 import auth, bookings, internal, meetings, rooms, slots, submissions, users, workspaces
 from app.models import attachment  # noqa: F401  — регистрирует BookingAttachment в metadata
@@ -29,7 +29,7 @@ async def _cleanup_expired_sessions() -> None:
     while True:
         await asyncio.sleep(3600)
         try:
-            async with AsyncSession(engine) as session:
+            async with AsyncSessionLocal() as session:
                 await session.execute(
                     delete(BrowserSession).where(
                         BrowserSession.expires_at < datetime.now(timezone.utc)
@@ -50,7 +50,7 @@ async def _cleanup_chat_data() -> None:
         await asyncio.sleep(3600)
         try:
             cutoff = datetime.now(timezone.utc) - timedelta(days=settings.CHAT_RETENTION_DAYS)
-            async with AsyncSession(engine) as session:
+            async with AsyncSessionLocal() as session:
                 old_bookings = await session.execute(
                     select(Booking.id).where(Booking.end_time < cutoff, Booking.deleted_at.is_(None))
                 )
@@ -76,7 +76,7 @@ async def _cleanup_attachment_data() -> None:
     while True:
         await asyncio.sleep(300)  # каждые 5 минут
         try:
-            async with AsyncSession(engine) as session:
+            async with AsyncSessionLocal() as session:
                 subq = select(Booking.id).where(Booking.end_time < datetime.now(timezone.utc))
                 await session.execute(
                     update(BookingAttachment)

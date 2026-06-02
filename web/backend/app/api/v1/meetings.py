@@ -675,6 +675,16 @@ async def request_admission(
     expires = invite.expires_at if invite.expires_at.tzinfo else invite.expires_at.replace(tzinfo=timezone.utc)
     if now > expires:
         raise HTTPException(410, "Invite link has expired")
+    if invite.status == "used":
+        raise HTTPException(410, "Invite link has already been used")
+
+    # 30-second cooldown after rejection to prevent organizer spam
+    if invite.status == "rejected" and invite.requested_at is not None:
+        last_req = invite.requested_at
+        if last_req.tzinfo is None:
+            last_req = last_req.replace(tzinfo=timezone.utc)
+        if (now - last_req).total_seconds() < 30:
+            raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, "Too many requests. Please wait before requesting again")
 
     # Reusable link: each new guest resets state (previously admitted guest keeps LiveKit connection)
     invite.guest_name = body.guest_name
@@ -707,9 +717,9 @@ async def get_invite_status(
     if not invite:
         raise HTTPException(404, "Invalid invite link")
 
-    if invite.status == "approved" and invite.livekit_token:
+    if invite.status in ("approved", "used") and invite.livekit_token:
         booking = await db.get(Booking, invite.booking_id)
-        gst = _invite_to_session.get(invite_token)
+        gst = _invite_to_session.get(invite_token) or invite.guest_session_token
         return InviteStatusResponse(
             status="approved",
             livekit_token=invite.livekit_token,
@@ -769,8 +779,9 @@ async def admit_guest(
         if len(_guest_sessions) > 1000:
             oldest = next(iter(_guest_sessions))
             del _guest_sessions[oldest]
-        # Map invite token → session token so the guest can retrieve it via /status
+        # Map invite token → session token (in-memory + DB for multi-process safety)
         _invite_to_session[body.invite_token] = guest_session_token
+        invite.guest_session_token = guest_session_token
     elif body.action == "reject":
         invite.status = "rejected"
     else:
@@ -888,6 +899,25 @@ async def chat_websocket(
     elif guest_token:
         # Guest auth via session token from /admit
         session = _guest_sessions.get(guest_token)
+        if not session:
+            # DB fallback for multi-process deployments (guest admitted on different worker)
+            async with AsyncSessionLocal() as gst_db:
+                inv = await gst_db.scalar(
+                    select(MeetingInvitation).where(
+                        MeetingInvitation.guest_session_token == guest_token,
+                        MeetingInvitation.status == "used",
+                    )
+                )
+                if inv is not None:
+                    inv_expires = inv.expires_at
+                    if inv_expires.tzinfo is None:
+                        inv_expires = inv_expires.replace(tzinfo=timezone.utc)
+                    if inv_expires >= datetime.now(timezone.utc):
+                        session = {
+                            "booking_id": inv.booking_id,
+                            "guest_name": inv.guest_name or "Гость",
+                            "expires_at": inv_expires,
+                        }
         if not session:
             await websocket.send_json({"error": "unauthorized"})
             await websocket.close(code=4401)
