@@ -1,6 +1,6 @@
 import enum
 from datetime import datetime
-from sqlalchemy import BigInteger, DateTime, Enum, ForeignKey, String, UniqueConstraint, func
+from sqlalchemy import BigInteger, Boolean, DateTime, Enum, ForeignKey, String, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
 
@@ -37,6 +37,7 @@ class Workspace(Base):
     invite_code: Mapped[str] = mapped_column(String(32), unique=True, index=True)
     timezone: Mapped[str] = mapped_column(String(50), default="UTC", server_default="UTC")
     telegram_chat_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    restrict_join_to_group: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     created_by_user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

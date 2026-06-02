@@ -871,7 +871,11 @@ async def consume_session_bot(
             ))
             await db.commit()
 
-        return {"ok": True}
+        return {
+            "ok": True,
+            "telegram_chat_id": workspace.telegram_chat_id,
+            "restrict_join_to_group": workspace.restrict_join_to_group,
+        }
 
     # ── QR / browser deep-link session ───────────────────────────────────────
     result = await db.execute(
@@ -942,6 +946,7 @@ class BindTelegramRequest(BaseModel):
     invite_code: str
     chat_id: int
     telegram_user_id: int
+    restrict_join_to_group: bool = False
 
 
 class BindTelegramResponse(BaseModel):
@@ -980,6 +985,7 @@ async def bind_workspace_telegram(
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Must be owner or admin to bind")
 
     ws.telegram_chat_id = payload.chat_id
+    ws.restrict_join_to_group = payload.restrict_join_to_group
     await db.commit()
     return BindTelegramResponse(workspace_name=ws.name)
 
@@ -1013,6 +1019,47 @@ async def unbind_workspace_telegram(
     ws.telegram_chat_id = None
     await db.commit()
     return {"ok": True, "workspace_name": ws.name}
+
+
+class WorkspaceByInviteResponse(BaseModel):
+    workspace_id: int
+    workspace_name: str
+    telegram_chat_id: int | None
+    restrict_join_to_group: bool
+
+
+@router.get(
+    "/workspaces/by-invite/{code}",
+    response_model=WorkspaceByInviteResponse,
+    summary="Получить данные пространства по публичному invite_code (для проверки членства в TG-группе)",
+)
+async def get_workspace_by_invite(
+    code: str,
+    db: AsyncSession = Depends(get_db),
+    _: None = Depends(verify_bot_secret),
+) -> WorkspaceByInviteResponse:
+    """
+    Бот вызывает перед join-by-invite чтобы узнать:
+    - привязана ли TG-группа (telegram_chat_id)
+    - нужна ли проверка членства (restrict_join_to_group)
+
+    Только для публичных ссылок (ws_{code}). Персональные invite_token этот
+    эндпоинт не используют — они пускают без проверки.
+    """
+    ws = await db.scalar(
+        select(Workspace).where(
+            Workspace.invite_code == code,
+            Workspace.archived_at.is_(None),
+        )
+    )
+    if not ws:
+        raise HTTPException(status_code=404, detail="Workspace not found")
+    return WorkspaceByInviteResponse(
+        workspace_id=ws.id,
+        workspace_name=ws.name,
+        telegram_chat_id=ws.telegram_chat_id,
+        restrict_join_to_group=ws.restrict_join_to_group,
+    )
 
 
 class WorkspaceJoinByInviteRequest(BaseModel):
@@ -1067,7 +1114,14 @@ async def join_workspace_by_invite(
         )
     )
     if existing:
-        return {"ok": True, "already_member": True, "status": existing.status.value, "workspace_name": ws.name}
+        return {
+            "ok": True,
+            "already_member": True,
+            "status": existing.status.value,
+            "workspace_name": ws.name,
+            "telegram_chat_id": ws.telegram_chat_id,
+            "restrict_join_to_group": ws.restrict_join_to_group,
+        }
 
     new_member = WorkspaceMember(
         workspace_id=ws.id,
@@ -1077,7 +1131,14 @@ async def join_workspace_by_invite(
     )
     db.add(new_member)
     await db.commit()
-    return {"ok": True, "already_member": False, "status": "active", "workspace_name": ws.name}
+    return {
+        "ok": True,
+        "already_member": False,
+        "status": "active",
+        "workspace_name": ws.name,
+        "telegram_chat_id": ws.telegram_chat_id,
+        "restrict_join_to_group": ws.restrict_join_to_group,
+    }
 
 
 # ── LiveKit webhook (подпись проверяется самим LiveKit JWT, не X-Bot-Secret) ──
