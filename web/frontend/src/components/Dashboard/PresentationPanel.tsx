@@ -47,7 +47,7 @@ function R({ children, delay = 0, dir = "up" }: { children: React.ReactNode; del
   useEffect(() => {
     const el = ref.current, root = scrollRef.current;
     if (!el || !root) return;
-    const io = new IntersectionObserver(([e]) => { setOn(e.isIntersecting); },
+    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setOn(true); io.disconnect(); } },
       { root, threshold: 0.08, rootMargin: "0px 0px -20px 0px" });
     io.observe(el);
     return () => io.disconnect();
