@@ -21,6 +21,9 @@ import { NotificationCenter, addNotification, getReminderMinutes, getUnreadCount
 const AdminPanel = React.lazy(() =>
   import("./components/Dashboard/AdminPanel").then((m) => ({ default: m.AdminPanel }))
 );
+const PresentationPanel = React.lazy(() =>
+  import("./components/Dashboard/PresentationPanel").then((m) => ({ default: m.PresentationPanel }))
+);
 import { SubmissionsPanel } from "./components/Dashboard/SubmissionsPanel";
 import { SplashScreen } from "./components/Common/SplashScreen";
 import { FeedbackModal } from "./components/Common/FeedbackModal";
@@ -307,6 +310,7 @@ function Dashboard() {
   const [activeOpen,     setActiveOpen]     = useState(false);
   const [notifOpen,      setNotifOpen]      = useState(false);
   const [adminOpen,      setAdminOpen]      = useState(false);
+  const [presOpen,       setPresOpen]       = useState(false);
   const [feedbackOpen,   setFeedbackOpen]   = useState(false);
   const [submissionsOpen,setSubmissionsOpen]= useState(false);
   const [wsSettingsOpen, setWsSettingsOpen] = useState(false);
@@ -576,7 +580,7 @@ function Dashboard() {
 
               {/* About */}
               <div className="px-3 pb-1 shrink-0">
-                <SideBtn icon={<IcInfo />} label="О платформе  v1.0" onClick={() => { window.open('/presentation.html', '_blank'); closeSidebar(); }} />
+                <SideBtn icon={<IcInfo />} label="О платформе  v1.0" onClick={() => { setPresOpen(true); closeSidebar(); }} />
               </div>
 
               {/* Logout */}
@@ -595,6 +599,7 @@ function Dashboard() {
 
       {isAdmin && <AdminPanel isOpen={adminOpen} onClose={() => setAdminOpen(false)}
         onBack={() => { setAdminOpen(false); setSidebarOpen(true); }} />}
+      <Suspense fallback={null}><PresentationPanel isOpen={presOpen} onClose={() => setPresOpen(false)} /></Suspense>
       {isSuperadmin && <SubmissionsPanel isOpen={submissionsOpen} onClose={() => setSubmissionsOpen(false)}
         onBack={() => { setSubmissionsOpen(false); setSidebarOpen(true); }} />}
 

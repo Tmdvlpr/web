@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CorpMeet — О платформе</title>
+<title>CorpMeet — О платформе v1.0</title>
 <style>
 @font-face{font-family:'Gilroy';src:url('/fonts/Gilroy-Regular.woff2') format('woff2');font-weight:400;font-display:swap}
 @font-face{font-family:'Gilroy';src:url('/fonts/Gilroy-Medium.woff2') format('woff2');font-weight:500;font-display:swap}
@@ -11,406 +11,450 @@
 @font-face{font-family:'Gilroy';src:url('/fonts/Gilroy-Bold.woff2') format('woff2');font-weight:700;font-display:swap}
 @font-face{font-family:'Gilroy';src:url('/fonts/Gilroy-Extrabold.woff2') format('woff2');font-weight:800;font-display:swap}
 
-:root{
-  --bg:#e8ecf5;
-  --surface:rgba(255,255,255,0.78);
-  --elevated:rgba(255,255,255,0.95);
-  --border:rgba(200,208,226,0.65);
-  --border-light:rgba(200,208,226,0.35);
-  --text:#111827;
-  --text-sec:#374151;
-  --text-muted:#6b7280;
-  --primary:#1565a8;
-  --primary-hover:#114e85;
-  --primary-light:rgba(21,101,168,0.09);
-  --primary-border:rgba(21,101,168,0.28);
-  --accent:#0ea5e9;
-  --success:#10b981;
-  --danger:#ef4444;
-  --amber:#f59e0b;
-  --shadow:0 2px 8px rgba(17,24,39,0.07),0 4px 18px rgba(17,24,39,0.04);
-  --shadow-lg:0 8px 28px rgba(17,24,39,0.12);
-  --blur:12px;
-  --r:6px;
+/* ── TOKENS — точно как в index.css проекта ─────────────────────── */
+:root {
+  --bg:             #e8ecf5;
+  --surface:        #ffffff;
+  --elevated:       #f4f6fb;
+  --border:         rgba(200,208,226,0.65);
+  --border-light:   rgba(200,208,226,0.35);
+  --text:           #111827;
+  --text-sec:       #374151;
+  --text-muted:     #6b7280;
+  --primary:        #1565a8;
+  --primary-hover:  #114e85;
+  --primary-light:  rgba(21,101,168,0.09);
+  --primary-border: rgba(21,101,168,0.26);
+  --accent:         #0ea5e9;
+  --success:        #10b981;
+  --danger:         #ef4444;
+  --amber:          #f59e0b;
+  --shadow:         0 2px 8px rgba(17,24,39,0.07), 0 4px 16px rgba(17,24,39,0.04);
+  --shadow-lg:      0 8px 24px rgba(17,24,39,0.11);
+  --blur:           12px;
+  --r:              6px;
 }
-[data-theme="dark"]{
-  --bg:#07070d;
-  --surface:rgba(10,10,20,0.85);
-  --elevated:rgba(24,24,42,0.92);
-  --border:rgba(148,163,184,0.20);
-  --border-light:rgba(148,163,184,0.08);
-  --text:#f8fafc;
-  --text-sec:#cbd5e1;
-  --text-muted:#8899b4;
-  --primary:#5ba3df;
-  --primary-hover:#3b82f6;
-  --primary-light:rgba(91,163,223,0.16);
-  --primary-border:rgba(91,163,223,0.38);
-  --accent:#38bdf8;
-  --success:#6ee7b7;
-  --danger:#fca5a5;
-  --amber:#fbbf24;
-  --shadow:0 2px 12px rgba(0,0,0,0.40);
-  --shadow-lg:0 8px 32px rgba(0,0,0,0.55);
-  --blur:16px;
-}
-
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth;overflow-x:hidden}
-body{
-  font-family:'Gilroy',system-ui,-apple-system,sans-serif;
-  background:var(--bg);
-  color:var(--text);
-  line-height:1.55;
-  transition:background .3s ease,color .3s ease;
-  overflow-x:hidden;
+[data-theme="dark"] {
+  --bg:             #07070d;
+  --surface:        #0e0e1c;
+  --elevated:       #14142a;
+  --border:         rgba(148,163,184,0.18);
+  --border-light:   rgba(148,163,184,0.07);
+  --text:           #f8fafc;
+  --text-sec:       #cbd5e1;
+  --text-muted:     #7e8fa8;
+  --primary:        #5ba3df;
+  --primary-hover:  #3b82f6;
+  --primary-light:  rgba(91,163,223,0.13);
+  --primary-border: rgba(91,163,223,0.30);
+  --accent:         #38bdf8;
+  --success:        #6ee7b7;
+  --danger:         #fca5a5;
+  --amber:          #fbbf24;
+  --shadow:         0 2px 12px rgba(0,0,0,0.50);
+  --shadow-lg:      0 8px 32px rgba(0,0,0,0.65);
+  --blur:           16px;
 }
 
-/* ── SCROLL PROGRESS ─────────────────────── */
-#prog{
-  position:fixed;top:0;left:0;height:3px;width:0%;z-index:1001;
-  background:linear-gradient(90deg,var(--primary),var(--accent));
-  transition:width .08s linear;
-  pointer-events:none;
+/* ── RESET ──────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0 }
+html { scroll-behavior:smooth; overflow-x:hidden }
+body {
+  font-family: 'Gilroy', system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.55;
+  overflow-x: hidden;
+  transition: background-color .25s ease, color .25s ease;
 }
 
-/* ── TOPBAR ──────────────────────────────── */
-.topbar{
-  position:fixed;top:0;left:0;right:0;height:52px;z-index:900;
-  display:flex;align-items:center;justify-content:space-between;
-  padding:0 clamp(16px,5vw,72px);
-  background:var(--surface);
-  backdrop-filter:blur(var(--blur));
-  -webkit-backdrop-filter:blur(var(--blur));
-  border-bottom:1px solid var(--border);
-  box-shadow:var(--shadow);
-  transition:background .3s ease;
+/* Background gradient — как в приложении */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 900px 500px at 85% -5%,  rgba(21,101,168,.07),  transparent 60%),
+    radial-gradient(ellipse 600px 400px at 5%  105%, rgba(14,165,233,.05),  transparent 55%);
+  transition: opacity .25s ease;
 }
-.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:17px;text-decoration:none;color:var(--text)}
-.logo-mark{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--primary),var(--accent));display:grid;place-items:center;box-shadow:0 4px 12px rgba(21,101,168,0.4);flex-shrink:0}
-.logo-mark span{width:12px;height:12px;border:2.5px solid #fff;border-radius:4px;display:block}
-.logo em{color:var(--primary);font-style:normal}
-.topbar-right{display:flex;align-items:center;gap:8px}
-.tbtn{
-  display:flex;align-items:center;gap:6px;
-  font-family:inherit;font-size:13px;font-weight:600;
-  color:var(--text-muted);text-decoration:none;
-  padding:5px 11px;border-radius:var(--r);
-  border:1px solid var(--border);background:var(--elevated);cursor:pointer;
+[data-theme="dark"] body::before {
+  background:
+    radial-gradient(ellipse 900px 500px at 85% -5%,  rgba(91,163,223,.09),  transparent 60%),
+    radial-gradient(ellipse 600px 400px at 5%  105%, rgba(56,189,248,.05),  transparent 55%);
+}
+
+/* ── SCROLL PROGRESS ────────────────────────────────────────────── */
+#prog {
+  position: fixed; top:0; left:0; height:3px; width:0; z-index:1001;
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+  transition: width .08s linear;
+  pointer-events: none;
+}
+
+/* ── TOPBAR ─────────────────────────────────────────────────────── */
+.topbar {
+  position: fixed; top:0; left:0; right:0; height:52px; z-index:900;
+  display: flex; align-items:center; justify-content:space-between;
+  padding: 0 clamp(14px,4.5vw,64px);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  backdrop-filter: blur(var(--blur));
+  -webkit-backdrop-filter: blur(var(--blur));
+  border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  transition: background .25s ease;
+}
+
+/* Логотип — точная копия из App.tsx */
+.logo {
+  display: flex; align-items:center; gap:9px;
+  font-family: 'Gilroy', system-ui, sans-serif;
+  font-weight: 800; font-size:16px;
+  text-decoration: none; color: var(--text);
+  user-select: none;
+}
+.logo-mark {
+  width: 28px; height:28px; border-radius:8px; flex-shrink:0;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  display: grid; place-items:center;
+  box-shadow: 0 4px 12px rgba(21,101,168,.38);
+}
+.logo-mark span {
+  display:block; width:12px; height:12px;
+  border: 2.5px solid #fff; border-radius:4px;
+}
+.logo-name { color:var(--text) }
+.logo-name em { color:var(--primary); font-style:normal }
+
+.topbar-right { display:flex; align-items:center; gap:7px }
+
+.tbtn {
+  display: inline-flex; align-items:center; gap:5px;
+  font-family: 'Gilroy', system-ui, sans-serif;
+  font-size:13px; font-weight:600;
+  color:var(--text-muted); text-decoration:none;
+  padding:5px 11px; border-radius:var(--r);
+  border:1px solid var(--border); background:var(--surface);
+  cursor:pointer; transition:all .15s ease;
+}
+.tbtn:hover { color:var(--primary); border-color:var(--primary-border); background:var(--primary-light) }
+
+.icon-btn {
+  width:32px; height:32px; border-radius:var(--r);
+  border:1px solid var(--border); background:var(--surface);
+  color:var(--text-muted); cursor:pointer;
+  display:grid; place-items:center;
   transition:all .15s ease;
 }
-.tbtn:hover{color:var(--primary);border-color:var(--primary-border);background:var(--primary-light)}
+.icon-btn:hover { color:var(--primary); border-color:var(--primary-border); background:var(--primary-light) }
+.icon-btn svg { display:block }
 
-/* ── CONTAINER ───────────────────────────── */
-.wrap{max-width:1160px;margin:0 auto;padding:0 clamp(16px,5vw,60px)}
+/* ── WRAPPER ────────────────────────────────────────────────────── */
+.wrap { max-width:1140px; margin:0 auto; padding:0 clamp(14px,4.5vw,56px); position:relative; z-index:1 }
+.divider { height:1px; background:var(--border); margin:0 clamp(14px,4.5vw,56px); position:relative; z-index:1 }
 
-/* ── DIVIDER ─────────────────────────────── */
-.divider{height:1px;background:var(--border);margin:0 clamp(16px,5vw,60px)}
-
-/* ── REVEAL ──────────────────────────────── */
-[data-r]{
+/* ── REVEAL ANIMATIONS ──────────────────────────────────────────── */
+[data-r] {
   opacity:0;
-  transition:opacity .65s cubic-bezier(.22,1,.36,1),transform .65s cubic-bezier(.22,1,.36,1);
+  transition: opacity .6s cubic-bezier(.22,1,.36,1), transform .6s cubic-bezier(.22,1,.36,1);
 }
-[data-r="up"]{transform:translateY(22px)}
-[data-r="left"]{transform:translateX(-22px)}
-[data-r="right"]{transform:translateX(22px)}
-[data-r="scale"]{transform:scale(.96) translateY(12px)}
-[data-r].on{opacity:1;transform:none}
+[data-r="up"]    { transform: translateY(20px) }
+[data-r="left"]  { transform: translateX(-20px) }
+[data-r="right"] { transform: translateX(20px) }
+[data-r="scale"] { transform: scale(.97) translateY(10px) }
+[data-r].on      { opacity:1; transform:none }
 
-[data-d="1"]{transition-delay:.07s}
-[data-d="2"]{transition-delay:.14s}
-[data-d="3"]{transition-delay:.21s}
-[data-d="4"]{transition-delay:.28s}
-[data-d="5"]{transition-delay:.35s}
-[data-d="6"]{transition-delay:.42s}
-[data-d="7"]{transition-delay:.49s}
-[data-d="8"]{transition-delay:.56s}
+[data-d="1"]{transition-delay:.06s} [data-d="2"]{transition-delay:.12s}
+[data-d="3"]{transition-delay:.18s} [data-d="4"]{transition-delay:.24s}
+[data-d="5"]{transition-delay:.30s} [data-d="6"]{transition-delay:.36s}
+[data-d="7"]{transition-delay:.42s} [data-d="8"]{transition-delay:.48s}
 
-/* ── TYPOGRAPHY ──────────────────────────── */
-h1{font-size:clamp(36px,6vw,68px);font-weight:800;line-height:1.05;letter-spacing:-.022em}
-h2{font-size:clamp(24px,4vw,44px);font-weight:800;line-height:1.08;letter-spacing:-.016em}
-h3{font-size:17px;font-weight:700;line-height:1.3}
-.lead{font-size:clamp(14px,1.8vw,18px);color:var(--text-sec);line-height:1.65;max-width:680px;margin-top:10px}
-.grad{background:linear-gradient(120deg,var(--text) 10%,var(--primary) 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+/* ── TYPOGRAPHY ─────────────────────────────────────────────────── */
+h1 { font-size:clamp(34px,5.5vw,64px); font-weight:800; line-height:1.06; letter-spacing:-.022em }
+h2 { font-size:clamp(22px,3.5vw,42px); font-weight:800; line-height:1.09; letter-spacing:-.016em }
+h3 { font-size:16px; font-weight:700; line-height:1.3 }
+.lead { font-size:clamp(14px,1.7vw,17px); color:var(--text-sec); line-height:1.65; max-width:640px; margin-top:9px }
+.grad { background:linear-gradient(120deg,var(--text) 15%,var(--primary) 100%); -webkit-background-clip:text; background-clip:text; color:transparent }
 
-.eyebrow{
-  display:inline-flex;align-items:center;gap:7px;
-  font-size:11.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
-  color:var(--primary);margin-bottom:10px;
+.eyebrow {
+  display:inline-flex; align-items:center; gap:7px;
+  font-size:11px; font-weight:700; letter-spacing:.15em; text-transform:uppercase;
+  color:var(--primary); margin-bottom:9px;
 }
-.eyebrow-n{
-  background:var(--primary);color:#fff;border-radius:4px;
-  padding:2px 7px;font-size:10.5px;
+.eyebrow-n {
+  background:var(--primary); color:#fff;
+  border-radius:4px; padding:2px 7px; font-size:10px;
 }
 
-/* ── CARDS ───────────────────────────────── */
-.card{
-  background:var(--surface);
-  backdrop-filter:blur(var(--blur));
-  -webkit-backdrop-filter:blur(var(--blur));
-  border:1px solid var(--border);
-  border-radius:var(--r);
-  box-shadow:var(--shadow);
-  padding:20px;
-  transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease;
+/* ── CARD ───────────────────────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
+  padding: 18px;
+  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
 }
-.card:hover{transform:translateY(-2px);border-color:var(--primary-border);box-shadow:var(--shadow-lg)}
-.card-ic{
-  width:40px;height:40px;border-radius:var(--r);
-  background:var(--primary-light);border:1px solid var(--primary-border);
-  display:grid;place-items:center;font-size:19px;margin-bottom:12px;
+.card:hover { transform:translateY(-2px); border-color:var(--primary-border); box-shadow:var(--shadow-lg) }
+.card-ic {
+  width:38px; height:38px; border-radius:var(--r);
+  background:var(--primary-light); border:1px solid var(--primary-border);
+  display:grid; place-items:center; font-size:18px; margin-bottom:11px;
 }
-.card h3{margin-bottom:5px}
-.card p{color:var(--text-muted);font-size:13.5px;line-height:1.6}
+.card h3 { margin-bottom:5px }
+.card p  { color:var(--text-muted); font-size:13px; line-height:1.6 }
 
-/* ── GRIDS ───────────────────────────────── */
-.g2{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
-.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-@media(max-width:900px){.g4{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:680px){.g3{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:500px){.g4,.g3,.g2{grid-template-columns:1fr}}
+/* ── GRIDS ──────────────────────────────────────────────────────── */
+.g2{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media(max-width:860px){.g4{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:640px){.g3{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:460px){.g4,.g3,.g2{grid-template-columns:1fr}}
 
-/* ── SPLIT ───────────────────────────────── */
-.split{display:grid;grid-template-columns:1fr 1fr;gap:36px;align-items:center}
-.split.fw{grid-template-columns:1.1fr .9fr}
-@media(max-width:760px){.split,.split.fw{grid-template-columns:1fr}}
+/* ── SPLIT ──────────────────────────────────────────────────────── */
+.split     { display:grid; grid-template-columns:1fr 1fr; gap:32px; align-items:center }
+.split.fw  { grid-template-columns:1.1fr .9fr }
+@media(max-width:720px){.split,.split.fw{grid-template-columns:1fr}}
 
-/* ── TAG ─────────────────────────────────── */
-.tag{
-  display:inline-flex;align-items:center;font-size:11px;font-weight:700;letter-spacing:.03em;
-  color:var(--primary);background:var(--primary-light);border:1px solid var(--primary-border);
-  border-radius:4px;padding:2px 8px;margin:3px 3px 0 0;
-}
-
-/* ── NOTE ────────────────────────────────── */
-.note{
-  margin-top:18px;padding:11px 15px;
-  background:var(--primary-light);border:1px solid var(--primary-border);
-  border-left:3px solid var(--primary);border-radius:var(--r);
-  font-size:13.5px;color:var(--text-sec);line-height:1.6;
+/* ── TAG ────────────────────────────────────────────────────────── */
+.tag {
+  display:inline-flex; align-items:center;
+  font-size:11px; font-weight:700; letter-spacing:.03em;
+  color:var(--primary); background:var(--primary-light);
+  border:1px solid var(--primary-border); border-radius:4px;
+  padding:2px 7px; margin:3px 3px 0 0;
 }
 
-/* ── LIST ────────────────────────────────── */
-.blist{list-style:none;margin-top:6px}
-.blist li{
-  position:relative;padding:7px 0 7px 22px;
-  color:var(--text-sec);font-size:14px;line-height:1.55;
+/* ── NOTE ───────────────────────────────────────────────────────── */
+.note {
+  margin-top:16px; padding:10px 14px;
+  background:var(--primary-light); border:1px solid var(--primary-border);
+  border-left:3px solid var(--primary); border-radius:var(--r);
+  font-size:13px; color:var(--text-sec); line-height:1.6;
+}
+
+/* ── BULLET LIST ─────────────────────────────────────────────────── */
+.blist { list-style:none; margin-top:4px }
+.blist li {
+  position:relative; padding:6px 0 6px 21px;
+  color:var(--text-sec); font-size:13.5px; line-height:1.55;
   border-bottom:1px solid var(--border-light);
 }
-.blist li:last-child{border-bottom:none}
-.blist li::before{
-  content:"";position:absolute;left:3px;top:15px;
-  width:6px;height:6px;border-radius:2px;background:var(--primary);opacity:.75;
+.blist li:last-child { border-bottom:none }
+.blist li::before {
+  content:''; position:absolute; left:3px; top:14px;
+  width:6px; height:6px; border-radius:2px;
+  background:var(--primary); opacity:.7;
 }
-.blist li b{color:var(--text);font-weight:600}
+.blist li b { color:var(--text); font-weight:600 }
 
-/* ── STEP COUNTER ────────────────────────── */
-.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:26px;counter-reset:sc}
-.step{
-  background:var(--surface);backdrop-filter:blur(var(--blur));
-  border:1px solid var(--border);border-radius:var(--r);
-  box-shadow:var(--shadow);padding:20px;padding-top:28px;
-  position:relative;counter-increment:sc;
-  transition:transform .25s,box-shadow .25s,border-color .25s;
+/* ── STEPS ──────────────────────────────────────────────────────── */
+.steps { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:22px; counter-reset:sc }
+.step {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--r); box-shadow:var(--shadow);
+  padding:18px; padding-top:26px;
+  position:relative; counter-increment:sc;
+  transition:transform .22s, box-shadow .22s, border-color .22s;
 }
-.step:hover{transform:translateY(-2px);border-color:var(--primary-border);box-shadow:var(--shadow-lg)}
-.step::before{
+.step:hover { transform:translateY(-2px); border-color:var(--primary-border); box-shadow:var(--shadow-lg) }
+.step::before {
   content:counter(sc);
-  position:absolute;top:-14px;left:18px;width:30px;height:30px;
+  position:absolute; top:-13px; left:16px;
+  width:28px; height:28px;
   background:linear-gradient(135deg,var(--primary),var(--accent));
-  border-radius:var(--r);display:grid;place-items:center;
-  font-weight:800;font-size:14px;color:#fff;
-  box-shadow:0 5px 14px rgba(21,101,168,.42);
+  border-radius:var(--r); display:grid; place-items:center;
+  font-weight:800; font-size:13px; color:#fff;
+  box-shadow:0 4px 12px rgba(21,101,168,.38);
 }
-.step h3{margin:3px 0 5px;font-size:16px}
-.step p{color:var(--text-muted);font-size:13.5px;line-height:1.6}
-@media(max-width:640px){.steps{grid-template-columns:1fr}}
+.step h3 { margin:2px 0 4px; font-size:15px }
+.step p  { color:var(--text-muted); font-size:13px; line-height:1.6 }
+@media(max-width:580px){.steps{grid-template-columns:1fr}}
 
-/* ── FLOW ────────────────────────────────── */
-.flow{display:flex;align-items:stretch;flex-wrap:wrap;margin-top:26px}
-.fnode{
-  flex:1;min-width:130px;
-  background:var(--surface);backdrop-filter:blur(var(--blur));
-  border:1px solid var(--border);border-radius:var(--r);
-  padding:16px;text-align:center;
+/* ── FLOW ────────────────────────────────────────────────────────── */
+.flow { display:flex; flex-wrap:wrap; margin-top:22px }
+.fnode {
+  flex:1; min-width:120px;
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--r); padding:14px; text-align:center;
 }
-.fnode .fi{font-size:24px;margin-bottom:7px}
-.fnode h4{font-size:13.5px;font-weight:700;margin-bottom:3px}
-.fnode p{font-size:12px;color:var(--text-muted);line-height:1.5}
-.farrow{display:grid;place-items:center;color:var(--primary);font-size:18px;padding:0 5px;opacity:.6}
-@media(max-width:600px){.flow{flex-direction:column}.farrow{transform:rotate(90deg);padding:4px 0}}
+.fnode .fi  { font-size:22px; margin-bottom:6px }
+.fnode h4   { font-size:13px; font-weight:700; margin-bottom:3px }
+.fnode p    { font-size:11.5px; color:var(--text-muted); line-height:1.5 }
+.farrow     { display:grid; place-items:center; color:var(--primary); font-size:16px; padding:0 4px; opacity:.55 }
+@media(max-width:520px){ .flow{flex-direction:column} .farrow{transform:rotate(90deg);padding:3px 0} }
 
-/* ── STATS ───────────────────────────────── */
-.stats{display:flex;gap:28px;flex-wrap:wrap;margin-top:24px}
-.stat .big{
-  font-size:clamp(24px,3.5vw,42px);font-weight:800;
+/* ── STATS ──────────────────────────────────────────────────────── */
+.stats { display:flex; gap:24px; flex-wrap:wrap; margin-top:22px }
+.stat .big {
+  font-size:clamp(22px,3vw,38px); font-weight:800;
   background:linear-gradient(135deg,var(--text),var(--primary));
-  -webkit-background-clip:text;background-clip:text;color:transparent;line-height:1;
+  -webkit-background-clip:text; background-clip:text; color:transparent; line-height:1;
 }
-.stat small{display:block;color:var(--text-muted);font-size:12px;margin-top:5px}
+.stat small { display:block; color:var(--text-muted); font-size:11.5px; margin-top:4px }
 
-/* ── SCENE ───────────────────────────────── */
-.scene{
-  background:var(--surface);backdrop-filter:blur(var(--blur));
-  border:1px solid var(--border);border-radius:var(--r);
-  padding:16px 18px;margin-top:10px;
+/* ── SCENE ──────────────────────────────────────────────────────── */
+.scene {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--r); padding:14px 17px; margin-top:9px;
   transition:border-color .2s;
 }
-.scene:hover{border-color:var(--primary-border)}
-.scene .who{display:inline-block;font-weight:700;color:var(--primary);font-size:12.5px;margin-bottom:3px}
-.scene p{color:var(--text-sec);font-size:14px;line-height:1.6}
+.scene:hover { border-color:var(--primary-border) }
+.scene .who { display:inline-block; font-weight:700; color:var(--primary); font-size:12px; margin-bottom:3px }
+.scene p    { color:var(--text-sec); font-size:13.5px; line-height:1.6 }
 
-/* ── PERMISSION MODES ────────────────────── */
-.pmodes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
-.pmode-item{padding:11px 13px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r)}
-.pmode-item b{display:block;color:var(--text);font-weight:700;font-size:13px;margin-bottom:2px}
-.pmode-item span{color:var(--text-muted);font-size:12px}
-@media(max-width:500px){.pmodes{grid-template-columns:1fr}}
+/* ── PERMISSION MODES ────────────────────────────────────────────── */
+.pmodes { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; margin-top:10px }
+.pm { padding:10px 12px; background:var(--elevated); border:1px solid var(--border); border-radius:var(--r) }
+.pm b   { display:block; font-weight:700; font-size:12.5px; margin-bottom:2px }
+.pm span{ color:var(--text-muted); font-size:11.5px }
+@media(max-width:460px){.pmodes{grid-template-columns:1fr}}
 
-/* ── MOCK SHELL ──────────────────────────── */
-.mock{
-  background:var(--elevated);border:1px solid var(--border);
-  border-radius:var(--r);box-shadow:var(--shadow-lg);overflow:hidden;
+/* ── MOCK SHELL ──────────────────────────────────────────────────── */
+.mock { background:var(--elevated); border:1px solid var(--border); border-radius:var(--r); box-shadow:var(--shadow-lg); overflow:hidden }
+.mock-bar {
+  display:flex; align-items:center; gap:5px;
+  padding:7px 11px; border-bottom:1px solid var(--border);
+  background:var(--surface);
 }
-.mock-bar{
-  display:flex;align-items:center;gap:5px;padding:8px 12px;
-  border-bottom:1px solid var(--border);background:var(--surface);
-}
-.mock-bar .d{width:9px;height:9px;border-radius:50%;display:block}
-.mock-bar .d.r{background:#ef4444}.mock-bar .d.a{background:#f59e0b}.mock-bar .d.g{background:#22c55e}
-.mock-bar .t{margin-left:8px;font-size:11.5px;color:var(--text-muted);font-weight:500}
+.mock-bar .d { width:9px; height:9px; border-radius:50%; display:block }
+.mock-bar .d.r{background:#ef4444} .mock-bar .d.a{background:#f59e0b} .mock-bar .d.g{background:#22c55e}
+.mock-bar .t { margin-left:7px; font-size:11px; color:var(--text-muted); font-weight:500 }
 
-/* calendar */
-.cal{padding:12px}
-.cal-head{display:grid;grid-template-columns:40px repeat(5,1fr);gap:4px;margin-bottom:5px}
-.cal-head div{font-size:10.5px;color:var(--text-muted);text-align:center;font-weight:700}
-.cal-body{display:grid;grid-template-columns:40px repeat(5,1fr);gap:4px}
-.cal-hrs{display:flex;flex-direction:column;gap:4px}
-.cal-hrs div{height:30px;font-size:10px;color:var(--text-muted);text-align:right;padding-right:5px;line-height:30px}
-.cal-col{display:flex;flex-direction:column;gap:4px}
-.cal-slot{height:30px;border-radius:4px;background:var(--primary-light);border:1px dashed var(--primary-border);transition:.15s}
-.cal-slot:hover{background:rgba(21,101,168,.18)}
-.cal-ev{border-radius:4px;padding:4px 6px;font-size:10.5px;color:#fff;font-weight:700;overflow:hidden;line-height:1.3}
-.cal-ev small{display:block;font-weight:500;opacity:.85;font-size:9.5px}
-.cal-ev.e1{background:linear-gradient(135deg,var(--primary),var(--accent))}
-.cal-ev.e2{background:linear-gradient(135deg,#7c3aed,#a78bfa)}
-.cal-ev.e3{background:linear-gradient(135deg,#0891b2,#22d3ee)}
-.cal-ev.busy{background:var(--border-light);color:var(--text-muted);font-weight:500;border:1px solid var(--border)}
-[data-theme="dark"] .cal-ev.busy{background:rgba(255,255,255,.06)}
+/* calendar mock */
+.cal { padding:10px }
+.cal-head { display:grid; grid-template-columns:38px repeat(5,1fr); gap:3px; margin-bottom:4px }
+.cal-head div { font-size:10px; color:var(--text-muted); text-align:center; font-weight:700 }
+.cal-body { display:grid; grid-template-columns:38px repeat(5,1fr); gap:3px }
+.cal-hrs  { display:flex; flex-direction:column; gap:3px }
+.cal-hrs div { height:28px; font-size:9.5px; color:var(--text-muted); text-align:right; padding-right:4px; line-height:28px }
+.cal-col  { display:flex; flex-direction:column; gap:3px }
+.cal-slot { height:28px; border-radius:4px; background:var(--primary-light); border:1px dashed var(--primary-border); transition:.15s }
+.cal-slot:hover { background:rgba(21,101,168,.16) }
+.cal-ev   { border-radius:4px; padding:3px 6px; font-size:10px; color:#fff; font-weight:700; overflow:hidden; line-height:1.3 }
+.cal-ev small { display:block; font-weight:500; opacity:.85; font-size:9px }
+.cal-ev.e1 { background:linear-gradient(135deg,var(--primary),var(--accent)) }
+.cal-ev.e2 { background:linear-gradient(135deg,#7c3aed,#a78bfa) }
+.cal-ev.e3 { background:linear-gradient(135deg,#0891b2,#22d3ee) }
+.cal-ev.busy { background:var(--elevated); color:var(--text-muted); font-weight:500; border:1px solid var(--border) }
 
-/* booking form */
-.bm{padding:14px}
-.bm-lbl{font-size:10.5px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;font-weight:700;display:block;margin-bottom:3px}
-.bm-inp{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:7px 10px;font-size:12.5px;color:var(--text)}
-.bm-field{margin-bottom:11px}
-.bm-row{display:flex;gap:5px;flex-wrap:wrap}
-.bm-chip{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:4px 9px;font-size:11.5px;cursor:pointer;color:var(--text-sec);font-weight:500;transition:.15s}
-.bm-chip.on{background:var(--primary);border-color:var(--primary);color:#fff}
-.bm-gpill{background:var(--primary-light);border:1px solid var(--primary-border);border-radius:999px;padding:3px 9px;font-size:11.5px;display:inline-flex;align-items:center;gap:4px;color:var(--primary);font-weight:600}
-.bm-btn{background:var(--primary);border:none;color:#fff;border-radius:var(--r);padding:9px;font-weight:700;font-size:13px;width:100%;margin-top:5px;cursor:pointer;font-family:inherit;transition:background .15s}
-.bm-btn:hover{background:var(--primary-hover)}
+/* booking mock */
+.bm { padding:13px }
+.bm-f { margin-bottom:10px }
+.bm-lbl { font-size:10px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.08em; font-weight:700; display:block; margin-bottom:3px }
+.bm-inp { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:6px 9px; font-size:12px; color:var(--text) }
+.bm-row { display:flex; gap:4px; flex-wrap:wrap }
+.bm-chip{ background:var(--surface); border:1px solid var(--border); border-radius:4px; padding:4px 8px; font-size:11px; color:var(--text-sec); font-weight:500; cursor:pointer }
+.bm-chip.on { background:var(--primary); border-color:var(--primary); color:#fff }
+.bm-gpill { background:var(--primary-light); border:1px solid var(--primary-border); border-radius:999px; padding:3px 8px; font-size:11px; display:inline-flex; align-items:center; gap:3px; color:var(--primary); font-weight:600 }
+.bm-btn { background:var(--primary); border:none; color:#fff; border-radius:var(--r); padding:8px; font-weight:700; font-size:12.5px; width:100%; margin-top:4px; cursor:pointer; font-family:inherit; transition:background .15s }
+.bm-btn:hover { background:var(--primary-hover) }
 
-/* video */
-.vid{padding:10px;display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
-.vid-tile{aspect-ratio:16/10;border-radius:var(--r);background:var(--surface);border:1px solid var(--border);position:relative;display:grid;place-items:center;overflow:hidden}
-.vid-tile.sp{border-color:var(--success);box-shadow:0 0 0 2px rgba(16,185,129,.25)}
-.vid-av{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-weight:700;color:#fff;font-size:15px}
-.vid-nm{position:absolute;bottom:5px;left:5px;font-size:10px;background:rgba(0,0,0,.45);padding:2px 6px;border-radius:4px;color:#fff}
-.vid-mic{position:absolute;bottom:5px;right:5px;font-size:10px;background:rgba(0,0,0,.45);width:20px;height:20px;border-radius:4px;display:grid;place-items:center}
-.vtb{display:flex;justify-content:center;gap:7px;padding:10px;border-top:1px solid var(--border);background:var(--surface)}
-.vbtn{width:34px;height:34px;border-radius:var(--r);background:var(--elevated);border:1px solid var(--border);display:grid;place-items:center;font-size:14px;cursor:pointer;transition:.15s}
-.vbtn:hover{background:var(--primary-light);border-color:var(--primary-border)}
-.vbtn.off{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.32)}
-.vbtn.leave{background:var(--danger);border:none;color:#fff}
-.vbtn.rec{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.32);color:var(--danger)}
+/* video mock */
+.vid { padding:9px; display:grid; grid-template-columns:repeat(3,1fr); gap:6px }
+.vid-tile { aspect-ratio:16/10; border-radius:var(--r); background:var(--surface); border:1px solid var(--border); position:relative; display:grid; place-items:center; overflow:hidden }
+.vid-tile.sp { border-color:var(--success); box-shadow:0 0 0 2px rgba(16,185,129,.2) }
+.vid-av  { width:34px; height:34px; border-radius:50%; display:grid; place-items:center; font-weight:700; color:#fff; font-size:14px }
+.vid-nm  { position:absolute; bottom:4px; left:4px; font-size:9.5px; background:rgba(0,0,0,.48); padding:2px 5px; border-radius:4px; color:#fff }
+.vid-mic { position:absolute; bottom:4px; right:4px; font-size:9px; background:rgba(0,0,0,.48); width:18px; height:18px; border-radius:4px; display:grid; place-items:center }
+.vtb { display:flex; justify-content:center; gap:6px; padding:9px; border-top:1px solid var(--border); background:var(--surface) }
+.vbtn { width:30px; height:30px; border-radius:var(--r); background:var(--elevated); border:1px solid var(--border); display:grid; place-items:center; font-size:13px; cursor:pointer; transition:.15s }
+.vbtn:hover { background:var(--primary-light); border-color:var(--primary-border) }
+.vbtn.off   { background:rgba(239,68,68,.1); border-color:rgba(239,68,68,.28) }
+.vbtn.leave { background:var(--danger); border:none; color:#fff }
+.vbtn.rec   { background:rgba(239,68,68,.1); border-color:rgba(239,68,68,.28); color:var(--danger) }
 
-/* telegram */
-.tg{padding:13px;display:flex;flex-direction:column;gap:9px}
-.tgmsg{
-  background:var(--elevated);border:1px solid var(--border);
-  border-radius:var(--r);border-top-left-radius:2px;
-  padding:10px 13px;max-width:93%;font-size:12.5px;line-height:1.6;
-  color:var(--text-sec);white-space:pre-line;
+/* telegram mock */
+.tg { padding:12px; display:flex; flex-direction:column; gap:8px }
+.tgmsg {
+  background:var(--elevated); border:1px solid var(--border);
+  border-radius:var(--r); border-top-left-radius:2px;
+  padding:9px 12px; max-width:92%; font-size:12px; line-height:1.6;
+  color:var(--text-sec); white-space:pre-line;
 }
-.tgmsg.rem{border-left:3px solid var(--amber)}
-.tgmsg .who{color:var(--primary);font-weight:700;font-size:11px;margin-bottom:3px}
-.tgbtn{display:inline-block;margin-top:7px;background:var(--primary-light);border:1px solid var(--primary-border);color:var(--primary);border-radius:var(--r);padding:5px 11px;font-size:11.5px;font-weight:700}
+.tgmsg.rem { border-left:3px solid var(--amber) }
+.tgmsg .who{ color:var(--primary); font-weight:700; font-size:10.5px; margin-bottom:3px }
+.tgbtn { display:inline-block; margin-top:6px; background:var(--primary-light); border:1px solid var(--primary-border); color:var(--primary); border-radius:var(--r); padding:4px 10px; font-size:11px; font-weight:700 }
 
-/* ── HERO ────────────────────────────────── */
-.hero{
-  min-height:calc(100vh - 52px);margin-top:52px;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  text-align:center;padding:60px 0 50px;
-  position:relative;overflow:hidden;
+/* ── HERO ────────────────────────────────────────────────────────── */
+.hero {
+  min-height: calc(100vh - 52px);
+  margin-top: 52px;
+  display: flex; flex-direction:column; align-items:center; justify-content:center;
+  text-align: center;
+  padding: 64px 0 52px;
+  position: relative; overflow: hidden;
 }
-.hblob{
-  position:absolute;border-radius:50%;filter:blur(90px);pointer-events:none;z-index:0;
-  animation:levitate 8s ease-in-out infinite alternate;
+.hblob {
+  position:absolute; border-radius:50%; filter:blur(100px);
+  pointer-events:none; z-index:0;
+  animation: blobFloat 9s ease-in-out infinite alternate;
 }
-.hblob.b1{width:600px;height:380px;background:rgba(21,101,168,.11);top:-120px;right:-60px}
-.hblob.b2{width:400px;height:280px;background:rgba(14,165,233,.09);bottom:-80px;left:-80px;animation-delay:-3s}
-[data-theme="dark"] .hblob.b1{background:rgba(91,163,223,.12)}
-[data-theme="dark"] .hblob.b2{background:rgba(56,189,248,.08)}
-@keyframes levitate{from{transform:translateY(0)}to{transform:translateY(-20px)}}
+.hblob.b1 { width:700px; height:420px; top:-140px; right:-80px; background:rgba(21,101,168,.09) }
+.hblob.b2 { width:480px; height:320px; bottom:-80px; left:-100px; background:rgba(14,165,233,.07); animation-delay:-4s }
+[data-theme="dark"] .hblob.b1 { background:rgba(91,163,223,.10) }
+[data-theme="dark"] .hblob.b2 { background:rgba(56,189,248,.07) }
+@keyframes blobFloat { from{transform:translateY(0)} to{transform:translateY(-22px)} }
 
-.hero>*{position:relative;z-index:1}
-.hero-badge{
-  display:inline-flex;align-items:center;gap:6px;
-  font-size:12px;font-weight:700;letter-spacing:.04em;
-  color:var(--text-muted);background:var(--surface);
-  backdrop-filter:blur(var(--blur));
-  border:1px solid var(--border);border-radius:4px;
-  padding:4px 12px;margin-bottom:22px;
-  animation:hIn .7s cubic-bezier(.22,1,.36,1) both;
+.hero > * { position:relative; z-index:1 }
+
+.hero-ver {
+  display:inline-flex; align-items:center; gap:6px;
+  font-size:11.5px; font-weight:700; letter-spacing:.04em;
+  color:var(--text-muted); background:var(--surface);
+  border:1px solid var(--border); border-radius:4px;
+  padding:3px 11px; margin-bottom:22px;
+  animation: hIn .65s cubic-bezier(.22,1,.36,1) both;
 }
-.hero-logo{
-  display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:24px;
-  animation:hIn .7s .06s cubic-bezier(.22,1,.36,1) both;
+.hero-logo {
+  display:flex; align-items:center; justify-content:center; gap:13px;
+  margin-bottom:22px;
+  animation: hIn .65s .07s cubic-bezier(.22,1,.36,1) both;
 }
-.hero-logo-mark{
-  width:58px;height:58px;border-radius:16px;
+.hero-logo-mark {
+  width:56px; height:56px; border-radius:15px; flex-shrink:0;
   background:linear-gradient(135deg,var(--primary),var(--accent));
-  display:grid;place-items:center;
-  box-shadow:0 14px 36px rgba(21,101,168,.42);
+  display:grid; place-items:center;
+  box-shadow: 0 12px 32px rgba(21,101,168,.38);
 }
-.hero-logo-mark span{width:24px;height:24px;border:4.5px solid #fff;border-radius:7px;display:block}
-.hero-logo-txt{font-size:38px;font-weight:800}
-.hero-logo-txt em{color:var(--primary);font-style:normal}
-.hero h1{animation:hIn .7s .12s cubic-bezier(.22,1,.36,1) both;max-width:14ch}
-.hero .lead{animation:hIn .7s .18s cubic-bezier(.22,1,.36,1) both;margin:12px auto 0;max-width:560px}
-.pills{
-  display:flex;gap:7px;flex-wrap:wrap;justify-content:center;margin-top:26px;
-  animation:hIn .7s .24s cubic-bezier(.22,1,.36,1) both;
+.hero-logo-mark span { display:block; width:23px; height:23px; border:4px solid #fff; border-radius:7px }
+.hero-logo-txt { font-size:36px; font-weight:800; color:var(--text) }
+.hero-logo-txt em { color:var(--primary); font-style:normal }
+.hero h1   { animation: hIn .65s .13s cubic-bezier(.22,1,.36,1) both; max-width:13ch }
+.hero .lead{ animation: hIn .65s .19s cubic-bezier(.22,1,.36,1) both; margin:11px auto 0; max-width:530px }
+.pills {
+  display:flex; gap:7px; flex-wrap:wrap; justify-content:center;
+  margin-top:24px;
+  animation: hIn .65s .25s cubic-bezier(.22,1,.36,1) both;
 }
-.pill{
-  background:var(--surface);backdrop-filter:blur(var(--blur));
-  border:1px solid var(--border);border-radius:4px;
-  padding:6px 13px;font-size:13px;font-weight:600;color:var(--text-sec);
+.pill {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:4px; padding:5px 12px;
+  font-size:12.5px; font-weight:600; color:var(--text-sec);
 }
-.byline{
-  margin-top:38px;font-size:11.5px;font-weight:600;letter-spacing:.13em;
-  text-transform:uppercase;color:var(--text-muted);
-  animation:hIn .7s .3s cubic-bezier(.22,1,.36,1) both;
+.byline {
+  margin-top:36px;
+  font-size:11px; font-weight:600; letter-spacing:.13em;
+  text-transform:uppercase; color:var(--text-muted);
+  animation: hIn .65s .31s cubic-bezier(.22,1,.36,1) both;
 }
-@keyframes hIn{from{opacity:0;transform:translateY(-18px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes hIn { from{opacity:0;transform:translateY(-16px) scale(.97)} to{opacity:1;transform:none} }
 
-/* ── SECTIONS ────────────────────────────── */
-section.sec{padding:72px 0}
+/* ── SECTION ─────────────────────────────────────────────────────── */
+.sec { padding:68px 0 }
 
-/* ── CLOSING ─────────────────────────────── */
-.closing{
-  padding:90px 0;text-align:center;position:relative;overflow:hidden;
+/* ── CLOSING ─────────────────────────────────────────────────────── */
+.closing { padding:88px 0; text-align:center; position:relative; overflow:hidden }
+.close-glow {
+  position:absolute; inset:0; pointer-events:none;
+  background:radial-gradient(ellipse 700px 320px at 50% 50%, var(--primary-light), transparent 70%);
 }
-.close-glow{
-  position:absolute;inset:0;
-  background:radial-gradient(ellipse 700px 350px at 50% 50%,var(--primary-light),transparent 70%);
-  pointer-events:none;
-}
-.close-inner>*{position:relative;z-index:1}
+.close-inner > * { position:relative; z-index:1 }
 
-/* ── SCROLLBAR ───────────────────────────── */
+/* ── SCROLLBAR — точно как в проекте ────────────────────────────── */
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:10px}
@@ -421,24 +465,32 @@ section.sec{padding:72px 0}
 
 <div id="prog"></div>
 
-<!-- ═══ TOPBAR ════════════════════════════════════════════════════════ -->
+<!-- ═══ TOPBAR ══════════════════════════════════════════════════════ -->
 <header class="topbar">
   <a href="/" class="logo">
     <div class="logo-mark"><span></span></div>
-    Corp<em>Meet</em>
+    <span class="logo-name">Corp<em>Meet</em></span>
   </a>
   <div class="topbar-right">
-    <a href="/" class="tbtn">← В приложение</a>
-    <button class="tbtn" id="themeBtn" title="Сменить тему">🌙</button>
+    <a href="/" class="tbtn">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      В приложение
+    </a>
+    <button class="icon-btn" id="themeBtn" title="Сменить тему">
+      <!-- sun (показывается в тёмной теме) -->
+      <svg id="iconSun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="6.34" y2="6.34"/><line x1="17.66" y1="17.66" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="6.34" y2="17.66"/><line x1="17.66" y1="6.34" x2="19.07" y2="4.93"/></svg>
+      <!-- moon (показывается в светлой теме) -->
+      <svg id="iconMoon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
   </div>
 </header>
 
-<!-- ═══ HERO ══════════════════════════════════════════════════════════ -->
+<!-- ═══ HERO ════════════════════════════════════════════════════════ -->
 <section class="hero">
   <div class="hblob b1"></div>
   <div class="hblob b2"></div>
 
-  <div class="hero-badge">v1.0 · Презентация платформы</div>
+  <div class="hero-ver">v1.0 · Презентация платформы</div>
 
   <div class="hero-logo">
     <div class="hero-logo-mark"><span></span></div>
@@ -456,183 +508,152 @@ section.sec{padding:72px 0}
     <div class="pill">🌐 РУ / УЗ</div>
   </div>
 
-  <div class="byline">Продукт UZINFOCOM</div>
+  <div class="byline">&nbsp;</div>
 </section>
 
 <div class="divider"></div>
 
-<!-- ═══ 01 PROBLEM ════════════════════════════════════════════════════ -->
-<section class="sec">
-<div class="wrap">
+<!-- ═══ 01 ══════════════════════════════════════════════════════════ -->
+<section class="sec"><div class="wrap">
   <div data-r="up">
     <span class="eyebrow"><span class="eyebrow-n">01</span> Зачем это нужно</span>
     <h2>Знакомая боль с переговорными</h2>
     <p class="lead">Договорённости в чате, занятая комната «по факту», встречи в трёх разных сервисах. CorpMeet убирает этот хаос.</p>
   </div>
-  <div class="g3" style="margin-top:26px">
+  <div class="g3" style="margin-top:22px">
     <div class="card" data-r="up" data-d="1"><div class="card-ic">🤯</div><h3>Двойные брони</h3><p>Две команды приходят в одну комнату — потому что расписания нет или оно в чьей-то голове.</p></div>
-    <div class="card" data-r="up" data-d="2"><div class="card-ic">🧩</div><h3>Зоопарк сервисов</h3><p>Календарь отдельно, видеозвонок отдельно, файлы где-то ещё. Ничего не связано между собой.</p></div>
+    <div class="card" data-r="up" data-d="2"><div class="card-ic">🧩</div><h3>Зоопарк сервисов</h3><p>Календарь отдельно, видеозвонок отдельно, файлы где-то ещё. Ничего не связано.</p></div>
     <div class="card" data-r="up" data-d="3"><div class="card-ic">⏰</div><h3>Забытые встречи</h3><p>Никто не напомнил вовремя — участники опаздывают или не приходят вовсе.</p></div>
   </div>
-  <div data-r="up" data-d="4">
-    <div class="note">CorpMeet объединяет расписание, видеосвязь, файлы и уведомления так, чтобы встреча «жила» в одном месте — от брони до записи.</div>
-  </div>
-</div>
-</section>
+  <div data-r="up" data-d="4"><div class="note">CorpMeet объединяет расписание, видеосвязь, файлы и уведомления так, чтобы встреча «жила» в одном месте — от брони до записи.</div></div>
+</div></section>
 
 <div class="divider"></div>
 
-<!-- ═══ 02 OVERVIEW ═══════════════════════════════════════════════════ -->
-<section class="sec">
-<div class="wrap">
+<!-- ═══ 02 ══════════════════════════════════════════════════════════ -->
+<section class="sec"><div class="wrap">
   <div data-r="up">
     <span class="eyebrow"><span class="eyebrow-n">02</span> Обзор</span>
     <h2>Что умеет CorpMeet</h2>
   </div>
-  <div class="g4" style="margin-top:26px">
+  <div class="g4" style="margin-top:22px">
     <div class="card" data-r="up" data-d="1"><div class="card-ic">📅</div><h3>Календарь брони</h3><p>Недельная сетка слотов, статус переговорной в реальном времени, drag&drop.</p></div>
-    <div class="card" data-r="up" data-d="2"><div class="card-ic">🎥</div><h3>Видеоконференции</h3><p>Звонок прямо в приложении: экран, чат, файлы, запись, E2EE-шифрование.</p></div>
-    <div class="card" data-r="up" data-d="3"><div class="card-ic">🏢</div><h3>Пространства</h3><p>Несколько компаний на одной платформе, общие физические переговорные.</p></div>
+    <div class="card" data-r="up" data-d="2"><div class="card-ic">🎥</div><h3>Видеоконференции</h3><p>Звонок в приложении: экран, чат, файлы, запись, E2EE-шифрование.</p></div>
+    <div class="card" data-r="up" data-d="3"><div class="card-ic">🏢</div><h3>Пространства</h3><p>Несколько компаний на одной платформе, общие переговорные.</p></div>
     <div class="card" data-r="up" data-d="4"><div class="card-ic">✈️</div><h3>Telegram</h3><p>Вход через Mini App, уведомления в группу, личные напоминания.</p></div>
-    <div class="card" data-r="up" data-d="5"><div class="card-ic">👥</div><h3>Гости и должности</h3><p>Приглашение по @username и по должностям, гостевой вход без регистрации.</p></div>
+    <div class="card" data-r="up" data-d="5"><div class="card-ic">👥</div><h3>Гости и должности</h3><p>Приглашение по @username и должностям, гостевой вход без регистрации.</p></div>
     <div class="card" data-r="up" data-d="6"><div class="card-ic">📎</div><h3>Материалы встречи</h3><p>Вложения к брони, файлы в чате, повестка и заметки.</p></div>
     <div class="card" data-r="up" data-d="7"><div class="card-ic">📊</div><h3>Аналитика</h3><p>Управление пользователями, статистика, обратная связь.</p></div>
     <div class="card" data-r="up" data-d="8"><div class="card-ic">🌗</div><h3>Удобство</h3><p>Тёмная/светлая тема, два языка (РУ/УЗ), экспорт в iCal.</p></div>
   </div>
-</div>
-</section>
+</div></section>
 
 <div class="divider"></div>
 
-<!-- ═══ 03 LOGIN ══════════════════════════════════════════════════════ -->
-<section class="sec">
-<div class="wrap">
+<!-- ═══ 03 ══════════════════════════════════════════════════════════ -->
+<section class="sec"><div class="wrap">
   <div data-r="up">
     <span class="eyebrow"><span class="eyebrow-n">03</span> Вход в систему</span>
     <h2>Три способа войти</h2>
     <p class="lead">Авторизация завязана на Telegram — никаких отдельных паролей.</p>
   </div>
-  <div class="g3" style="margin-top:26px">
-    <div class="card" data-r="up" data-d="1">
-      <div class="card-ic">📱</div><h3>Telegram Mini App</h3>
-      <p>Открываете бота @corpmeetbot, нажимаете «Запустить» и входите внутри Telegram. Данные подтверждаются подписью Telegram.</p>
-      <span class="tag">основной способ</span>
-    </div>
-    <div class="card" data-r="up" data-d="2">
-      <div class="card-ic">🔳</div><h3>QR-код в браузере</h3>
-      <p>На странице входа — QR. Сканируете телефоном, подтверждаете в боте, и браузер авторизуется автоматически.</p>
-      <span class="tag">для десктопа</span>
-    </div>
-    <div class="card" data-r="up" data-d="3">
-      <div class="card-ic">🌐</div><h3>«Открыть в браузере»</h3>
-      <p>Из Mini App одним нажатием переходите в полную веб-версию. Ссылка одноразовая, действует несколько минут.</p>
-      <span class="tag">бесшовно</span>
-    </div>
+  <div class="g3" style="margin-top:22px">
+    <div class="card" data-r="up" data-d="1"><div class="card-ic">📱</div><h3>Telegram Mini App</h3><p>Открываете бота @corpmeetbot, нажимаете «Запустить». Данные подтверждаются подписью Telegram.</p><span class="tag">основной способ</span></div>
+    <div class="card" data-r="up" data-d="2"><div class="card-ic">🔳</div><h3>QR-код в браузере</h3><p>На странице входа — QR. Сканируете телефоном, подтверждаете в боте — браузер авторизуется автоматически.</p><span class="tag">для десктопа</span></div>
+    <div class="card" data-r="up" data-d="3"><div class="card-ic">🌐</div><h3>«Открыть в браузере»</h3><p>Из Mini App одним нажатием переходите в полную веб-версию. Ссылка одноразовая.</p><span class="tag">бесшовно</span></div>
   </div>
-  <div data-r="up" data-d="4">
-    <div class="note">Для разработчиков есть отдельный <b>Dev-вход</b> без Telegram — для тестирования.</div>
-  </div>
-</div>
-</section>
+  <div data-r="up" data-d="4"><div class="note">Для разработчиков есть отдельный <b>Dev-вход</b> без Telegram — для тестирования.</div></div>
+</div></section>
 
 <div class="divider"></div>
 
-<!-- ═══ 04 SPACES ═════════════════════════════════════════════════════ -->
-<section class="sec">
-<div class="wrap">
+<!-- ═══ 04 ══════════════════════════════════════════════════════════ -->
+<section class="sec"><div class="wrap">
   <div data-r="up">
     <span class="eyebrow"><span class="eyebrow-n">04</span> Пространства</span>
     <h2>При первом входе — развилка из трёх путей</h2>
-    <p class="lead">«Пространство» — это ваша команда или компания. Один пользователь может состоять в нескольких и переключаться между ними, как воркспейсы в Slack или Notion.</p>
+    <p class="lead">«Пространство» — это ваша команда или компания. Переключайтесь между ними, как воркспейсы в Slack или Notion.</p>
   </div>
   <div class="steps">
     <div class="step" data-r="up" data-d="1"><h3>Создать своё</h3><p>Вводите название, выбираете часовой пояс — становитесь <b>владельцем</b> и получаете invite-код для коллег.</p></div>
-    <div class="step" data-r="up" data-d="2"><h3>Войти по коду</h3><p>Вводите invite-код пространства — заявка уходит админам, они подтверждают вступление.</p></div>
-    <div class="step" data-r="up" data-d="3"><h3>Найти по названию</h3><p>Начинаете печатать название — видите автодополнение и отправляете заявку на вступление.</p></div>
+    <div class="step" data-r="up" data-d="2"><h3>Войти по коду</h3><p>Вводите invite-код — заявка уходит админам, они подтверждают вступление.</p></div>
+    <div class="step" data-r="up" data-d="3"><h3>Найти по названию</h3><p>Начинаете печатать — видите автодополнение и отправляете заявку.</p></div>
   </div>
-  <div data-r="up" data-d="4">
-    <div class="note">Те же три кнопки показывает и Telegram-бот после команды <b>/start</b>. В шапке приложения всегда есть селектор пространств.</div>
-  </div>
-</div>
-</section>
+  <div data-r="up" data-d="4"><div class="note">Те же три кнопки показывает и Telegram-бот после команды <b>/start</b>. В шапке приложения всегда есть селектор пространств.</div></div>
+</div></section>
 
 <div class="divider"></div>
 
-<!-- ═══ 05 ROLES ══════════════════════════════════════════════════════ -->
-<section class="sec">
-<div class="wrap">
+<!-- ═══ 05 ══════════════════════════════════════════════════════════ -->
+<section class="sec"><div class="wrap">
   <div data-r="up">
     <span class="eyebrow"><span class="eyebrow-n">05</span> Роли</span>
     <h2>Кто что может в пространстве</h2>
   </div>
-  <div class="g3" style="margin-top:26px">
+  <div class="g3" style="margin-top:22px">
     <div class="card" data-r="up" data-d="1"><div class="card-ic">👑</div><h3>Owner — владелец</h3><p>Создатель пространства. Может всё: настройки, удаление, передача владения. Один на пространство.</p></div>
-    <div class="card" data-r="up" data-d="2"><div class="card-ic">🛡️</div><h3>Admin</h3><p>Назначается владельцем. Управляет участниками, комнатами и бронями всех. Не трогает права владельца.</p></div>
-    <div class="card" data-r="up" data-d="3"><div class="card-ic">🙋</div><h3>Member — участник</h3><p>Бронирует, видит общий календарь и доступные комнаты. Никем не управляет.</p></div>
+    <div class="card" data-r="up" data-d="2"><div class="card-ic">🛡️</div><h3>Admin</h3><p>Управляет участниками, комнатами и бронями всех. Назначается владельцем.</p></div>
+    <div class="card" data-r="up" data-d="3"><div class="card-ic">🙋</div><h3>Member — участник</h3><p>Бронирует, видит общий календарь и комнаты. Никем не управляет.</p></div>
   </div>
-  <div class="split" style="margin-top:24px;gap:24px">
+  <div class="split" style="margin-top:20px;gap:20px">
     <div data-r="left" data-d="1">
-      <h3 style="margin-bottom:10px;font-size:16px">Приглашение коллег</h3>
+      <h3 style="margin-bottom:9px;font-size:15px">Приглашение коллег</h3>
       <ul class="blist">
         <li><b>Персональная ссылка</b> — по Telegram-ссылке, активируется при первом входе</li>
-        <li><b>По @username</b> — система находит пользователя и шлёт ему приглашение</li>
+        <li><b>По @username</b> — находит пользователя и шлёт приглашение</li>
         <li><b>По invite-коду</b> — публичный код, любой желающий подаёт заявку</li>
-        <li><b>Заявки на вступление</b> — owner и admin видят их в отдельной вкладке</li>
+        <li><b>Заявки на вступление</b> — owner и admin аппрувят в отдельной вкладке</li>
       </ul>
     </div>
     <div data-r="right" data-d="2">
       <div class="card" style="border-color:var(--primary-border)">
-        <div style="font-size:11px;color:var(--text-muted);margin-bottom:5px">Над всеми пространствами</div>
-        <div style="font-size:24px;font-weight:800;color:var(--primary)">Superadmin</div>
-        <p style="margin-top:9px">Оператор сервиса с доступом ко всему: пользователи, все брони, аналитика по всем пространствам, передача владения комнатами.</p>
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">Над всеми пространствами</div>
+        <div style="font-size:22px;font-weight:800;color:var(--primary);margin-bottom:8px">Superadmin</div>
+        <p>Оператор сервиса с доступом ко всему: пользователи, все брони, аналитика, передача владения комнатами.</p>
       </div>
     </div>
   </div>
-</div>
-</section>
+</div></section>
 
 <div class="divider"></div>
 
-<!-- ═══ 06 ROOMS ══════════════════════════════════════════════════════ -->
-<section class="sec">
-<div class="wrap">
+<!-- ═══ 06 ══════════════════════════════════════════════════════════ -->
+<section class="sec"><div class="wrap">
   <div data-r="up">
     <span class="eyebrow"><span class="eyebrow-n">06</span> Комнаты</span>
     <h2>Комната — это общий физический ресурс</h2>
     <p class="lead">Одну и ту же комнату могут бронировать несколько пространств — типично для общего бизнес-центра.</p>
   </div>
-  <div class="split fw" style="margin-top:28px">
+  <div class="split fw" style="margin-top:24px">
     <div data-r="left" data-d="1">
       <ul class="blist">
-        <li><b>Создают</b> комнаты только owner и admin. Автор получает права владельца комнаты.</li>
-        <li><b>Бронирует</b> любой участник пространства с доступом к комнате.</li>
-        <li><b>Шеринг</b> — владелец делится комнатой по коду; получатель получает роль <b>shared</b>: видит и бронирует, но не редактирует.</li>
-        <li><b>Пересечения глобальные</b> — если комната занята одним пространством, другое на это время её не забронирует.</li>
+        <li><b>Создают</b> комнаты только owner и admin.</li>
+        <li><b>Бронирует</b> любой участник с доступом к комнате.</li>
+        <li><b>Шеринг</b> — владелец делится по коду; получатель получает роль <b>shared</b>: видит и бронирует, но не редактирует.</li>
+        <li><b>Пересечения глобальные</b> — занятый слот не отдаст другому пространству.</li>
       </ul>
       <div class="pmodes">
-        <div class="pmode-item"><b>open</b><span>Подключение по коду сразу</span></div>
-        <div class="pmode-item"><b>approval</b><span>С подтверждением (по умолч.)</span></div>
-        <div class="pmode-item"><b>closed</b><span>Подключение отключено</span></div>
+        <div class="pm"><b>open</b><span>Подключение по коду сразу</span></div>
+        <div class="pm"><b>approval</b><span>С подтверждением (по умолч.)</span></div>
+        <div class="pm"><b>closed</b><span>Подключение отключено</span></div>
       </div>
     </div>
     <div data-r="right" data-d="2">
-      <div class="card" style="margin-bottom:10px"><div class="card-ic">👁️</div><h3>Режим «full»</h3><p>Все пространства видят детали чужих броней: название, организатор. Для офиса, где все знакомы.</p></div>
-      <div class="card"><div class="card-ic">🕶️</div><h3>Режим «busy_only»</h3><p>Чужие брони — только плашка «Занято» без названия и деталей. Для независимых компаний в коворкинге.</p></div>
+      <div class="card" style="margin-bottom:9px"><div class="card-ic">👁️</div><h3>Режим «full»</h3><p>Все пространства видят детали чужих броней. Для офиса, где все знакомы.</p></div>
+      <div class="card"><div class="card-ic">🕶️</div><h3>Режим «busy_only»</h3><p>Чужие брони — только плашка «Занято» без деталей. Для независимых компаний.</p></div>
     </div>
   </div>
-</div>
-</section>
+</div></section>
 
 <div class="divider"></div>
 
-<!-- ═══ 07 CALENDAR ═══════════════════════════════════════════════════ -->
-<section class="sec">
-<div class="wrap">
+<!-- ═══ 07 ══════════════════════════════════════════════════════════ -->
+<section class="sec"><div class="wrap">
   <div data-r="up">
     <span class="eyebrow"><span class="eyebrow-n">07</span> Календарь</span>
     <h2>Главный экран — недельная сетка</h2>
   </div>
-  <div class="split" style="margin-top:26px">
+  <div class="split" style="margin-top:22px">
     <div data-r="left" data-d="1">
       <div class="mock">
         <div class="mock-bar"><span class="d r"></span><span class="d a"></span><span class="d g"></span><span class="t">CorpMeet · Календарь · эта неделя</span></div>
@@ -651,64 +672,60 @@ section.sec{padding:72px 0}
     </div>
     <div data-r="right" data-d="2">
       <ul class="blist">
-        <li><b>Слоты по 30 минут</b> — кликаете по свободному слоту, форма открывается с подставленным временем</li>
-        <li><b>Виджет статуса</b> — «Свободна» / «Занята до 11:00» прямо над сеткой</li>
-        <li><b>Drag&drop</b> — перетащили карточку на другое время, и бронь обновилась</li>
-        <li><b>Фильтры</b> — тип встречи: <span class="tag">Все</span><span class="tag">Офис</span><span class="tag">Онлайн</span><span class="tag">Гибрид</span></li>
-        <li><b>Чужие брони в busy_only</b> — серая плашка «Занято» без деталей</li>
+        <li><b>Слоты по 30 минут</b> — кликаете, форма открывается с подставленным временем</li>
+        <li><b>Виджет статуса</b> — «Свободна» / «Занята до 11:00» над сеткой</li>
+        <li><b>Drag&drop</b> — перетащили карточку, бронь обновилась</li>
+        <li><b>Фильтры</b> — <span class="tag">Все</span><span class="tag">Офис</span><span class="tag">Онлайн</span><span class="tag">Гибрид</span></li>
+        <li><b>busy_only</b> — чужие брони как серая плашка без деталей</li>
       </ul>
     </div>
   </div>
-</div>
-</section>
+</div></section>
 
 <div class="divider"></div>
 
-<!-- ═══ 08 BOOKING ════════════════════════════════════════════════════ -->
-<section class="sec">
-<div class="wrap">
+<!-- ═══ 08 ══════════════════════════════════════════════════════════ -->
+<section class="sec"><div class="wrap">
   <div data-r="up">
     <span class="eyebrow"><span class="eyebrow-n">08</span> Создание встречи</span>
     <h2>Одна форма — вся встреча</h2>
   </div>
-  <div class="split" style="margin-top:26px">
+  <div class="split" style="margin-top:22px">
     <div data-r="left" data-d="1">
       <div class="mock">
         <div class="mock-bar"><span class="d r"></span><span class="d a"></span><span class="d g"></span><span class="t">Новое бронирование</span></div>
         <div class="bm">
-          <div class="bm-field"><span class="bm-lbl">Название встречи *</span><div class="bm-inp">Планёрка команды</div></div>
-          <div class="bm-field"><span class="bm-lbl">Тип</span><div class="bm-row"><div class="bm-chip">🏢 Офис</div><div class="bm-chip on">🌐 Онлайн</div><div class="bm-chip">🔀 Гибрид</div></div></div>
-          <div class="bm-field"><span class="bm-lbl">Длительность</span><div class="bm-row"><div class="bm-chip">30м</div><div class="bm-chip on">1ч</div><div class="bm-chip">1.5ч</div><div class="bm-chip">2ч</div></div></div>
-          <div class="bm-field"><span class="bm-lbl">Повторение</span><div class="bm-row"><div class="bm-chip on">Нет</div><div class="bm-chip">Каждый день</div><div class="bm-chip">Каждую неделю</div></div></div>
-          <div class="bm-field"><span class="bm-lbl">Гости</span><div class="bm-row"><span class="bm-gpill">👤 @timur ✕</span><span class="bm-gpill">👤 Анна П. ✕</span></div></div>
+          <div class="bm-f"><span class="bm-lbl">Название встречи *</span><div class="bm-inp">Планёрка команды</div></div>
+          <div class="bm-f"><span class="bm-lbl">Тип</span><div class="bm-row"><div class="bm-chip">🏢 Офис</div><div class="bm-chip on">🌐 Онлайн</div><div class="bm-chip">🔀 Гибрид</div></div></div>
+          <div class="bm-f"><span class="bm-lbl">Длительность</span><div class="bm-row"><div class="bm-chip">30м</div><div class="bm-chip on">1ч</div><div class="bm-chip">1.5ч</div><div class="bm-chip">2ч</div></div></div>
+          <div class="bm-f"><span class="bm-lbl">Повторение</span><div class="bm-row"><div class="bm-chip on">Нет</div><div class="bm-chip">Каждый день</div><div class="bm-chip">Каждую неделю</div></div></div>
+          <div class="bm-f"><span class="bm-lbl">Гости</span><div class="bm-row"><span class="bm-gpill">👤 @timur ✕</span><span class="bm-gpill">👤 Анна П. ✕</span></div></div>
           <button class="bm-btn">Забронировать</button>
         </div>
       </div>
     </div>
     <div data-r="right" data-d="2">
       <ul class="blist">
-        <li><b>Тип встречи</b> — Офис (комната), Онлайн (видео) или Гибрид (и то, и другое)</li>
-        <li><b>Длительность</b> — пресеты 30м/1ч/1.5ч/2ч или вручную (от 15 мин до 8 часов)</li>
-        <li><b>Повторы</b> — ежедневно, еженедельно или свои дни недели; до 90 встреч в серии</li>
-        <li><b>Гости</b> — по @username/имени или сразу по должностям: все аналитики одним кликом</li>
+        <li><b>Тип встречи</b> — Офис (комната), Онлайн (видео) или Гибрид</li>
+        <li><b>Длительность</b> — пресеты 30м/1ч/1.5ч/2ч или вручную от 15 мин до 8 ч</li>
+        <li><b>Повторы</b> — ежедневно, еженедельно или свои дни; до 90 встреч в серии</li>
+        <li><b>Гости</b> — по @username или сразу по должностям: все аналитики одним кликом</li>
         <li><b>Материалы</b> — вложения PDF/Word/Excel до 10 МБ, вставка через Ctrl+V</li>
         <li><b>Напоминание</b> — за сколько минут предупредить (по умолчанию 15)</li>
       </ul>
     </div>
   </div>
-</div>
-</section>
+</div></section>
 
 <div class="divider"></div>
 
-<!-- ═══ 09 VIDEO ══════════════════════════════════════════════════════ -->
-<section class="sec">
-<div class="wrap">
+<!-- ═══ 09 ══════════════════════════════════════════════════════════ -->
+<section class="sec"><div class="wrap">
   <div data-r="up">
     <span class="eyebrow"><span class="eyebrow-n">09</span> Видеовстречи</span>
     <h2>Полноценная видеоконференция внутри продукта</h2>
   </div>
-  <div class="split" style="margin-top:26px">
+  <div class="split" style="margin-top:22px">
     <div data-r="left" data-d="1">
       <div class="mock">
         <div class="mock-bar"><span class="d r"></span><span class="d a"></span><span class="d g"></span><span class="t">🔒 Зашифровано · 12:34</span></div>
@@ -726,21 +743,19 @@ section.sec{padding:72px 0}
       <ul class="blist">
         <li><b>Камера, микрофон, экран</b> — стандартный набор управления</li>
         <li><b>Чат с файлами</b> — текст, реакции, поднятие руки, обмен файлами до 20 МБ</li>
-        <li><b>Запись встречи</b> — организатор включает запись, потом скачивает MP4</li>
+        <li><b>Запись встречи</b> — организатор включает запись, скачивает MP4</li>
         <li><b>Таймер</b> встречи и индикатор <b>E2EE-шифрования 🔒</b></li>
-        <li><b>Модерация</b> — организатор может приглушить или удалить участника</li>
+        <li><b>Модерация</b> — организатор приглушает или удаляет участника</li>
         <li><b>Раскладки</b> — сетка / фокус на спикере; зелёная рамка у говорящего</li>
       </ul>
     </div>
   </div>
-</div>
-</section>
+</div></section>
 
 <div class="divider"></div>
 
-<!-- ═══ 10 GUEST ══════════════════════════════════════════════════════ -->
-<section class="sec">
-<div class="wrap">
+<!-- ═══ 10 ══════════════════════════════════════════════════════════ -->
+<section class="sec"><div class="wrap">
   <div data-r="up">
     <span class="eyebrow"><span class="eyebrow-n">10</span> Гостевой вход</span>
     <h2>Гости подключаются без регистрации</h2>
@@ -751,26 +766,22 @@ section.sec{padding:72px 0}
     <div class="farrow" data-r="up" data-d="2">→</div>
     <div class="fnode" data-r="up" data-d="2"><div class="fi">🎚️</div><h4>Превью</h4><p>Гость видит превью камеры/микро и вводит своё имя</p></div>
     <div class="farrow" data-r="up" data-d="3">→</div>
-    <div class="fnode" data-r="up" data-d="3"><div class="fi">⏳</div><h4>Ожидание</h4><p>Запрос уходит организатору — «Ожидание подтверждения»</p></div>
+    <div class="fnode" data-r="up" data-d="3"><div class="fi">⏳</div><h4>Ожидание</h4><p>Запрос уходит организатору на подтверждение</p></div>
     <div class="farrow" data-r="up" data-d="4">→</div>
     <div class="fnode" data-r="up" data-d="4"><div class="fi">✅</div><h4>В эфире</h4><p>Организатор впускает — гость сразу в видеокомнате</p></div>
   </div>
-  <div data-r="up" data-d="5">
-    <div class="note">Ссылка одноразовая и действует ограниченное время. Войти можно только когда организатор онлайн — это защищает встречу от посторонних.</div>
-  </div>
-</div>
-</section>
+  <div data-r="up" data-d="5"><div class="note">Ссылка одноразовая. Войти можно только когда организатор онлайн — это защищает встречу от посторонних.</div></div>
+</div></section>
 
 <div class="divider"></div>
 
-<!-- ═══ 11 TELEGRAM ═══════════════════════════════════════════════════ -->
-<section class="sec">
-<div class="wrap">
+<!-- ═══ 11 ══════════════════════════════════════════════════════════ -->
+<section class="sec"><div class="wrap">
   <div data-r="up">
     <span class="eyebrow"><span class="eyebrow-n">11</span> Telegram</span>
     <h2>Уведомления приходят туда, где команда уже сидит</h2>
   </div>
-  <div class="split" style="margin-top:26px">
+  <div class="split" style="margin-top:22px">
     <div data-r="left" data-d="1">
       <div class="mock">
         <div class="mock-bar"><span class="d r"></span><span class="d a"></span><span class="d g"></span><span class="t">Telegram · группа команды</span></div>
@@ -788,42 +799,38 @@ section.sec{padding:72px 0}
     <div data-r="right" data-d="2">
       <ul class="blist">
         <li><b>В группу пространства</b> — новые и изменённые встречи с ссылкой на видео</li>
-        <li><b>Личные напоминания</b> — организатору и всем гостям за 15 минут (настраивается)</li>
-        <li><b>Приглашения гостям</b> — личное сообщение «Вас пригласили на встречу»</li>
+        <li><b>Личные напоминания</b> — организатору и всем гостям за 15 минут</li>
+        <li><b>Приглашения гостям</b> — личное сообщение «Вас пригласили»</li>
         <li><b>Уведомления об отмене</b> — если встречу удалили</li>
-        <li><b>У каждого пространства свой канал</b> — компании не спамят друг друга</li>
+        <li><b>Свой канал у каждого пространства</b> — компании не спамят друг друга</li>
       </ul>
-      <div class="note" style="margin-top:14px">Команды: <b>/start</b> — вход · <b>/bind &lt;код&gt;</b> — привязать группу · <b>/unbind</b> · <b>/chatid</b></div>
+      <div class="note" style="margin-top:12px">Команды бота: <b>/start</b> — вход · <b>/bind &lt;код&gt;</b> — привязать группу · <b>/unbind</b> · <b>/chatid</b></div>
     </div>
   </div>
-</div>
-</section>
+</div></section>
 
 <div class="divider"></div>
 
-<!-- ═══ 12 ADMIN ══════════════════════════════════════════════════════ -->
-<section class="sec">
-<div class="wrap">
+<!-- ═══ 12 ══════════════════════════════════════════════════════════ -->
+<section class="sec"><div class="wrap">
   <div data-r="up">
     <span class="eyebrow"><span class="eyebrow-n">12</span> Управление</span>
     <h2>Админка, аналитика и обратная связь</h2>
   </div>
-  <div class="g3" style="margin-top:26px">
-    <div class="card" data-r="up" data-d="1"><div class="card-ic">📊</div><h3>Аналитика</h3><p>Встречи и участники по дням, топ-10 организаторов, период 7/30/90 дней.</p></div>
-    <div class="card" data-r="up" data-d="2"><div class="card-ic">👥</div><h3>Пользователи</h3><p>Список, роли, приглашение по @username, массовые операции, отключение аккаунтов.</p></div>
-    <div class="card" data-r="up" data-d="3"><div class="card-ic">💬</div><h3>Обратная связь</h3><p>Обращения с текстом и скриншотом. Статусы: Новое → В работе → Закрыто.</p></div>
-    <div class="card" data-r="up" data-d="4"><div class="card-ic">🧑‍💼</div><h3>Должности</h3><p>Двуязычные должности (Начальник, PM, Аналитик, Программист, Дизайнер) для быстрого выбора гостей.</p></div>
-    <div class="card" data-r="up" data-d="5"><div class="card-ic">📆</div><h3>Экспорт календаря</h3><p>Скачивание .ics и подписка на iCal — встречи попадают в Google/Apple/Outlook.</p></div>
+  <div class="g3" style="margin-top:22px">
+    <div class="card" data-r="up" data-d="1"><div class="card-ic">📊</div><h3>Аналитика</h3><p>Встречи по дням, топ-10 организаторов, период 7/30/90 дней.</p></div>
+    <div class="card" data-r="up" data-d="2"><div class="card-ic">👥</div><h3>Пользователи</h3><p>Список, роли, приглашение по @username, массовые операции.</p></div>
+    <div class="card" data-r="up" data-d="3"><div class="card-ic">💬</div><h3>Обратная связь</h3><p>Обращения со скриншотом. Статусы: Новое → В работе → Закрыто.</p></div>
+    <div class="card" data-r="up" data-d="4"><div class="card-ic">🧑‍💼</div><h3>Должности</h3><p>Двуязычные должности (Начальник, PM, Аналитик, Программист, Дизайнер).</p></div>
+    <div class="card" data-r="up" data-d="5"><div class="card-ic">📆</div><h3>Экспорт календаря</h3><p>Скачивание .ics и iCal-фид — встречи в Google/Apple/Outlook.</p></div>
     <div class="card" data-r="up" data-d="6"><div class="card-ic">🔔</div><h3>Веб-уведомления</h3><p>Desktop-напоминания и центр уведомлений с RSVP «Принять» / «Отказаться».</p></div>
   </div>
-</div>
-</section>
+</div></section>
 
 <div class="divider"></div>
 
-<!-- ═══ 13 SECURITY ═══════════════════════════════════════════════════ -->
-<section class="sec">
-<div class="wrap">
+<!-- ═══ 13 ══════════════════════════════════════════════════════════ -->
+<section class="sec"><div class="wrap">
   <div data-r="up">
     <span class="eyebrow"><span class="eyebrow-n">13</span> Под капотом</span>
     <h2>Безопасность и рамки</h2>
@@ -835,94 +842,96 @@ section.sec{padding:72px 0}
     <div class="stat"><div class="big">90</div><small>встреч в серии повторов</small></div>
     <div class="stat"><div class="big">РУ/УЗ</div><small>два языка интерфейса</small></div>
   </div>
-  <div class="g3" style="margin-top:24px">
-    <div class="card" data-r="up" data-d="2"><div class="card-ic">🛡️</div><h3>Защита доступа</h3><p>Вход по подписи Telegram, одноразовые ссылки с коротким сроком жизни, проверка прав на каждое действие.</p></div>
-    <div class="card" data-r="up" data-d="3"><div class="card-ic">🔐</div><h3>Приватность встреч</h3><p>Сквозное шифрование видео и режим busy_only скрывают содержание от тех, кому оно не предназначено.</p></div>
-    <div class="card" data-r="up" data-d="4"><div class="card-ic">⚙️</div><h3>Надёжность</h3><p>Безопасные миграции БД, фоновые задачи уведомлений с интервалом 60 секунд.</p></div>
+  <div class="g3" style="margin-top:20px">
+    <div class="card" data-r="up" data-d="2"><div class="card-ic">🛡️</div><h3>Защита доступа</h3><p>Вход по подписи Telegram, одноразовые ссылки с коротким сроком жизни.</p></div>
+    <div class="card" data-r="up" data-d="3"><div class="card-ic">🔐</div><h3>Приватность</h3><p>Шифрование видео и режим busy_only скрывают содержание встреч.</p></div>
+    <div class="card" data-r="up" data-d="4"><div class="card-ic">⚙️</div><h3>Надёжность</h3><p>Безопасные миграции БД, фоновые задачи уведомлений каждые 60 секунд.</p></div>
   </div>
-</div>
-</section>
+</div></section>
 
 <div class="divider"></div>
 
-<!-- ═══ 14 SCENARIO ═══════════════════════════════════════════════════ -->
-<section class="sec">
-<div class="wrap">
+<!-- ═══ 14 ══════════════════════════════════════════════════════════ -->
+<section class="sec"><div class="wrap">
   <div data-r="up">
     <span class="eyebrow"><span class="eyebrow-n">14</span> Сценарий</span>
     <h2>Общий бизнес-центр — как это работает вместе</h2>
-    <p class="lead">Три компании в одном здании: «Альфа», «Бета», «Гамма». Три переговорки на этаже: «Москва», «Лондон», «Токио».</p>
+    <p class="lead">Три компании в одном здании: «Альфа», «Бета», «Гамма». Три переговорки на этаже.</p>
   </div>
-  <div style="margin-top:22px">
+  <div style="margin-top:18px">
     <div class="scene" data-r="up" data-d="1"><span class="who">«Альфа»</span><p>Регистрируется первой, создаёт пространство и все три комнаты — становится их владельцем.</p></div>
-    <div class="scene" data-r="up" data-d="2"><span class="who">«Бета»</span><p>Создаёт своё пространство. «Альфа» расшаривает ей все три комнаты по invite-коду — у «Беты» доступ с ролью shared.</p></div>
-    <div class="scene" data-r="up" data-d="3"><span class="who">Бронь и конфликт</span><p>«Бета» бронирует «Москву» на 14:00–15:00. «Альфа» на это же время получает ошибку «Время занято». В режиме busy_only «Бета» видит лишь, что слот занят, — но не кем.</p></div>
-    <div class="scene" data-r="up" data-d="4"><span class="who">«Гамма»</span><p>Работает в своих кабинетах, ничего не расшаривает — своё пространство, свои приватные комнаты, никого не видит и сама невидима.</p></div>
+    <div class="scene" data-r="up" data-d="2"><span class="who">«Бета»</span><p>Создаёт своё пространство. «Альфа» расшаривает все три комнаты по invite-коду — у «Беты» доступ с ролью shared.</p></div>
+    <div class="scene" data-r="up" data-d="3"><span class="who">Бронь и конфликт</span><p>«Бета» бронирует «Москву» на 14:00–15:00. «Альфа» на то же время получает ошибку «Время занято». В режиме busy_only «Бета» видит только, что слот занят, — но не кем.</p></div>
+    <div class="scene" data-r="up" data-d="4"><span class="who">«Гамма»</span><p>Работает в своих кабинетах, ничего не расшаривает — своё пространство, свои приватные комнаты.</p></div>
   </div>
-</div>
-</section>
+</div></section>
 
 <div class="divider"></div>
 
-<!-- ═══ CLOSING ════════════════════════════════════════════════════════ -->
+<!-- ═══ CLOSING ══════════════════════════════════════════════════════ -->
 <section class="closing">
-<div class="close-glow"></div>
-<div class="wrap close-inner">
-  <div data-r="scale">
-    <div class="hero-logo" style="margin-bottom:20px">
-      <div class="hero-logo-mark"><span></span></div>
-      <div class="hero-logo-txt">Corp<em>Meet</em></div>
-    </div>
-    <h2 class="grad" style="max-width:18ch;margin:0 auto">Бронь, встреча и видеосвязь — без переключения контекста</h2>
-    <p class="lead" style="margin:12px auto 0;text-align:center;max-width:520px">От клика по свободному слоту до записи видеовстречи — всё в одном продукте, прямо из Telegram.</p>
-    <div class="pills" style="margin-top:22px">
-      <div class="pill">📅 Расписание без двойных броней</div>
-      <div class="pill">🎥 Видео с шифрованием</div>
-      <div class="pill">🏢 Общие комнаты</div>
-      <div class="pill">✈️ Уведомления в Telegram</div>
-    </div>
-    <div class="byline" style="margin-top:32px">Спасибо за внимание · UZINFOCOM</div>
-    <div style="margin-top:28px">
-      <a href="/" class="tbtn" style="display:inline-flex">← Вернуться в приложение</a>
+  <div class="close-glow"></div>
+  <div class="wrap close-inner">
+    <div data-r="scale">
+      <div class="hero-logo" style="margin-bottom:18px">
+        <div class="hero-logo-mark"><span></span></div>
+        <div class="hero-logo-txt">Corp<em>Meet</em></div>
+      </div>
+      <h2 class="grad" style="max-width:18ch;margin:0 auto">Бронь, встреча и видеосвязь —<br>без переключения контекста</h2>
+      <p class="lead" style="margin:10px auto 0;text-align:center;max-width:500px">От клика по свободному слоту до записи видеовстречи — всё в одном продукте, прямо из Telegram.</p>
+      <div class="pills" style="margin-top:20px">
+        <div class="pill">📅 Расписание без двойных броней</div>
+        <div class="pill">🎥 Видео с шифрованием</div>
+        <div class="pill">🏢 Общие комнаты</div>
+        <div class="pill">✈️ Telegram-уведомления</div>
+      </div>
+      <div class="byline" style="margin-top:30px">Спасибо за внимание</div>
+      <div style="margin-top:22px">
+        <a href="/" class="tbtn" style="display:inline-flex">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          Вернуться в приложение
+        </a>
+      </div>
     </div>
   </div>
-</div>
 </section>
 
 <script>
 (function(){
-  // ── theme ──────────────────────────────────
   const html = document.documentElement;
   const btn  = document.getElementById('themeBtn');
-  function applyTheme(t){
+  const sun  = document.getElementById('iconSun');
+  const moon = document.getElementById('iconMoon');
+
+  function applyTheme(t) {
     html.setAttribute('data-theme', t);
-    btn.textContent = t === 'dark' ? '☀️' : '🌙';
-    try{ localStorage.setItem('corpmeet-theme', t) }catch{}
+    sun.style.display  = t === 'dark' ? 'block' : 'none';
+    moon.style.display = t === 'dark' ? 'none'  : 'block';
+    try { localStorage.setItem('corpmeet-theme', t) } catch {}
   }
-  try{
-    const stored = localStorage.getItem('corpmeet-theme');
-    applyTheme(stored || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
-  }catch{ applyTheme('light') }
+
+  // Синхронизируемся с localStorage приложения
+  let initial = 'light';
+  try { initial = localStorage.getItem('corpmeet-theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') } catch {}
+  applyTheme(initial);
+
   btn.addEventListener('click', () =>
     applyTheme(html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'));
 
-  // ── scroll progress ────────────────────────
+  // Scroll progress bar
   const prog = document.getElementById('prog');
-  function tick(){
+  function updateProg() {
     const max = document.documentElement.scrollHeight - window.innerHeight;
     prog.style.width = (max > 0 ? window.scrollY / max * 100 : 0) + '%';
   }
-  window.addEventListener('scroll', tick, { passive: true });
-  tick();
+  window.addEventListener('scroll', updateProg, { passive: true });
+  updateProg();
 
-  // ── reveal on scroll ───────────────────────
-  const obs = new IntersectionObserver(entries => {
-    entries.forEach(e => {
-      if(e.isIntersecting){ e.target.classList.add('on'); obs.unobserve(e.target) }
-    });
-  }, { threshold: 0.10, rootMargin: '0px 0px -36px 0px' });
-
-  document.querySelectorAll('[data-r]').forEach(el => obs.observe(el));
+  // Reveal on scroll
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('on'); io.unobserve(e.target) } });
+  }, { threshold: 0.10, rootMargin: '0px 0px -32px 0px' });
+  document.querySelectorAll('[data-r]').forEach(el => io.observe(el));
 })();
 </script>
 </body>
