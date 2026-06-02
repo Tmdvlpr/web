@@ -3,6 +3,11 @@ import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { useTheme } from "../../contexts/ThemeContext";
 
+// ── Actual CorpMeet brand logo paths (from SplashScreen.tsx) ──────────────
+const BRAND_BG   = "M 24 0 L 183.477 0 L 183.477 159.476 A 24 24 0 0 1 159.477 183.476 L 24 183.476 A 24 24 0 0 1 0 159.476 L 0 24 A 24 24 0 0 1 24 0 Z";
+const BRAND_W1   = "M183.477 -0.000213652H24.1003C10.8448 -0.000213652 0 10.8442 0 24.1002V29.4577C4.35965 30.1241 9.2007 31.4108 14.4453 33.2707C30.9597 39.1299 51.5212 50.7097 73.5983 66.6973C91.5408 53.3303 108.051 43.7672 121.444 39.0204C134.526 34.3831 144.68 34.3293 150.36 39.7837C156.794 45.9587 156.535 58.3064 150.797 74.4786C144.935 90.9937 133.356 111.555 117.37 133.632C130.738 151.575 140.298 168.087 145.045 181.48C145.286 182.154 145.511 182.818 145.725 183.476H159.377C172.632 183.476 183.477 172.634 183.477 159.378V-0.000213652Z";
+const BRAND_W2   = "M0 101.189V159.376C0 168.393 5.01728 176.29 12.3973 180.42C18.0218 180.586 24.8281 179.206 32.5683 176.422C48.3471 170.754 67.9784 159.273 89.4463 143.198C89.6156 143.069 89.8609 143.105 89.9921 143.275C90.1104 143.434 90.0894 143.658 89.949 143.793C83.9014 149.56 77.876 155.016 71.9314 160.131C65.8788 165.336 59.906 170.191 54.0732 174.655L54.0705 174.658L50.6656 177.231L50.6641 177.232L50.6599 177.235L50.6572 177.237C47.73 179.421 44.8397 181.502 41.9898 183.475H116.387C121.896 177.132 121.584 165.949 116.392 151.497C110.722 135.719 99.2405 116.088 83.1656 94.6182C83.0359 94.4481 83.071 94.2006 83.2423 94.0716C83.4017 93.9534 83.6256 93.9747 83.7592 94.1147H83.7611C89.5271 100.163 94.9865 106.19 100.101 112.134C105.16 118.017 109.887 123.825 114.25 129.503C121.803 114.774 126.675 101.709 128.415 91.1596C130.095 80.9622 128.849 73.1332 124.268 68.4527C118.097 62.1511 106.564 62.2476 91.463 67.6745C75.6841 73.3441 56.0556 84.8229 34.5862 100.899C34.4156 101.028 34.1715 100.994 34.0391 100.821C33.9217 100.663 33.943 100.438 34.0842 100.305H34.083C40.1287 94.5412 46.1515 89.0841 52.0938 83.9737C57.9766 78.9107 63.7907 74.1829 69.4702 69.8191C54.7411 62.2655 41.6766 57.3913 31.1279 55.6515C20.9285 53.9692 13.1007 55.2151 8.42024 59.7979C2.11631 65.9691 2.21587 77.5024 7.64207 92.6007C13.3097 108.38 24.7911 128.011 40.8664 149.476C40.9965 149.648 40.9587 149.894 40.7867 150.023C40.6299 150.143 40.4056 150.122 40.2706 149.979V149.982C34.5064 143.936 29.052 137.913 23.9397 131.971C18.7325 125.916 13.8754 119.941 9.4105 114.105L9.40821 114.104L6.83453 110.699L6.83148 110.697L6.83034 110.692L6.8269 110.69C4.42679 107.474 2.15065 104.304 0 101.189Z";
+
 // ── SVG icon set ───────────────────────────────────────────────────────────
 const ICONS: Record<string, string> = {
   calendar: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z",
@@ -47,18 +52,20 @@ function R({ children, delay = 0, dir = "up" }: { children: React.ReactNode; del
     io.observe(el);
     return () => io.disconnect();
   }, [scrollRef]);
-  const ini = dir==="left"  ? {opacity:0,x:-36,y:0,scale:0.96,filter:"blur(6px)"} :
-              dir==="right" ? {opacity:0,x:36,y:0,scale:0.96,filter:"blur(6px)"} :
-              dir==="scale" ? {opacity:0,x:0,y:16,scale:0.88,filter:"blur(10px)"} :
-                              {opacity:0,x:0,y:32,scale:0.94,filter:"blur(6px)"};
+  const ini = dir==="left"  ? {opacity:0,x:-40,y:0,scale:0.95,filter:"blur(8px)"} :
+              dir==="right" ? {opacity:0,x:40,y:0,scale:0.95,filter:"blur(8px)"} :
+              dir==="scale" ? {opacity:0,x:0,y:20,scale:0.90,filter:"blur(12px)"} :
+                              {opacity:0,x:0,y:40,scale:0.95,filter:"blur(8px)"};
+  const ease = [0.16, 1, 0.3, 1] as const;
   return (
     <motion.div ref={ref}
       initial={ini}
       animate={on ? {opacity:1,x:0,y:0,scale:1,filter:"blur(0px)"} : ini}
       transition={{
-        type:"spring", stiffness:280, damping:26, mass:0.9, delay:delay/1000,
-        filter:{duration:0.45,ease:"easeOut"},
-        opacity:{duration:0.4,ease:"easeOut"},
+        duration:0.7, ease,
+        delay:delay/1000,
+        filter:{duration:0.55,ease:"easeOut"},
+        opacity:{duration:0.5,ease:"easeOut"},
       }}
     >{children}</motion.div>
   );
@@ -241,8 +248,8 @@ function Card({icon,title,desc,accent,onClick,children}:{icon:string;title:strin
         style={{background:"var(--primary-light)",border:"1px solid var(--primary-border)",color:"var(--primary)"}}>
         <Ic name={icon} size={15}/>
       </div>
-      <div className="font-bold text-sm mb-1.5 leading-snug" style={{color:"var(--text)"}}>{title}</div>
-      {desc && <div className="text-xs leading-relaxed flex-1" style={{color:"var(--text-muted)"}}>{desc}</div>}
+      <div className="font-bold mb-2 leading-snug" style={{color:"var(--text)",fontSize:"var(--font-sm)"}}>{title}</div>
+      {desc && <div className="leading-relaxed flex-1" style={{color:"var(--text-muted)",fontSize:"var(--font-sm)"}}>{desc}</div>}
       {children}
     </div>
   );
@@ -352,20 +359,29 @@ function SH({ch,accent}:{ch:string;accent?:string}) {
   );
 }
 
-// ── Logo mark (exactly as in app sidebar) ──────────────────────────────────
+// ── Logo mark — actual SVG brand icon ────────────────────────────────────
 function LogoMark({size=28}:{size?:number}) {
+  const {isDark} = useTheme();
+  const bgFill   = isDark ? "#0f172a" : "#dbeafe";
+  const wingFill = isDark ? "#ffffff" : "#1565a8";
   return (
-    <div style={{width:size,height:size,borderRadius:size*0.28,background:"linear-gradient(135deg,var(--primary),var(--accent))",
-      display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 4px 12px rgba(21,101,168,.38)",flexShrink:0}}>
-      <span style={{display:"block",width:size*0.43,height:size*0.43,border:`${size*0.09}px solid #fff`,borderRadius:size*0.14,boxSizing:"border-box"}}/>
+    <div style={{width:size,height:size,borderRadius:size*0.2,overflow:"hidden",flexShrink:0,
+      boxShadow:"0 4px 12px rgba(21,101,168,.38)",background:isDark?"#1565a8":"#dbeafe"}}>
+      <svg viewBox="-4 -4 192 192" width={size} height={size} style={{display:"block"}}>
+        <path d={BRAND_BG} fill={bgFill}/>
+        <path d={BRAND_W1} fill={wingFill}/>
+        <path d={BRAND_W2} fill={wingFill}/>
+      </svg>
     </div>
   );
 }
 
 function LogoText({size=16}:{size?:number}) {
+  const {isDark} = useTheme();
+  const corpColor = isDark ? "#f8fafc" : "#1a1a1a";
   return (
-    <span style={{fontWeight:800,fontSize:size,color:"var(--text)",fontVariant:"normal",textTransform:"none",letterSpacing:"0.01em"}}>
-      Corp<span style={{color:"var(--primary)"}}>Meet</span>
+    <span style={{fontWeight:800,fontSize:size,letterSpacing:"0.12em",fontVariant:"normal",textTransform:"none"}}>
+      <span style={{color:corpColor}}>CORP</span><span style={{color:"#1565a8"}}>MEET</span>
     </span>
   );
 }
@@ -763,7 +779,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
 
             {/* ── Feedback & Rights ─────────────────────────────────── */}
             <Sec id="sec-feedback" ch={<>
-              <R><Eyebrow n="i" label="Для пользователя"/><SH ch="Обратная связь и права доступа" accent="права доступа"/></R>
+              <R><Eyebrow n="13" label="Для пользователя"/><SH ch="Обратная связь и права доступа" accent="права доступа"/></R>
               <div className="grid gap-6 mt-5 items-start" style={{gridTemplateColumns:"1fr 1fr"}}>
                 <R dir="left">
                   <div className="font-semibold text-sm mb-3" style={{color:"var(--text)"}}>Как отправить обращение</div>
@@ -792,7 +808,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
 
             {/* ── 13 Admin ──────────────────────────────────────────── */}
             <Sec id="sec-13" ch={<>
-              <R><Eyebrow n="13" label="Управление"/><SH ch="Админка, аналитика и обратная связь" accent="Аналитика"/></R>
+              <R><Eyebrow n="14" label="Управление"/><SH ch="Админка, аналитика и обратная связь" accent="Аналитика"/></R>
               <div className="grid grid-cols-3 gap-3 mt-5" style={{gridAutoRows:"1fr"}}>
                 {([["chart","Аналитика","Встречи и участники по дням, топ-10 организаторов, период 7/30/90 дней. По пространству или по всей платформе."],
                   ["users","Пользователи","Список, роли, приглашение по @username, одобрение заявок, массовые операции."],
@@ -810,7 +826,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
 
             {/* ── 14 Security ───────────────────────────────────────── */}
             <Sec id="sec-14" ch={<>
-              <R><Eyebrow n="14" label="Безопасность"/><SH ch="Надёжность и защита данных" accent="защита"/></R>
+              <R><Eyebrow n="15" label="Безопасность"/><SH ch="Надёжность и защита данных" accent="защита"/></R>
               <div className="flex gap-8 flex-wrap mt-5">
                 {[["E2EE","сквозное шифрование видео"],["PASETO","токены вместо JWT"],["15м–8ч","диапазон встреч"],["90","встреч в серии повторов"],["РУ / УЗ","два языка"]].map(([b,s],i)=>(
                   <AnimStat key={b} big={b} small={s} idx={i}/>
@@ -827,7 +843,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
 
             {/* ── 15 Scenario ───────────────────────────────────────── */}
             <Sec id="sec-15" ch={<>
-              <R><Eyebrow n="15" label="Сценарий"/><SH ch="Общий бизнес-центр — как это работает" accent="как это работает"/>
+              <R><Eyebrow n="16" label="Сценарий"/><SH ch="Общий бизнес-центр — как это работает" accent="как это работает"/>
                 <p className="mt-2 text-sm leading-relaxed" style={{color:"var(--text-sec)",maxWidth:560}}>Три компании в одном здании: «Альфа», «Бета», «Гамма». Три переговорки на этаже: «Москва», «Лондон», «Токио».</p>
               </R>
               <div className="mt-4">
