@@ -72,9 +72,10 @@ const Note = ({ch}:{ch:React.ReactNode}) => (
 const BList = ({items}:{items:{k:string;v:React.ReactNode}[]}) => (
   <ul style={{listStyle:"none",padding:0,margin:0}}>
     {items.map((it,i) => (
-      <li key={i} className="relative py-[7px] pl-5 text-sm leading-snug"
-        style={{color:"var(--text-sec)",borderBottom:i<items.length-1?"1px solid var(--border-light)":"none"}}>
-        <span className="absolute left-[3px] top-[14px] w-[5px] h-[5px] rounded-sm"
+      <li key={i} className="relative py-2 pl-5"
+        style={{fontSize:"var(--font-sm)",lineHeight:1.6,color:"var(--text-sec)",
+          borderBottom:i<items.length-1?"1px solid var(--border-light)":"none"}}>
+        <span className="absolute left-[3px] top-[16px] w-[5px] h-[5px] rounded-sm"
           style={{background:"var(--primary)",opacity:.75,display:"block"}}/>
         <b style={{color:"var(--text)",fontWeight:600}}>{it.k}</b>{" — "}{it.v}
       </li>
@@ -221,13 +222,15 @@ function TgMock() {
 }
 
 // ── Card component ─────────────────────────────────────────────────────────
-function Card({icon,title,desc,accent,children}:{icon:string;title:string;desc?:string;accent?:boolean;children?:React.ReactNode}) {
+function Card({icon,title,desc,accent,onClick,children}:{icon:string;title:string;desc?:string;accent?:boolean;onClick?:()=>void;children?:React.ReactNode}) {
   const [hov,setHov] = useState(false);
   return (
     <div className="rounded-md p-4 flex flex-col h-full"
       onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
+      onClick={onClick}
       style={{background:"var(--elevated)",border:`1px solid ${accent||hov?"var(--primary-border)":"var(--border)"}`,
-        boxShadow:"var(--card-shadow)",transition:"border-color .15s,transform .2s",transform:hov?"translateY(-2px)":"none"}}>
+        boxShadow:"var(--card-shadow)",transition:"border-color .15s,transform .2s",
+        transform:hov?"translateY(-2px)":"none",cursor:onClick?"pointer":"default"}}>
       <div className="w-8 h-8 rounded-md flex items-center justify-center mb-3 shrink-0"
         style={{background:"var(--primary-light)",border:"1px solid var(--primary-border)",color:"var(--primary)"}}>
         <Ic name={icon} size={15}/>
@@ -243,8 +246,8 @@ function Card({icon,title,desc,accent,children}:{icon:string;title:string;desc?:
 const PAD = "0 clamp(20px,4vw,48px)";
 const MW  = 1180;
 
-const Sec = ({ch}:{ch:React.ReactNode}) => (
-  <section style={{padding:"60px 0"}}>
+const Sec = ({ch,id}:{ch:React.ReactNode;id?:string}) => (
+  <section id={id} style={{padding:"60px 0"}}>
     <div style={{maxWidth:MW,margin:"0 auto",padding:PAD}}>{ch}</div>
   </section>
 );
@@ -302,6 +305,13 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
     el.addEventListener("scroll",fn,{passive:true});
     return ()=>el.removeEventListener("scroll",fn);
   },[isOpen]);
+
+  const scrollTo = (id: string) => {
+    const el = document.getElementById(id);
+    const container = scrollRef.current;
+    if (!el || !container) return;
+    container.scrollTo({ top: el.offsetTop - 56, behavior: "smooth" });
+  };
 
   useEffect(() => {
     if (!isOpen) return;
@@ -419,26 +429,30 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
             <Sec ch={<>
               <R><Eyebrow n="02" label="Обзор"/><SH ch="Что умеет CorpMeet" accent="CorpMeet"/></R>
               <div className="grid grid-cols-4 gap-3 mt-5" style={{gridAutoRows:"1fr"}}>
-                {([["calendar","Бронирование","Недельная сетка, drag&drop, повторы, статус комнаты."],
-                  ["video","Видеовстречи","LiveKit с E2EE, запись, экран, чат, blur фона, Krisp."],
-                  ["building","Комнаты","Общие переговорные с режимами видимости и шерингом."],
-                  ["grid","Пространства","Несколько компаний на платформе, роли, invite-коды."],
-                  ["send","Telegram","Mini App, бот, уведомления в группу и личные напоминания."],
-                  ["bell","Уведомления","Web push, RSVP, центр уведомлений с историей."],
-                  ["users","Гости","Приглашение по @username, по должностям, гостевой вход."],
-                  ["chart","Аналитика","Статистика встреч, топ организаторов, управление участниками."],
-                  ["clip","Вложения","Файлы к брони и в чате встречи, вставка через Ctrl+V."],
-                  ["export","Экспорт","Скачивание .ics и подписка на iCal-фид."],
-                  ["globe","Локализация","Два языка (РУ/УЗ), любой часовой пояс."],
-                  ["sun","Темы","Тёмная и светлая, синхронизация с системой."],
-                ] as [string,string,string][]).map(([ic,t,d],i)=><R key={t} delay={i*35}><Card icon={ic} title={t} desc={d}/></R>)}
+                {([["calendar","Бронирование","Недельная сетка, drag&drop, повторы, статус комнаты.","sec-07"],
+                  ["video","Видеовстречи","LiveKit с E2EE, запись, экран, чат, blur фона, Krisp.","sec-09"],
+                  ["building","Комнаты","Общие переговорные с режимами видимости и шерингом.","sec-06"],
+                  ["grid","Пространства","Несколько компаний на платформе, роли, invite-коды.","sec-04"],
+                  ["send","Telegram","Mini App, бот, уведомления в группу и личные напоминания.","sec-11"],
+                  ["bell","Уведомления","Web push, RSVP, центр уведомлений с историей.","sec-12"],
+                  ["users","Гости","Приглашение по @username, по должностям, гостевой вход.","sec-10"],
+                  ["chart","Аналитика","Статистика встреч, топ организаторов, управление участниками.","sec-13"],
+                  ["clip","Вложения","Файлы к брони и в чате встречи, вставка через Ctrl+V.","sec-08"],
+                  ["export","Экспорт","Скачивание .ics и подписка на iCal-фид.","sec-13"],
+                  ["globe","Локализация","Два языка (РУ/УЗ), любой часовой пояс.","sec-14"],
+                  ["sun","Темы","Тёмная и светлая, синхронизация с системой.","sec-14"],
+                ] as [string,string,string,string][]).map(([ic,t,d,target],i)=>(
+                  <R key={t} delay={i*35}>
+                    <Card icon={ic} title={t} desc={d} onClick={()=>scrollTo(target)}/>
+                  </R>
+                ))}
               </div>
             </>}/>
 
             <Div/>
 
             {/* ── 03 Login ──────────────────────────────────────────── */}
-            <Sec ch={<>
+            <Sec id="sec-03" ch={<>
               <R><Eyebrow n="03" label="Вход в систему"/><SH ch="Три способа войти" accent="Три"/>
                 <p className="mt-2 text-sm leading-relaxed" style={{color:"var(--text-sec)"}}>Авторизация через Telegram — никаких отдельных паролей.</p>
               </R>
@@ -458,7 +472,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
             <Div/>
 
             {/* ── 04 Spaces ─────────────────────────────────────────── */}
-            <Sec ch={<>
+            <Sec id="sec-04" ch={<>
               <R><Eyebrow n="04" label="Пространства"/><SH ch="При первом входе — развилка" accent="развилка"/>
                 <p className="mt-2 text-sm leading-relaxed" style={{color:"var(--text-sec)",maxWidth:560}}>«Пространство» — ваша компания или команда. Как воркспейсы в Slack: один пользователь, несколько пространств, быстрое переключение.</p>
               </R>
@@ -473,7 +487,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
             <Div/>
 
             {/* ── 05 Roles ──────────────────────────────────────────── */}
-            <Sec ch={<>
+            <Sec id="sec-05" ch={<>
               <R><Eyebrow n="05" label="Роли"/><SH ch="Кто что может в пространстве" accent="может"/></R>
               <div className="grid grid-cols-3 gap-3 mt-5" style={{gridAutoRows:"1fr"}}>
                 <R delay={60}><Card icon="star" title="Owner — владелец" desc="Создатель пространства. Может всё: настройки, удаление, передача владения. Один на пространство."/></R>
@@ -500,7 +514,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
             <Div/>
 
             {/* ── 06 Rooms ──────────────────────────────────────────── */}
-            <Sec ch={<>
+            <Sec id="sec-06" ch={<>
               <R><Eyebrow n="06" label="Комнаты"/><SH ch="Переговорная — общий физический ресурс" accent="общий"/>
                 <p className="mt-2 text-sm leading-relaxed" style={{color:"var(--text-sec)",maxWidth:560}}>Одну комнату могут бронировать несколько пространств — типично для общего бизнес-центра.</p>
               </R>
@@ -534,7 +548,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
             <Div/>
 
             {/* ── 07 Calendar ───────────────────────────────────────── */}
-            <Sec ch={<>
+            <Sec id="sec-07" ch={<>
               <R><Eyebrow n="07" label="Календарь"/><SH ch="Главный экран — недельная сетка" accent="недельная сетка"/></R>
               <div className="grid gap-8 mt-5 items-center" style={{gridTemplateColumns:"1fr 1fr"}}>
                 <R dir="left"><CalMock/></R>
@@ -552,7 +566,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
             <Div/>
 
             {/* ── 08 Booking ────────────────────────────────────────── */}
-            <Sec ch={<>
+            <Sec id="sec-08" ch={<>
               <R><Eyebrow n="08" label="Создание встречи"/><SH ch="Одна форма — вся встреча" accent="Одна форма"/></R>
               <div className="grid gap-8 mt-5 items-center" style={{gridTemplateColumns:"1fr 1fr"}}>
                 <R dir="left"><BookMock/></R>
@@ -571,7 +585,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
             <Div/>
 
             {/* ── 09 Video ──────────────────────────────────────────── */}
-            <Sec ch={<>
+            <Sec id="sec-09" ch={<>
               <R><Eyebrow n="09" label="Видеовстречи"/><SH ch="Полноценная конференция внутри продукта" accent="внутри продукта"/></R>
               <div className="grid gap-8 mt-5 items-center" style={{gridTemplateColumns:"1fr 1fr"}}>
                 <R dir="left"><VideoMock/></R>
@@ -591,7 +605,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
             <Div/>
 
             {/* ── 10 Guest ──────────────────────────────────────────── */}
-            <Sec ch={<>
+            <Sec id="sec-10" ch={<>
               <R><Eyebrow n="10" label="Гостевой вход"/><SH ch="Гости подключаются без регистрации" accent="без регистрации"/>
                 <p className="mt-2 text-sm leading-relaxed" style={{color:"var(--text-sec)",maxWidth:540}}>Для внешних участников организатор создаёт ссылку-приглашение — аккаунт не нужен.</p>
               </R>
@@ -620,7 +634,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
             <Div/>
 
             {/* ── 11 Telegram ───────────────────────────────────────── */}
-            <Sec ch={<>
+            <Sec id="sec-11" ch={<>
               <R><Eyebrow n="11" label="Telegram"/><SH ch="Уведомления туда, где команда уже сидит" accent="где команда"/></R>
               <div className="grid gap-8 mt-5 items-center" style={{gridTemplateColumns:"1fr 1fr"}}>
                 <R dir="left"><TgMock/></R>
@@ -638,7 +652,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
             <Div/>
 
             {/* ── 12 Notifications ──────────────────────────────────── */}
-            <Sec ch={<>
+            <Sec id="sec-12" ch={<>
               <R><Eyebrow n="12" label="Уведомления"/><SH ch="Напоминания и центр уведомлений" accent="центр уведомлений"/></R>
               <div className="grid grid-cols-3 gap-3 mt-5" style={{gridAutoRows:"1fr"}}>
                 <R delay={60}><Card icon="bell" title="Web push" desc="Desktop-уведомления в браузере за 5, 15, 30 или 60 минут до встречи. Разрешение запрашивается один раз."/></R>
@@ -651,7 +665,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
             <Div/>
 
             {/* ── 13 Admin ──────────────────────────────────────────── */}
-            <Sec ch={<>
+            <Sec id="sec-13" ch={<>
               <R><Eyebrow n="13" label="Управление"/><SH ch="Админка, аналитика и обратная связь" accent="Аналитика"/></R>
               <div className="grid grid-cols-3 gap-3 mt-5" style={{gridAutoRows:"1fr"}}>
                 {([["chart","Аналитика","Встречи и участники по дням, топ-10 организаторов, период 7/30/90 дней. По пространству или по всей платформе."],
@@ -669,7 +683,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
             <Div/>
 
             {/* ── 14 Security ───────────────────────────────────────── */}
-            <Sec ch={<>
+            <Sec id="sec-14" ch={<>
               <R><Eyebrow n="14" label="Безопасность"/><SH ch="Надёжность и защита данных" accent="защита"/></R>
               <R delay={60}>
                 <div className="flex gap-7 flex-wrap mt-5">
@@ -691,7 +705,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
             <Div/>
 
             {/* ── 15 Scenario ───────────────────────────────────────── */}
-            <Sec ch={<>
+            <Sec id="sec-15" ch={<>
               <R><Eyebrow n="15" label="Сценарий"/><SH ch="Общий бизнес-центр — как это работает" accent="как это работает"/>
                 <p className="mt-2 text-sm leading-relaxed" style={{color:"var(--text-sec)",maxWidth:560}}>Три компании в одном здании: «Альфа», «Бета», «Гамма». Три переговорки на этаже: «Москва», «Лондон», «Токио».</p>
               </R>
