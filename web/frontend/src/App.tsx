@@ -99,7 +99,7 @@ function getSeenInviteIds(): Set<number> {
   catch { return new Set(); }
 }
 
-function useInviteNotifications(userId: number | undefined) {
+function useInviteNotifications(userId: number | undefined, workspaces: import("./types").Workspace[]) {
   useEffect(() => {
     if (!userId) return;
     const check = async () => {
@@ -107,6 +107,7 @@ function useInviteNotifications(userId: number | undefined) {
         const bookings = await bookingsApi.getActive();
         const invited = bookings.filter(b => b.user_id !== userId);
         if (!invited.length) return;
+        const ownBookings = bookings.filter(b => b.user_id === userId);
         const seen = getSeenInviteIds();
         const existingIds = new Set(
           getStoredNotifications()
@@ -115,13 +116,28 @@ function useInviteNotifications(userId: number | undefined) {
         );
         for (const b of invited) {
           if (seen.has(b.id) || existingIds.has(b.id)) continue;
+          // Check overlap with own bookings AND other invites
+          const allOthers = [...ownBookings, ...invited.filter(x => x.id !== b.id)];
+          const bStart = new Date(b.start_time).getTime();
+          const bEnd = new Date(b.end_time).getTime();
+          const overlapping = allOthers.find(o => {
+            const oStart = new Date(o.start_time).getTime();
+            const oEnd = new Date(o.end_time).getTime();
+            return bStart < oEnd && bEnd > oStart;
+          });
+          const overlapInfo = overlapping ? {
+            title: overlapping.title,
+            workspaceName: workspaces.find(w => w.id === overlapping.workspace_id)?.name ?? "",
+            startTime: overlapping.start_time,
+          } : null;
           addNotification({
             id: `invite-${b.id}-${b.created_at}`,
-            title: b.title,   // raw booking title — translated at render time
+            title: b.title,
             body: "",
             time: new Date(b.created_at).getTime(),
             type: "meeting_invited",
             bookingId: b.id,
+            overlapInfo,
           });
           seen.add(b.id);
         }
@@ -179,14 +195,14 @@ function useWorkspaceJoinRequestNotifications(userId: number | undefined) {
 }
 
 // ── Toast ────────────────────────────────────────────────────────────────────
-interface Toast { id: number; message: string; type: "success" | "error" | "info"; }
+interface Toast { id: number; message: string; type: "success" | "error" | "info" | "warning"; }
 let _tid = 0;
 function useToasts() {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const add = (message: string, type: Toast["type"] = "success") => {
     const id = ++_tid;
     setToasts((t) => [...t, { id, message, type }]);
-    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 4000);
+    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), type === "warning" ? 3000 : 4000);
   };
   return { toasts, add };
 }
@@ -195,14 +211,16 @@ function Toasts({ toasts }: { toasts: Toast[] }) {
   const { isDark } = useTheme();
   const colors: Record<Toast["type"], { bg: string; border: string; text: string }> = isDark
     ? {
-        success: { bg: "rgba(16,185,129,0.12)", border: "rgba(16,185,129,0.35)", text: "#34d399" },
-        error:   { bg: "rgba(239,68,68,0.12)",  border: "rgba(239,68,68,0.35)",  text: "#f87171" },
-        info:    { bg: "rgba(21,101,168,0.15)",  border: "rgba(21,101,168,0.4)",  text: "#5ba3df" },
+        success: { bg: "rgba(16,185,129,0.12)",  border: "rgba(16,185,129,0.35)", text: "#34d399" },
+        error:   { bg: "rgba(239,68,68,0.12)",   border: "rgba(239,68,68,0.35)",  text: "#f87171" },
+        info:    { bg: "rgba(21,101,168,0.15)",   border: "rgba(21,101,168,0.4)",  text: "#5ba3df" },
+        warning: { bg: "rgba(234,179,8,0.12)",    border: "rgba(234,179,8,0.4)",   text: "#facc15" },
       }
     : {
         success: { bg: "#f0fdf4", border: "#bbf7d0", text: "#15803d" },
         error:   { bg: "#fef2f2", border: "#fecaca", text: "#dc2626" },
         info:    { bg: "#eff6ff", border: "#bfdbfe", text: "#2563eb" },
+        warning: { bg: "#fefce8", border: "#fde68a", text: "#a16207" },
       };
   return (
     <div className="fixed bottom-6 right-6 z-[100] flex flex-col gap-2 pointer-events-none">
@@ -277,7 +295,7 @@ function Dashboard() {
   const { user, logout } = useAuth();
   const { isMiniApp: miniApp } = useTelegram();
   const { isDark, toggle } = useTheme();
-  useInviteNotifications(user?.id);
+  useInviteNotifications(user?.id, workspaces);
   useWorkspaceJoinRequestNotifications(user?.id);
   const { t, locale, setLocale } = useLocale();
   const { toasts, add: addToast } = useToasts();
@@ -380,8 +398,12 @@ function Dashboard() {
           {miniApp && <OpenInBrowserButton />}
           <div className="relative">
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 z-10 w-2.5 h-2.5 rounded-full border-2"
-              style={{ background: "#ef4444", borderColor: "var(--header)" }} />
+            <span className="absolute -top-1 -right-1 z-10 flex w-2.5 h-2.5">
+              <span className="animate-ping absolute inline-flex w-full h-full rounded-full"
+                style={{ background: "#ef4444", opacity: 0.6 }} />
+              <span className="relative inline-flex rounded-full w-2.5 h-2.5 border-2"
+                style={{ background: "#ef4444", borderColor: "var(--header)" }} />
+            </span>
           )}
           <button
             onClick={() => setSidebarOpen(v => !v)}
@@ -580,6 +602,7 @@ function Dashboard() {
         initialStart={slotStart} initialEnd={slotEnd}
         editBooking={editBooking} canEdit={canEdit} canDelete={canEdit}
         onSuccess={(msg) => addToast(msg)} onError={(msg) => addToast(msg, "error")}
+        onWarning={(msg) => addToast(msg, "warning")}
       />
 
       {user && (

@@ -15,6 +15,7 @@ import type { Booking, GuestStatusItem } from "../../types";
 import { GuestInput } from "./GuestInput";
 import { AttachmentsSection } from "./AttachmentsSection";
 import { MeetingChatPanel } from "../Video/MeetingChatPanel";
+import { addNotification } from "./NotificationCenter";
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -26,6 +27,7 @@ interface BookingModalProps {
   canDelete?: boolean;
   onSuccess?: (msg: string) => void;
   onError?: (msg: string) => void;
+  onWarning?: (msg: string) => void;
 }
 
 function pad(n: number) { return String(n).padStart(2, "0"); }
@@ -84,11 +86,11 @@ interface ConstellationNode {
 export function BookingModal({
   isOpen, onClose, initialStart, initialEnd,
   editBooking, canEdit, canDelete,
-  onSuccess, onError
+  onSuccess, onError, onWarning
 }: BookingModalProps) {
   const { isDark } = useTheme();
   const { t, locale } = useLocale();
-  const { activeWorkspace, myRooms } = useWorkspace();
+  const { activeWorkspace, myRooms, workspaces } = useWorkspace();
   const navigate    = useNavigate();
   const isEdit     = !!editBooking;
   const isReadOnly = isEdit && !canEdit;
@@ -502,6 +504,36 @@ export function BookingModal({
             : "🚀 Первая встреча! Начало эпохи");
         } else {
           onSuccess?.(count > 1 ? t("booking.toastBookedN", { n: count }) : t("booking.toastBooked"));
+        }
+        // Check for overlaps in other workspaces
+        if (onWarning && created.length > 0 && activeWorkspace) {
+          try {
+            const date = created[0].start_time.slice(0, 10);
+            const allDay = await bookingsApi.getByDate(date);
+            for (const newB of created) {
+              const newStart = new Date(newB.start_time).getTime();
+              const newEnd = new Date(newB.end_time).getTime();
+              const overlap = allDay.find(b =>
+                b.id !== newB.id &&
+                b.workspace_id != null &&
+                b.workspace_id !== newB.workspace_id &&
+                new Date(b.start_time).getTime() < newEnd &&
+                new Date(b.end_time).getTime() > newStart
+              );
+              if (overlap) {
+                const wsName = workspaces.find(w => w.id === overlap.workspace_id)?.name ?? "";
+                const msg = t("overlap.toast", { title: overlap.title, workspace: wsName });
+                onWarning(msg);
+                addNotification({
+                  id: `overlap-${newB.id}-${overlap.id}`,
+                  title: t("overlap.notifTitle"),
+                  body: t("overlap.body", { title: overlap.title, workspace: wsName }),
+                  time: Date.now(),
+                  type: "info",
+                });
+              }
+            }
+          } catch { /* non-fatal */ }
         }
       }
       onClose();

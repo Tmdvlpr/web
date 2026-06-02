@@ -594,6 +594,11 @@ export const T: Dict = {
   "pos.errPosition":          { ru: "Не удалось сохранить должность. Попробуйте снова.", uz: "Лавозим сақлаб бўлмади. Яна уриниб кўринг." },
   "pos.errRoom":              { ru: "Не удалось создать переговорную. Попробуйте снова.", uz: "Хона яратиб бўлмади. Яна уриниб кўринг." },
   "error.positionRequired":   { ru: "Укажите должность в пространстве для доступа к этой функции", uz: "Бу функция учун лавозим кўрсатинг" },
+
+  // ── Overlap warnings ──────────────────────────────────────────────────────
+  "overlap.toast":     { ru: "⚠ Пересечение встреч: «{title}» в «{workspace}»",                     uz: "⚠ Йиғилишлар мос келади: «{title}» — «{workspace}»" },
+  "overlap.notifTitle":{ ru: "Пересечение встреч",                                                   uz: "Йиғилишлар мос келади" },
+  "overlap.body":      { ru: "У вас пересечение со встречей «{title}» в пространстве «{workspace}»", uz: "Сизда «{title}» йиғилиши билан «{workspace}» ҳудудида мос келиш мавжуд" },
 };
 
 export function format(template: string, params?: Record<string, string | number>): string {

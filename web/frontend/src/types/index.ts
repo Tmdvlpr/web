@@ -170,6 +170,7 @@ export interface NotificationRecord {
   requestedUserName?: string;
   workspaceName?: string;
   joinRequestStatus?: "accepted" | "declined";
+  overlapInfo?: { title: string; workspaceName: string; startTime: string } | null;
 }
 
 export interface Room {

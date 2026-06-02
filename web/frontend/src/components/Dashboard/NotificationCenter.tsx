@@ -342,6 +342,14 @@ export function NotificationCenter({ isOpen, onClose, onBack }: Props) {
                         </p>
                         <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>{timeAgo(n.time)}</p>
 
+                        {/* Overlap warning */}
+                        {n.type === "meeting_invited" && n.overlapInfo && (
+                          <p className="text-xs mt-1.5 px-2 py-1 rounded font-medium"
+                            style={{ background: "rgba(234,179,8,0.1)", border: "1px solid rgba(234,179,8,0.3)", color: "#a16207" }}>
+                            ⚠ {t("overlap.body", { title: n.overlapInfo.title, workspace: n.overlapInfo.workspaceName })}
+                          </p>
+                        )}
+
                         {/* Meeting invite RSVP buttons */}
                         {n.type === "meeting_invited" && n.bookingId && (
                           <div className="mt-1.5">
