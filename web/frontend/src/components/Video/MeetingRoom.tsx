@@ -826,7 +826,7 @@ function ParticipantsPanel({
         <div style={{ padding: "10px 10px 12px", borderTop: "1px solid var(--brd)" }}>
           {!inviteUrl ? (
             <button
-              onClick={handleCreateInvite}
+              onClick={() => handleCreateInvite()}
               disabled={inviteLoading}
               style={{
                 width: "100%", padding: "10px 14px", borderRadius: 4, border: "none",
