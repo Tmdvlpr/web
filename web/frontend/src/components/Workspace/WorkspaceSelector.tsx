@@ -329,10 +329,9 @@ export function WorkspaceSelector({ onSettingsOpen }: WorkspaceSelectorProps) {
                     Отмена
                   </button>
                   <button onClick={handleJoin} disabled={busy}
-                    className="flex-1 py-1.5 text-xs font-bold text-white disabled:opacity-50"
+                    className="flex-1 py-1.5 rounded-md text-xs font-bold text-white disabled:opacity-50"
                     style={{
-                      borderRadius: 999,
-                      background: "linear-gradient(135deg, #2563eb, #6366f1)",
+                      background: "linear-gradient(135deg,#1565a8,#114e85)",
                       border: "none",
                       transition: "opacity 0.15s ease, transform 0.15s ease",
                     }}
