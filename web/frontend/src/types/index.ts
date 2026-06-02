@@ -55,6 +55,9 @@ export interface BookingUpdate {
   end_time?: string;
   guests?: string[];
   video_enabled?: boolean;
+  room_id?: string;
+  booking_type?: "physical" | "virtual" | "hybrid";
+  reminder_minutes?: number;
 }
 
 export interface MeetingJoinResponse {
