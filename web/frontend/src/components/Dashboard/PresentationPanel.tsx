@@ -62,10 +62,10 @@ function R({ children, delay = 0, dir = "up" }: { children: React.ReactNode; del
       initial={ini}
       animate={on ? {opacity:1,x:0,y:0,scale:1,filter:"blur(0px)"} : ini}
       transition={{
-        duration:0.7, ease,
+        duration:0.45, ease,
         delay:delay/1000,
-        filter:{duration:0.55,ease:"easeOut"},
-        opacity:{duration:0.5,ease:"easeOut"},
+        filter:{duration:0.22,ease:"easeOut"},
+        opacity:{duration:0.22,ease:"easeOut"},
       }}
     >{children}</motion.div>
   );
@@ -182,8 +182,8 @@ function BookMock() {
         <div><Lbl t="Длительность"/><div className="flex gap-1 flex-wrap"><Chip l="30м"/><Chip l="1ч" on/><Chip l="1.5ч"/><Chip l="2ч"/></div></div>
         <div><Lbl t="Повторение"/><div className="flex gap-1 flex-wrap"><Chip l="Нет" on/><Chip l="Каждый день"/><Chip l="Каждую неделю"/></div></div>
         <div><Lbl t="Гости"/><div className="flex gap-1 flex-wrap"><Pill l="@timur"/><Pill l="Анна П."/></div></div>
-        <button className="w-full rounded-md py-2 text-xs font-bold text-white"
-          style={{background:"linear-gradient(135deg,#1565a8,#114e85)",boxShadow:"0 4px 14px rgba(21,101,168,.32)"}}>Забронировать</button>
+        <button className="rounded-md px-4 py-1.5 text-xs font-bold text-white mt-1"
+          style={{background:"linear-gradient(135deg,#1565a8,#114e85)",boxShadow:"0 3px 10px rgba(21,101,168,.28)"}}>Забронировать</button>
       </div>
     </MockShell>
   );
@@ -270,7 +270,7 @@ const ANIM_CSS = `
 `;
 
 // ── HoverGrid — avatar-group-hover for card grids ──────────────────────────
-function HoverGrid({ items, cols = 4 }: { items: React.ReactNode[]; cols?: number }) {
+function HoverGrid({ children, cols = 4 }: { children: React.ReactNode; cols?: number }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const setShifts = (activeIdx: number | null, phase: "in" | "out") => {
     const root = rootRef.current; if (!root) return;
@@ -286,10 +286,10 @@ function HoverGrid({ items, cols = 4 }: { items: React.ReactNode[]; cols?: numbe
   };
   return (
     <div ref={rootRef} onMouseLeave={() => setShifts(null, "out")}
-      className="grid gap-3 mt-5"
-      style={{ gridTemplateColumns: `repeat(${cols}, 1fr)`, gridAutoRows: "1fr" }}>
-      {items.map((child, i) => (
-        <div key={i} className="t-avatar" onMouseEnter={() => setShifts(i, "in")}>{child}</div>
+      className="gap-3 mt-5"
+      style={{ display:"grid", gridTemplateColumns: `repeat(${cols}, 1fr)`, gridAutoRows: "1fr" }}>
+      {React.Children.map(children, (child, i) => (
+        <div key={i} className="t-avatar" onMouseEnter={() => setShifts(i, "in")} style={{height:"100%"}}>{child}</div>
       ))}
     </div>
   );
@@ -502,12 +502,12 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
                 <SH ch="Знакомая боль с переговорными" accent="переговорными"/>
                 <p className="mt-2 text-sm leading-relaxed" style={{color:"var(--text-sec)",maxWidth:580}}>Договорённости в чате, занятая комната «по факту», встречи в трёх разных сервисах. CorpMeet убирает этот хаос.</p>
               </R>
-              <div className="grid grid-cols-3 gap-3 mt-5" style={{gridAutoRows:"1fr"}}>
+              <HoverGrid cols={3}>
                 {[["calendar","Двойные брони","Две команды приходят в одну комнату — потому что расписания нет или оно в чьей-то голове."],
-                  ["grid","Зоопарк сервисов","Календарь отдельно, видеозвонок отдельно, файлы где-то ещё. Ничего не связано."],
+                  ["grid","Разрозненные сервисы","Календарь отдельно, видеозвонок отдельно, файлы где-то ещё. Ничего не связано."],
                   ["bell","Забытые встречи","Никто не напомнил вовремя — участники опаздывают или не приходят вовсе."],
                 ].map(([ic,t,d],i)=><R key={t} delay={i*60}><Card icon={ic} title={t} desc={d}/></R>)}
-              </div>
+              </HoverGrid>
               <R delay={180}><Note ch="CorpMeet объединяет расписание, видеосвязь, файлы и уведомления — встреча «живёт» в одном месте от брони до записи."/></R>
             </>}/>
 
@@ -516,24 +516,23 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
             {/* ── 02 Overview ───────────────────────────────────────── */}
             <Sec ch={<>
               <R><Eyebrow n="02" label="Обзор"/><SH ch="Что умеет CorpMeet" accent="CorpMeet"/></R>
-              <HoverGrid cols={4} items={([
-                  ["calendar","Бронирование","Недельная сетка, drag&drop, повторы, статус комнаты.","sec-07"],
+              <HoverGrid cols={4}>
+                {([["calendar","Бронирование","Недельная сетка, drag&drop, повторы, статус комнаты.","sec-07"],
                   ["video","Видеовстречи","LiveKit с E2EE, запись, экран, чат, blur фона, Krisp.","sec-09"],
                   ["building","Комнаты","Общие переговорные с режимами видимости и шерингом.","sec-06"],
                   ["grid","Пространства","Несколько компаний на платформе, роли, invite-коды.","sec-04"],
                   ["send","Telegram","Mini App, бот, уведомления в группу и личные напоминания.","sec-11"],
                   ["bell","Уведомления","Web push, RSVP, центр уведомлений с историей.","sec-12"],
                   ["users","Гости","Приглашение по @username, по должностям, гостевой вход.","sec-10"],
-                  ["chart","Аналитика","Статистика встреч, топ организаторов, управление участниками.","sec-13"],
+                  ["chart","Аналитика","Статистика встреч, топ организаторов, управление участниками.","sec-14"],
                   ["clip","Вложения","Файлы к брони и в чате встречи, вставка через Ctrl+V.","sec-08"],
-                  ["export","Экспорт","Скачивание .ics и подписка на iCal-фид.","sec-13"],
-                  ["globe","Локализация","Два языка (РУ/УЗ), любой часовой пояс.","sec-14"],
-                  ["sun","Темы","Тёмная и светлая, синхронизация с системой.","sec-14"],
+                  ["export","Экспорт","Скачивание .ics и подписка на iCal-фид.","sec-14"],
+                  ["globe","Локализация","Два языка (РУ/УЗ), любой часовой пояс.","sec-15"],
+                  ["sun","Темы","Тёмная и светлая, синхронизация с системой.","sec-15"],
                 ] as [string,string,string,string][]).map(([ic,t,d,target],i)=>(
-                  <R key={t} delay={i*30}>
-                    <Card icon={ic} title={t} desc={d} onClick={()=>scrollTo(target)}/>
-                  </R>
-                ))}/>
+                  <R key={t} delay={i*30}><Card icon={ic} title={t} desc={d} onClick={()=>scrollTo(target)}/></R>
+                ))}
+              </HoverGrid>
             </>}/>
 
             <Div/>
@@ -543,17 +542,14 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
               <R><Eyebrow n="03" label="Вход в систему"/><SH ch="Три способа войти" accent="Три"/>
                 <p className="mt-2 text-sm leading-relaxed" style={{color:"var(--text-sec)"}}>Авторизация через Telegram — никаких отдельных паролей.</p>
               </R>
-              <div className="grid grid-cols-3 gap-3 mt-5" style={{gridAutoRows:"1fr"}}>
+              <HoverGrid cols={3}>
                 {([["send","Telegram Mini App","Открываете бота @corpmeetbot и входите прямо внутри Telegram. Данные подтверждаются криптографической подписью.","основной"],
                   ["star","QR-код в браузере","На странице входа — QR. Сканируете телефоном, подтверждаете в боте — браузер авторизуется автоматически.","для десктопа"],
                   ["globe","«Открыть в браузере»","Из Mini App одним нажатием переходите в полную веб-версию. Ссылка одноразовая, действует несколько минут.","бесшовно"],
                 ] as [string,string,string,string][]).map(([ic,t,d,tag],i)=>(
-                  <R key={t} delay={i*70}>
-                    <Card icon={ic} title={t} desc={d}><Tag ch={tag}/></Card>
-                  </R>
+                  <R key={t} delay={i*70}><Card icon={ic} title={t} desc={d}><Tag ch={tag}/></Card></R>
                 ))}
-              </div>
-              <R delay={210}><Note ch={<>Для разработчиков есть <b>Dev-вход</b> без Telegram — для тестирования локально.</>}/></R>
+              </HoverGrid>
             </>}/>
 
             <Div/>
@@ -563,7 +559,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
               <R><Eyebrow n="→" label="Быстрый старт"/><SH ch="Как начать пользоваться платформой" accent="начать"/>
                 <p className="mt-2 text-sm leading-relaxed" style={{color:"var(--text-sec)",maxWidth:560}}>Пять шагов от первого открытия до первой видеовстречи.</p>
               </R>
-              <div className="grid grid-cols-5 gap-3 mt-5" style={{gridAutoRows:"1fr"}}>
+              <HoverGrid cols={5}>
                 {([
                   ["01","Войдите","Откройте @corpmeetbot в Telegram или отсканируйте QR-код в браузере."],
                   ["02","Создайте пространство","Введите название компании/команды и invite-код — или присоединитесь к существующему."],
@@ -589,11 +585,11 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
               <R><Eyebrow n="04" label="Пространства"/><SH ch="При первом входе — развилка" accent="развилка"/>
                 <p className="mt-2 text-sm leading-relaxed" style={{color:"var(--text-sec)",maxWidth:560}}>«Пространство» — ваша компания или команда. Как воркспейсы в Slack: один пользователь, несколько пространств, быстрое переключение.</p>
               </R>
-              <div className="grid grid-cols-3 gap-3 mt-5" style={{gridAutoRows:"1fr"}}>
+              <HoverGrid cols={3}>
                 <R delay={60}><Step n={1} title="Создать своё" desc="Вводите название, выбираете часовой пояс — становитесь владельцем и получаете invite-код для коллег."/></R>
                 <R delay={120}><Step n={2} title="Войти по коду" desc="Вводите invite-код пространства — заявка уходит админам, они одобряют вступление."/></R>
                 <R delay={180}><Step n={3} title="Найти по названию" desc="Начинаете печатать — видите автодополнение и отправляете заявку на вступление."/></R>
-              </div>
+              </HoverGrid>
               <R delay={240}><Note ch={<>Те же три кнопки показывает Telegram-бот после команды <b>/start</b>. В шапке приложения всегда есть селектор пространств.</>}/></R>
             </>}/>
 
@@ -602,11 +598,11 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
             {/* ── 05 Roles ──────────────────────────────────────────── */}
             <Sec id="sec-05" ch={<>
               <R><Eyebrow n="05" label="Роли"/><SH ch="Кто что может в пространстве" accent="может"/></R>
-              <div className="grid grid-cols-3 gap-3 mt-5" style={{gridAutoRows:"1fr"}}>
+              <HoverGrid cols={3}>
                 <R delay={60}><Card icon="star" title="Owner — владелец" desc="Создатель пространства. Может всё: настройки, удаление, передача владения. Один на пространство."/></R>
                 <R delay={120}><Card icon="shield" title="Admin" desc="Управляет участниками, комнатами, бронями всех. Назначается владельцем."/></R>
                 <R delay={180}><Card icon="users" title="Member — участник" desc="Бронирует, видит общий календарь пространства и доступные переговорные."/></R>
-              </div>
+              </HoverGrid>
               <div className="grid gap-6 mt-5 items-start" style={{gridTemplateColumns:"1fr 1fr"}}>
                 <R dir="left">
                   <div className="font-semibold text-sm mb-2.5" style={{color:"var(--text)"}}>Приглашение коллег</div>
@@ -767,11 +763,11 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
             {/* ── 12 Notifications ──────────────────────────────────── */}
             <Sec id="sec-12" ch={<>
               <R><Eyebrow n="12" label="Уведомления"/><SH ch="Напоминания и центр уведомлений" accent="центр уведомлений"/></R>
-              <div className="grid grid-cols-3 gap-3 mt-5" style={{gridAutoRows:"1fr"}}>
+              <HoverGrid cols={3}>
                 <R delay={60}><Card icon="bell" title="Web push" desc="Desktop-уведомления в браузере за 5, 15, 30 или 60 минут до встречи. Разрешение запрашивается один раз."/></R>
                 <R delay={120}><Card icon="star" title="RSVP" desc="Из уведомления можно сразу принять или отклонить приглашение на встречу — без перехода в приложение."/></R>
                 <R delay={180}><Card icon="users" title="Заявки на вступление" desc="При новом запросе на присоединение к пространству приходит уведомление с кнопкой «Одобрить»."/></R>
-              </div>
+              </HoverGrid>
               <R delay={240}><Note ch="Центр уведомлений хранит историю за сессию. Пульсирующий индикатор в шапке показывает количество непрочитанных."/></R>
             </>}/>
 
@@ -809,7 +805,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
             {/* ── 13 Admin ──────────────────────────────────────────── */}
             <Sec id="sec-13" ch={<>
               <R><Eyebrow n="14" label="Управление"/><SH ch="Админка, аналитика и обратная связь" accent="Аналитика"/></R>
-              <div className="grid grid-cols-3 gap-3 mt-5" style={{gridAutoRows:"1fr"}}>
+              <HoverGrid cols={3}>
                 {([["chart","Аналитика","Встречи и участники по дням, топ-10 организаторов, период 7/30/90 дней. По пространству или по всей платформе."],
                   ["users","Пользователи","Список, роли, приглашение по @username, одобрение заявок, массовые операции."],
                   ["lock","Должности","Двуязычные должности (Начальник, PM, Аналитик, Программист, Дизайнер) для быстрого выбора гостей."],
@@ -817,7 +813,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
                   ["export","Экспорт календаря","Скачивание .ics и подписка на iCal-фид — встречи в Google/Apple/Outlook Calendar."],
                   ["shield","Superadmin",<>Полный доступ ко всем пространствам, ко всем бронированиям, управление ролями пользователей платформы.</>],
                 ] as [string,string,string|React.ReactNode][]).map(([ic,t,d],i)=>(
-                  <R key={t as string} delay={i*45}><Card icon={ic} title={t as string} desc={typeof d==="string"?d:undefined}>{typeof d!=="string"?<div className="text-xs mt-1 leading-relaxed" style={{color:"var(--text-muted)"}}>{d}</div>:null}</Card></R>
+                  <R key={t as string} delay={i*40}><Card icon={ic} title={t as string} desc={typeof d==="string"?d:undefined}>{typeof d!=="string"?<div className="text-xs mt-1 leading-relaxed" style={{color:"var(--text-muted)"}}>{d}</div>:null}</Card></R>
                 ))}
               </div>
             </>}/>
@@ -832,11 +828,11 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
                   <AnimStat key={b} big={b} small={s} idx={i}/>
                 ))}
               </div>
-              <div className="grid grid-cols-3 gap-3 mt-5" style={{gridAutoRows:"1fr"}}>
-                <R delay={80}><Card icon="shield" title="Защита доступа" desc="Вход по подписи Telegram, одноразовые ссылки, PASETO-токены с коротким TTL, проверка прав на каждый запрос."/></R>
-                <R delay={140}><Card icon="lock" title="Приватность встреч" desc="E2EE-шифрование видеопотока и режим busy_only скрывают содержание встреч от других арендаторов здания."/></R>
-                <R delay={200}><Card icon="calendar" title="Надёжность" desc="Безопасные миграции базы данных, фоновые задачи уведомлений каждые 60 секунд, изолированные пространства."/></R>
-              </div>
+              <HoverGrid cols={3}>
+                <R delay={60}><Card icon="shield" title="Защита доступа" desc="Вход по подписи Telegram, одноразовые ссылки, PASETO-токены с коротким TTL, проверка прав на каждый запрос."/></R>
+                <R delay={110}><Card icon="lock" title="Приватность встреч" desc="E2EE-шифрование видеопотока и режим busy_only скрывают содержание встреч от других арендаторов здания."/></R>
+                <R delay={160}><Card icon="calendar" title="Надёжность" desc="Безопасные миграции базы данных, фоновые задачи уведомлений каждые 60 секунд, изолированные пространства."/></R>
+              </HoverGrid>
             </>}/>
 
             <Div/>
