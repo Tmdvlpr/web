@@ -47,13 +47,19 @@ function R({ children, delay = 0, dir = "up" }: { children: React.ReactNode; del
     io.observe(el);
     return () => io.disconnect();
   }, [scrollRef]);
-  const ini = dir==="left" ? {opacity:0,x:-24,y:0,scale:1} : dir==="right" ? {opacity:0,x:24,y:0,scale:1} :
-    dir==="scale" ? {opacity:0,x:0,y:12,scale:0.94} : {opacity:0,x:0,y:24,scale:0.97};
+  const ini = dir==="left"  ? {opacity:0,x:-36,y:0,scale:0.96,filter:"blur(6px)"} :
+              dir==="right" ? {opacity:0,x:36,y:0,scale:0.96,filter:"blur(6px)"} :
+              dir==="scale" ? {opacity:0,x:0,y:16,scale:0.88,filter:"blur(10px)"} :
+                              {opacity:0,x:0,y:32,scale:0.94,filter:"blur(6px)"};
   return (
     <motion.div ref={ref}
       initial={ini}
-      animate={on ? {opacity:1,x:0,y:0,scale:1} : ini}
-      transition={{duration:0.5, ease:[0.16,1,0.3,1], delay:delay/1000}}
+      animate={on ? {opacity:1,x:0,y:0,scale:1,filter:"blur(0px)"} : ini}
+      transition={{
+        type:"spring", stiffness:280, damping:26, mass:0.9, delay:delay/1000,
+        filter:{duration:0.45,ease:"easeOut"},
+        opacity:{duration:0.4,ease:"easeOut"},
+      }}
     >{children}</motion.div>
   );
 }
@@ -243,16 +249,15 @@ function Card({icon,title,desc,accent,onClick,children}:{icon:string;title:strin
 }
 
 // ── Layout helpers ─────────────────────────────────────────────────────────
-const PAD = "0 clamp(20px,4vw,48px)";
-const MW  = 1180;
+const PAD = "0 clamp(32px,5vw,72px)";
 
 const Sec = ({ch,id}:{ch:React.ReactNode;id?:string}) => (
   <section id={id} style={{padding:"60px 0"}}>
-    <div style={{maxWidth:MW,margin:"0 auto",padding:PAD}}>{ch}</div>
+    <div style={{padding:PAD}}>{ch}</div>
   </section>
 );
 
-const Div = () => <div style={{height:1,background:"var(--border)",margin:`0 clamp(20px,4vw,48px)`}}/>;
+const Div = () => <div style={{height:1,background:"var(--border)",margin:`0 clamp(32px,5vw,72px)`}}/>;
 
 function Eyebrow({n,label}:{n:string;label:string}) {
   return (
@@ -377,7 +382,9 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
                 <motion.div initial={{opacity:0,scale:0.88,y:-10}} animate={{opacity:1,scale:1,y:0}}
                   transition={{duration:0.55,ease:[0.16,1,0.3,1],delay:0.06}}
                   className="flex items-center gap-4 mb-5">
-                  <LogoMark size={56}/>
+                  <motion.div animate={{y:[0,-7,0]}} transition={{duration:3.5,repeat:Infinity,ease:"easeInOut"}}>
+                    <LogoMark size={56}/>
+                  </motion.div>
                   <LogoText size={36}/>
                 </motion.div>
 
@@ -717,42 +724,6 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
               </div>
             </>}/>
 
-            <Div/>
-
-            {/* ── Closing ───────────────────────────────────────────── */}
-            <section style={{padding:"80px 0",textAlign:"center",position:"relative",overflow:"hidden"}}>
-              <div style={{position:"absolute",inset:0,background:"radial-gradient(ellipse 600px 240px at 50% 50%,var(--primary-light),transparent 70%)",pointerEvents:"none"}}/>
-              <div style={{maxWidth:MW,margin:"0 auto",padding:PAD,position:"relative",zIndex:1}}>
-                <R dir="scale">
-                  <div className="flex items-center justify-center gap-4 mb-4">
-                    <LogoMark size={52}/>
-                    <LogoText size={32}/>
-                  </div>
-                  <h2 style={{fontSize:"clamp(18px,2.6vw,32px)",fontWeight:800,letterSpacing:"-0.016em",color:"var(--text)",maxWidth:"18ch",margin:"0 auto"}}>
-                    Бронь, встреча и видеосвязь —<br/><span style={{color:"var(--primary)"}}>без переключения контекста</span>
-                  </h2>
-                  <p style={{margin:"10px auto 0",fontSize:14,color:"var(--text-sec)",lineHeight:1.65,maxWidth:440}}>
-                    От клика по свободному слоту до записи видеовстречи — всё в одном продукте.
-                  </p>
-                  <div className="flex gap-2 flex-wrap justify-center mt-5">
-                    {["📅 Расписание","🎥 Видео E2EE","🏢 Общие комнаты","✈️ Telegram","🔔 Уведомления"].map(p=>(
-                      <span key={p} className="rounded-md text-xs font-semibold px-3 py-1.5"
-                        style={{background:"var(--elevated)",border:"1px solid var(--border)",color:"var(--text-sec)"}}>{p}</span>
-                    ))}
-                  </div>
-                  <div style={{marginTop:24}}>
-                    <button onClick={onClose}
-                      className="inline-flex items-center gap-1.5 rounded-md text-xs font-semibold px-4 py-2"
-                      style={{background:"var(--elevated)",border:"1px solid var(--border)",color:"var(--text-muted)",cursor:"pointer"}}
-                      onMouseEnter={e=>{e.currentTarget.style.borderColor="var(--primary-border)";e.currentTarget.style.color="var(--primary)";e.currentTarget.style.background="var(--primary-light)";}}
-                      onMouseLeave={e=>{e.currentTarget.style.borderColor="var(--border)";e.currentTarget.style.color="var(--text-muted)";e.currentTarget.style.background="var(--elevated)";}}>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-                      Закрыть презентацию
-                    </button>
-                  </div>
-                </R>
-              </div>
-            </section>
 
           </div>
           </ScrollCtx.Provider>
