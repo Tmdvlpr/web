@@ -404,6 +404,7 @@ export function BookingModal({
         ? myRooms.filter(wr => wr.workspace_id === activeWorkspace.id)
         : myRooms;
       setBookingType(available.length > 0 ? "physical" : "virtual");
+      if (available.length === 1) setSelectedRoomId(available[0].room.id);
     }
     setFormReady(true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -456,7 +457,10 @@ export function BookingModal({
     const available = activeWorkspace
       ? myRooms.filter(wr => wr.workspace_id === activeWorkspace.id)
       : myRooms;
-    if (available.length > 0) setBookingType("physical");
+    if (available.length > 0) {
+      setBookingType("physical");
+      if (available.length === 1) setSelectedRoomId(available[0].room.id);
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [myRooms, isOpen]);
 
