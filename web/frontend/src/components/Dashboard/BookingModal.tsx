@@ -972,7 +972,7 @@ export function BookingModal({
                                 boxShadow: isDark ? "0 8px 32px rgba(0,0,0,0.6)" : "0 4px 20px rgba(0,0,0,0.12)",
                               }}
                             >
-                              {[{ id: "" as const, name: "— не выбрана —", shared: false }, ...availableRooms.map(wr => ({ id: wr.room.id, name: wr.room.name, shared: wr.role === "shared" }))].map(opt => (
+                              {availableRooms.map(wr => ({ id: wr.room.id, name: wr.room.name, shared: wr.role === "shared" })).map(opt => (
                                 <button
                                   key={String(opt.id)}
                                   type="button"
