@@ -113,6 +113,7 @@ function useMeetingChat(
   guestSessionToken?: string,
   onHandRaise?: (userId: number, userName: string, raised: boolean) => void,
   onRecordPermission?: (granteeIdentity: string) => void,
+  onRecordingStarted?: (recorderName: string) => void,
 ) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [unread, setUnread] = useState(0);
@@ -128,6 +129,8 @@ function useMeetingChat(
   useEffect(() => { onHandRaiseRef.current = onHandRaise; }, [onHandRaise]);
   const onRecordPermRef = useRef(onRecordPermission);
   useEffect(() => { onRecordPermRef.current = onRecordPermission; }, [onRecordPermission]);
+  const onRecordingStartedRef = useRef(onRecordingStarted);
+  useEffect(() => { onRecordingStartedRef.current = onRecordingStarted; }, [onRecordingStarted]);
 
   useEffect(() => {
     let mounted = true;
@@ -174,6 +177,10 @@ function useMeetingChat(
           }
           if (msg.type === "record_permission") {
             onRecordPermRef.current?.(msg.grantee_identity ?? "");
+            return;
+          }
+          if (msg.type === "recording_started") {
+            onRecordingStartedRef.current?.(msg.user_name ?? "");
             return;
           }
           setMessages((prev) => prev.some(m => m.id === msg.id) ? prev : [...prev, msg]);
@@ -242,6 +249,12 @@ function useMeetingChat(
     }
   }, []);
 
+  const sendRecordingStarted = useCallback(() => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: "recording_started" }));
+    }
+  }, []);
+
   const [uploadError, setUploadError] = useState<string | null>(null);
 
   const uploadAndSend = useCallback(async (file: File) => {
@@ -262,7 +275,7 @@ function useMeetingChat(
     }
   }, [bookingId]);
 
-  return { messages, unread, send, sendReaction, sendHandRaise, sendGrantRecord, uploadAndSend, uploading, uploadError };
+  return { messages, unread, send, sendReaction, sendHandRaise, sendGrantRecord, sendRecordingStarted, uploadAndSend, uploading, uploadError };
 }
 
 // ─── Video tile ───────────────────────────────────────────────────────────────
@@ -1584,9 +1597,10 @@ function ConferenceUI({
   const startedAt = useRef(new Date(joinData.start_time).getTime());
   const [pendingAdmissions, setPendingAdmissions] = useState<AdmissionRequest[]>([]);
   const dismissedAdmissions = useRef<Set<string>>(new Set());
+  const [recordingBanner, setRecordingBanner] = useState<string | null>(null);
 
   const chatVisible = activePanel === "chat";
-  const { messages, unread, send, sendReaction, sendHandRaise, sendGrantRecord, uploadAndSend, uploading, uploadError } = useMeetingChat(
+  const { messages, unread, send, sendReaction, sendHandRaise, sendGrantRecord, sendRecordingStarted, uploadAndSend, uploading, uploadError } = useMeetingChat(
     bookingId,
     chatVisible,
     (emoji) => {
@@ -1609,6 +1623,10 @@ function ConferenceUI({
     },
     (granteeIdentity) => {
       if (granteeIdentity === localParticipant.identity) setCanRecord(true);
+    },
+    (recorderName) => {
+      setRecordingBanner(recorderName);
+      setTimeout(() => setRecordingBanner(null), 5000);
     },
   );
 
@@ -1705,6 +1723,7 @@ function ConferenceUI({
         v.muted = true;
         v.playsInline = true;
         v.srcObject = new MediaStream([mst]);
+        v.play().catch(() => {});
         videoEls.push(v);
       }
 
@@ -1735,9 +1754,15 @@ function ConferenceUI({
       }
 
       // ── Combine + record ──
-      const mimeType = MediaRecorder.isTypeSupported("video/webm;codecs=vp8,opus")
-        ? "video/webm;codecs=vp8,opus"
-        : "video/webm";
+      const MIME_PRIORITY = [
+        "video/webm;codecs=vp8,opus",
+        "video/webm;codecs=vp9,opus",
+        "video/webm;codecs=h264,opus",
+        "video/webm",
+        "video/mp4",
+      ];
+      const mimeType = MIME_PRIORITY.find((m) => MediaRecorder.isTypeSupported(m)) ?? "";
+      if (!mimeType) throw new Error("MediaRecorder не поддерживается на этом устройстве");
       const stream = new MediaStream([
         ...canvas.captureStream(25).getVideoTracks(),
         ...audioDest.stream.getAudioTracks(),
@@ -1763,12 +1788,13 @@ function ConferenceUI({
       };
 
       mr.start(1000);
+      sendRecordingStarted();
       setIsRecording(true);
     } catch {
       setRecordingError("Не удалось начать запись");
       setTimeout(() => setRecordingError(null), 4000);
     }
-  }, [canRecord, isRecording, allTracks, allParticipants, bookingId]);
+  }, [canRecord, isRecording, allTracks, allParticipants, bookingId, sendRecordingStarted]);
 
   const handleMuteParticipant = useCallback(async (identity: string, muted: boolean) => {
     try {
@@ -1882,6 +1908,23 @@ function ConferenceUI({
         ))}
       </div>
 
+      {/* Recording started banner */}
+      {recordingBanner && (
+        <div style={{
+          position: "fixed", bottom: 80, right: 16, zIndex: 10002,
+          background: "rgba(234,179,8,0.95)", color: "#1c1400",
+          padding: "10px 16px", borderRadius: 8,
+          fontSize: 13, fontWeight: 700,
+          boxShadow: "0 4px 20px rgba(0,0,0,0.35)",
+          display: "flex", alignItems: "center", gap: 8,
+          animation: "rec-notify 5s cubic-bezier(0.22,1,0.36,1) forwards",
+          pointerEvents: "none",
+        }}>
+          <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#ef4444", flexShrink: 0, display: "inline-block" }} />
+          {recordingBanner} начал запись собрания
+        </div>
+      )}
+
       {/* Error toasts */}
       {(recordingError || uploadError) && (
         <div style={{
@@ -1921,10 +1964,10 @@ function ConferenceUI({
             <div
               key={req.invite_token}
               style={{
-                background: "rgba(15,23,42,0.95)",
-                border: "1px solid rgba(59,130,246,0.4)",
-                borderRadius: 6, padding: "14px 16px",
-                boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
+                background: "var(--surface)",
+                border: "1px solid var(--border)",
+                borderRadius: 8, padding: "14px 16px",
+                boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
                 backdropFilter: "blur(20px)",
                 animation: "conf-card-in 0.22s cubic-bezier(0.22,1,0.36,1) both",
               }}
@@ -1932,17 +1975,17 @@ function ConferenceUI({
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
                 <div style={{
                   width: 36, height: 36, borderRadius: "50%",
-                  background: "rgba(59,130,246,0.2)", border: "1px solid rgba(59,130,246,0.4)",
+                  background: colorFromIdentity(req.guest_name),
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 16,
+                  fontSize: 13, fontWeight: 700, color: "#fff", flexShrink: 0,
                 }}>
-                  👤
+                  {initialsFromName(req.guest_name)}
                 </div>
                 <div>
-                  <p style={{ fontSize: 13, fontWeight: 700, color: "#e2e8f0", margin: 0 }}>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: "var(--tx)", margin: 0 }}>
                     {req.guest_name}
                   </p>
-                  <p style={{ fontSize: 11, color: "#94a3b8", margin: 0 }}>
+                  <p style={{ fontSize: 11, color: "var(--tx2)", margin: 0 }}>
                     Запрашивает доступ к встрече
                   </p>
                 </div>
@@ -1952,13 +1995,12 @@ function ConferenceUI({
                   onClick={() => handleAdmit(req.invite_token, "approve")}
                   style={{
                     flex: 1, padding: "10px 12px", borderRadius: 4, border: "none",
-                    background: "linear-gradient(135deg,#16a34a,#22c55e)",
-                    boxShadow: "0 4px 12px rgba(22,163,74,0.28)",
+                    background: "var(--green)",
                     color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer",
                     display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
                     transition: "opacity 0.15s ease",
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.opacity = "0.88"; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.opacity = "0.85"; }}
                   onMouseLeave={(e) => { e.currentTarget.style.opacity = "1"; }}
                 >
                   <Ic.Check sz={14} /> Разрешить
@@ -1967,14 +2009,14 @@ function ConferenceUI({
                   onClick={() => handleAdmit(req.invite_token, "reject")}
                   style={{
                     flex: 1, padding: "10px 12px", borderRadius: 4,
-                    background: "rgba(255,255,255,0.07)",
-                    border: "1px solid rgba(255,255,255,0.14)",
-                    color: "#cbd5e1", fontSize: 13, fontWeight: 600, cursor: "pointer",
+                    background: "transparent",
+                    border: "1px solid var(--border)",
+                    color: "var(--tx2)", fontSize: 13, fontWeight: 600, cursor: "pointer",
                     display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
                     transition: "background 0.15s ease",
                   }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.13)"; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.07)"; }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--elevated)"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
                 >
                   <Ic.Close sz={13} /> Отклонить
                 </button>

@@ -45,6 +45,7 @@
 @keyframes conf-toast-in { from { opacity: 0; transform: translateX(-50%) translateY(-10px) } to { opacity: 1; transform: translateX(-50%) translateY(0) } }
 @keyframes conf-card-in  { from { opacity: 0; transform: translateX(16px) } to { opacity: 1; transform: translateX(0) } }
 @keyframes conf-msg-in   { from { opacity: 0; transform: translateY(5px) } to { opacity: 1; transform: translateY(0) } }
+@keyframes rec-notify    { 0% { opacity:0; transform:translateY(10px) } 10% { opacity:1; transform:translateY(0) } 80% { opacity:1; transform:translateY(0) } 100% { opacity:0; transform:translateY(10px) } }
 
 /* Sidebar inside conf-root uses same bg, not --surf */
 .conf-root .sidebar { background: var(--bg); }

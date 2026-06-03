@@ -1006,6 +1006,14 @@ async def chat_websocket(
                             })
                 continue
 
+            # Recording started — broadcast to all participants
+            if data.get("type") == "recording_started":
+                await manager.broadcast(booking_id, {
+                    "type": "recording_started",
+                    "user_name": user_display,
+                })
+                continue
+
             try:
                 payload = ChatMessageCreate.model_validate(data)
             except Exception:
