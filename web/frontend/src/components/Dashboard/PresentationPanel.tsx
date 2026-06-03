@@ -54,10 +54,10 @@ function R({ children, delay = 0, dir = "up", spring = false }: { children: Reac
   }, [scrollRef]);
   const ini = dir==="left"  ? {opacity:0,x:-20,y:0,scale:1,filter:"blur(4px)"} :
               dir==="right" ? {opacity:0,x:20,y:0,scale:1,filter:"blur(4px)"} :
-              dir==="scale" ? {opacity:0,x:0,y:6,scale:0.95,filter:"blur(6px)"} :
+              dir==="scale" ? {opacity:0,x:0,y:6,scale:0.97,filter:"blur(5px)"} :
                               {opacity:0,x:0,y:18,scale:0.99,filter:"blur(4px)"};
   const transition = spring
-    ? {type:"spring" as const,stiffness:260,damping:22,mass:0.8,delay:delay/1000,filter:{duration:0.25,ease:"easeOut"},opacity:{duration:0.2,ease:"easeOut"}}
+    ? {type:"spring" as const,stiffness:200,damping:28,mass:1,delay:delay/1000,filter:{duration:0.25,ease:"easeOut"},opacity:{duration:0.2,ease:"easeOut"}}
     : {duration:0.5,ease:[0.16,1,0.3,1] as const,delay:delay/1000,filter:{duration:0.22,ease:"easeOut"},opacity:{duration:0.22,ease:"easeOut"}};
   return (
     <motion.div ref={ref}
@@ -234,53 +234,26 @@ function TgMock() {
 
 // ── Card component ─────────────────────────────────────────────────────────
 function Card({icon,title,desc,accent,onClick,children}:{icon:string;title:string;desc?:string;accent?:boolean;onClick?:()=>void;children?:React.ReactNode}) {
-  const {isDark} = useTheme();
   const [hov,setHov] = useState(false);
   const active = accent || hov;
   return (
-    <div className="rounded-xl p-4 flex flex-col h-full relative overflow-hidden"
+    <div className="rounded-md p-4 flex flex-col h-full"
       onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
       onClick={onClick}
       style={{
-        background:isDark
-          ?"linear-gradient(145deg,rgba(28,28,50,0.92) 0%,rgba(18,18,38,0.88) 100%)"
-          :"linear-gradient(145deg,rgba(255,255,255,0.88) 0%,rgba(248,250,255,0.82) 100%)",
-        backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",
-        border:"1px solid transparent",backgroundClip:"padding-box",
-        boxShadow:active
-          ? isDark
-            ?"0 0 0 1px rgba(91,163,223,.45),0 8px 32px rgba(0,0,0,.4),0 0 20px rgba(91,163,223,.10)"
-            :"0 0 0 1px rgba(21,101,168,.30),0 8px 24px rgba(21,101,168,.10),0 2px 8px rgba(17,24,39,.06)"
-          :"var(--card-shadow)",
-        transition:"box-shadow .2s,transform .2s",
-        transform:hov?"translateY(-3px)":"none",
+        background:"var(--elevated)",
+        border:`1px solid ${active?"var(--primary-border)":"var(--border)"}`,
+        boxShadow:hov?"var(--card-shadow),0 4px 16px rgba(21,101,168,.07)":"var(--card-shadow)",
+        transition:"border-color .15s,transform .2s,box-shadow .2s",
+        transform:hov?"translateY(-2px)":"none",
         cursor:onClick?"pointer":"default"
       }}>
-      {/* Top glint */}
-      <div style={{position:"absolute",top:0,left:"12%",right:"12%",height:1,pointerEvents:"none",
-        background:isDark
-          ?"linear-gradient(90deg,transparent,rgba(91,163,223,.35),transparent)"
-          :"linear-gradient(90deg,transparent,rgba(255,255,255,.9),transparent)"}}/>
-      {/* Hover glow spot */}
-      {hov && <div style={{position:"absolute",top:-20,left:"30%",width:120,height:80,borderRadius:"50%",pointerEvents:"none",
-        background:isDark
-          ?"radial-gradient(ellipse,rgba(91,163,223,.12) 0%,transparent 70%)"
-          :"radial-gradient(ellipse,rgba(21,101,168,.08) 0%,transparent 70%)",
-        filter:"blur(20px)"}}/>}
-      {/* Icon */}
-      <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-3 shrink-0"
+      <div className="w-8 h-8 rounded-md flex items-center justify-center mb-3 shrink-0"
         style={{
-          background:active
-            ?"linear-gradient(135deg,var(--primary),var(--accent))"
-            :isDark
-              ?"linear-gradient(135deg,rgba(91,163,223,.25),rgba(56,189,248,.15))"
-              :"linear-gradient(135deg,rgba(21,101,168,.14),rgba(14,165,233,.08))",
+          background:active?"linear-gradient(135deg,var(--primary),var(--accent))":"var(--primary-light)",
           border:active?"none":"1px solid var(--primary-border)",
           color:active?"#fff":"var(--primary)",
-          boxShadow:active
-            ?isDark?"0 4px 14px rgba(91,163,223,.35)":"0 4px 14px rgba(21,101,168,.28)"
-            :"none",
-          transition:"all .2s"
+          transition:"all .15s"
         }}>
         <Ic name={icon} size={15}/>
       </div>
@@ -293,8 +266,8 @@ function Card({icon,title,desc,accent,onClick,children}:{icon:string;title:strin
 
 // ── transitions-dev CSS (avatar-group-hover + digit-pop-in) ───────────────
 const ANIM_CSS = `
-.t-avatar{transform-origin:center;transform:translateY(var(--shift,0px)) scale(var(--scale-active,1));transition:transform 300ms cubic-bezier(0.22,1,0.36,1),filter 300ms ease;will-change:transform,filter;}
-@media(prefers-reduced-motion:reduce){.t-avatar{transition:none!important;transform:none!important;filter:none!important;}}
+.t-avatar{transform-origin:center;transform:translateY(var(--shift,0px)) scale(var(--scale-active,1));transition:transform 300ms cubic-bezier(0.22,1,0.36,1);will-change:transform;}
+@media(prefers-reduced-motion:reduce){.t-avatar{transition:none!important;transform:none!important;}}
 @keyframes t-digit-pop-in{0%{transform:translateY(14px);opacity:0;filter:blur(3px);}100%{transform:none;opacity:1;filter:none;}}
 .t-digit-group{display:inline-flex;align-items:baseline;}
 .t-digit{display:inline-block;will-change:transform,opacity,filter;}
@@ -310,21 +283,19 @@ function HoverGrid({ children, cols = 4 }: { children: React.ReactNode; cols?: n
   const rootRef = useRef<HTMLDivElement>(null);
   const setShifts = (activeIdx: number | null, phase: "in" | "out") => {
     const root = rootRef.current; if (!root) return;
-    const lift = -8, falloff = 0.28, scale = 1.025;
-    const tf = phase === "out" ? "cubic-bezier(0.34,3.85,0.64,1)" : "cubic-bezier(0.22,1,0.36,1)";
+    const lift = -4, falloff = 0.5, scale = 1.015;
+    const tf = "cubic-bezier(0.22,1,0.36,1)";
     root.querySelectorAll<HTMLElement>(".t-avatar").forEach((el, i) => {
       el.style.transitionTimingFunction = tf;
-      el.style.transitionDuration = phase === "out" ? "400ms" : "250ms";
+      el.style.transitionDuration = phase === "out" ? "300ms" : "200ms";
       if (activeIdx === null) {
         el.style.setProperty("--shift","0px");
         el.style.setProperty("--scale-active","1");
-        el.style.setProperty("--glow","0");
         return;
       }
       const d = Math.abs(i - activeIdx);
       el.style.setProperty("--shift", (lift * Math.pow(falloff, d)).toFixed(2) + "px");
       el.style.setProperty("--scale-active", i === activeIdx ? String(scale) : "1");
-      el.style.setProperty("--glow", i === activeIdx ? "1" : "0");
     });
   };
   return (
@@ -332,8 +303,7 @@ function HoverGrid({ children, cols = 4 }: { children: React.ReactNode; cols?: n
       className="gap-3 mt-5"
       style={{ display:"grid", gridTemplateColumns: `repeat(${cols}, 1fr)`, gridAutoRows: "1fr" }}>
       {React.Children.map(children, (child, i) => (
-        <div key={i} className="t-avatar" onMouseEnter={() => setShifts(i, "in")}
-          style={{height:"100%",filter:"drop-shadow(0 0 calc(var(--glow,0) * 8px) var(--primary-border))"}}>
+        <div key={i} className="t-avatar" onMouseEnter={() => setShifts(i, "in")} style={{height:"100%"}}>
           {child}
         </div>
       ))}
