@@ -30,6 +30,7 @@ const ICONS: Record<string, string> = {
   screen:   "M21 14H3m18 0V5a2 2 0 00-2-2H5a2 2 0 00-2 2v9m18 0a2 2 0 01-2 2H5a2 2 0 01-2-2m5 4h8",
   msg:      "M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z",
   phone:    "M18 6L6 18M6 6l12 12",
+  arrow:    "M5 12h14M13 6l6 6-6 6",
 };
 
 function Ic({ name, size = 16 }: { name: string; size?: number }) {
@@ -79,8 +80,10 @@ function R({ children, delay = 0, dir = "up" }: { children: React.ReactNode; del
 
 // ── Primitives ─────────────────────────────────────────────────────────────
 const Tag = ({ch}:{ch:React.ReactNode}) => (
-  <span className="inline-flex items-center text-xs font-semibold px-1.5 py-0.5 rounded mr-1 mt-1"
-    style={{background:"var(--primary-light)",border:"1px solid var(--primary-border)",color:"var(--primary)"}}>{ch}</span>
+  <span className="inline-flex items-center font-semibold mr-1 mt-1"
+    style={{fontSize:11.5,padding:"4px 10px",borderRadius:999,
+      background:"rgba(56,160,240,.1)",border:"1px solid var(--primary-border)",
+      color:"var(--accent,var(--primary))"}}>{ch}</span>
 );
 
 const Note = ({ch}:{ch:React.ReactNode}) => (
@@ -282,12 +285,12 @@ function Card({icon,title,desc,accent,onClick,children}:{icon:string;title:strin
       }}>
       <div className="flex items-center justify-center mb-4 shrink-0"
         style={{
-          width:40,height:40,borderRadius:12,
+          width:44,height:44,borderRadius:13,
           background:active
             ?"linear-gradient(135deg,var(--accent),var(--primary))"
             :isDark?"linear-gradient(135deg,rgba(56,160,240,.16),rgba(21,101,168,.1))":"var(--primary-light)",
           border:active?"none":isDark?"1px solid rgba(120,160,210,.26)":"1px solid var(--primary-border)",
-          color:active?(isDark?"#04101f":"#fff"):"var(--primary)",
+          color:active?(isDark?"#04101f":"#fff"):"var(--accent,var(--primary))",
           boxShadow:active?isDark?"0 8px 22px -4px rgba(56,160,240,.45)":"0 4px 14px rgba(21,101,168,.28)":"none",
           transition:"all .22s"
         }}>
@@ -302,6 +305,7 @@ function Card({icon,title,desc,accent,onClick,children}:{icon:string;title:strin
 
 // ── transitions-dev CSS (avatar-group-hover + digit-pop-in) ───────────────
 const ANIM_CSS = `
+.pp-lede{margin-top:18px;font-size:clamp(14px,1.4vw,17px);line-height:1.65;}
 .t-avatar{transform-origin:center;transform:translateY(var(--shift,0px)) scale(var(--scale-active,1));transition:transform 300ms cubic-bezier(0.22,1,0.36,1);will-change:transform;}
 @media(prefers-reduced-motion:reduce){.t-avatar{transition:none!important;transform:none!important;}}
 @keyframes t-digit-pop-in{0%{transform:translateY(14px);opacity:0;filter:blur(3px);}100%{transform:none;opacity:1;filter:none;}}
@@ -392,7 +396,7 @@ const GlowDot = ({w=440,h=440,top,bottom,left,right,color="rgba(56,160,240,.13)"
 const Sec = ({ch,id,gd}:{ch:React.ReactNode;id?:string;gd?:React.ReactNode}) => (
   <section id={id} style={{padding:"96px 0",position:"relative",overflow:"hidden"}}>
     {gd}
-    <div style={{padding:PAD,position:"relative",zIndex:1}}>{ch}</div>
+    <div style={{padding:PAD,maxWidth:1280,margin:"0 auto",position:"relative",zIndex:1}}>{ch}</div>
   </section>
 );
 
@@ -409,7 +413,7 @@ function Eyebrow({n,label}:{n:string;label:string}) {
       style={{padding:"5px 14px",borderRadius:999,
         background:"var(--primary-light)",border:"1px solid var(--primary-border)"}}>
       <span style={{fontFamily:"ui-monospace,monospace",fontWeight:700,fontSize:11,
-        color:"var(--primary)",letterSpacing:"0.04em"}}>{n}</span>
+        color:"var(--accent,var(--primary))",letterSpacing:"0.04em"}}>{n}</span>
       <span style={{fontWeight:700,textTransform:"uppercase",letterSpacing:"0.16em",
         fontSize:11,color:"var(--text-muted)"}}>{label}</span>
     </div>
@@ -535,7 +539,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
           </div>
 
           {/* Progress */}
-          <div ref={progRef} style={{height:2,width:"0%",background:"linear-gradient(90deg,var(--primary),var(--accent))",transition:"width .08s linear",flexShrink:0}}/>
+          <div ref={progRef} style={{height:2,width:"0%",background:"linear-gradient(90deg,var(--primary),var(--accent))",transition:"width .08s linear",flexShrink:0,boxShadow:"0 0 12px rgba(56,160,240,.45)"}}/>
 
           {/* Scroll area */}
           <ScrollCtx.Provider value={scrollRef}>
@@ -543,37 +547,50 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
 
             {/* ── HERO ──────────────────────────────────────────────── */}
             <div className="flex flex-col items-center justify-center text-center relative overflow-hidden"
-              style={{minHeight:"calc(100vh - 54px)",padding:"60px 0 48px"}}>
-              {/* Blob 1 — primary, slow drift + rotate */}
-              <div style={{position:"absolute",width:800,height:500,top:-180,right:-120,borderRadius:"50%",
+              style={{minHeight:"calc(100vh - 54px)",padding:"80px clamp(24px,5vw,80px) 64px"}}>
+              {/* Blob 1 — center top, strong glow like Variant C gd1 */}
+              <div style={{position:"absolute",width:680,height:680,top:-280,left:"50%",borderRadius:"50%",
                 background:isDark
-                  ?"radial-gradient(ellipse,rgba(91,163,223,.18) 0%,rgba(56,189,248,.06) 60%,transparent 80%)"
-                  :"radial-gradient(ellipse,rgba(21,101,168,.13) 0%,rgba(14,165,233,.05) 60%,transparent 80%)",
-                filter:"blur(80px)",animation:"ppb1 14s ease-in-out infinite alternate",pointerEvents:"none"}}/>
-              {/* Blob 2 — accent, faster, scale */}
-              <div style={{position:"absolute",width:560,height:360,bottom:-100,left:-80,borderRadius:"50%",
+                  ?"radial-gradient(circle,rgba(56,160,240,.42),transparent 65%)"
+                  :"radial-gradient(circle,rgba(21,101,168,.18),transparent 65%)",
+                filter:"blur(1px)",animation:"cf1 13s ease-in-out infinite alternate",pointerEvents:"none"}}/>
+              {/* Blob 2 — bottom right, Variant C gd2 */}
+              <div style={{position:"absolute",width:460,height:460,bottom:-220,right:-120,borderRadius:"50%",
                 background:isDark
-                  ?"radial-gradient(ellipse,rgba(56,189,248,.12) 0%,rgba(91,163,223,.04) 60%,transparent 80%)"
-                  :"radial-gradient(ellipse,rgba(14,165,233,.10) 0%,rgba(21,101,168,.03) 60%,transparent 80%)",
-                filter:"blur(70px)",animation:"ppb2 10s 3s ease-in-out infinite alternate",pointerEvents:"none"}}/>
-              {/* Blob 3 — small central halo */}
-              <div style={{position:"absolute",width:320,height:180,top:"50%",left:"50%",
-                transform:"translate(-50%,-50%)",borderRadius:"50%",
+                  ?"radial-gradient(circle,rgba(21,101,168,.4),transparent 65%)"
+                  :"radial-gradient(circle,rgba(14,165,233,.15),transparent 65%)",
+                filter:"blur(1px)",animation:"cf2 11s 2s ease-in-out infinite alternate",pointerEvents:"none"}}/>
+              {/* Blob 3 — bottom left, Variant C gd3 */}
+              <div style={{position:"absolute",width:380,height:380,bottom:-120,left:-100,borderRadius:"50%",
                 background:isDark
-                  ?"radial-gradient(ellipse,rgba(91,163,223,.10) 0%,transparent 70%)"
-                  :"radial-gradient(ellipse,rgba(21,101,168,.07) 0%,transparent 70%)",
-                filter:"blur(50px)",animation:"ppb3 8s 1s ease-in-out infinite alternate",pointerEvents:"none"}}/>
-              {/* Grid texture */}
-              <div style={{position:"absolute",inset:0,pointerEvents:"none",opacity:isDark?0.03:0.02,
-                backgroundImage:"linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px)",
-                backgroundSize:"48px 48px"}}/>
+                  ?"radial-gradient(circle,rgba(67,196,245,.22),transparent 70%)"
+                  :"radial-gradient(circle,rgba(14,165,233,.10),transparent 70%)",
+                filter:"blur(1px)",animation:"cf1 15s 1s ease-in-out infinite alternate",pointerEvents:"none"}}/>
+              {/* Grid texture with radial mask — Variant C gridtex */}
+              <div style={{position:"absolute",inset:0,zIndex:0,pointerEvents:"none",
+                opacity:isDark?0.5:0.15,
+                backgroundImage:`linear-gradient(rgba(120,160,210,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(120,160,210,.08) 1px,transparent 1px)`,
+                backgroundSize:"60px 60px",
+                WebkitMaskImage:"radial-gradient(ellipse at center,#000 25%,transparent 72%)",
+                maskImage:"radial-gradient(ellipse at center,#000 25%,transparent 72%)"}}/>
               <style>{`
-                @keyframes ppb1{from{transform:translateY(0) rotate(0deg)}to{transform:translateY(-30px) rotate(3deg)}}
-                @keyframes ppb2{from{transform:translateY(0) rotate(0deg) scale(1)}to{transform:translateY(-20px) rotate(-4deg) scale(1.08)}}
-                @keyframes ppb3{from{transform:translate(-50%,-50%) scale(1)}to{transform:translate(-50%,-54%) scale(1.15)}}
+                @keyframes cf1{from{transform:translate(-50%,0)}to{transform:translate(-50%,40px)}}
+                @keyframes cf2{from{transform:translate(0,0)}to{transform:translate(-30px,-30px)}}
               `}</style>
 
-              <div className="relative flex flex-col items-center" style={{zIndex:1,maxWidth:"min(860px,90vw)"}}>
+              <div className="relative flex flex-col items-center" style={{zIndex:2,maxWidth:"min(860px,90vw)"}}>
+                {/* Status pill badge */}
+                <motion.div initial={{opacity:0,y:16,filter:"blur(4px)"}} animate={{opacity:1,y:0,filter:"blur(0px)"}}
+                  transition={{duration:0.55,ease:[0.16,1,0.3,1],delay:0}}
+                  className="inline-flex items-center gap-2.5 mb-8"
+                  style={{padding:"8px 16px",borderRadius:999,fontSize:12.5,fontWeight:600,
+                    background:"rgba(56,160,240,.1)",border:"1px solid rgba(120,160,210,.26)",
+                    color:"var(--text-sec)"}}>
+                  <span style={{width:7,height:7,borderRadius:"50%",flexShrink:0,
+                    background:"var(--success,#34d399)",boxShadow:"0 0 10px var(--success,#34d399)",
+                    display:"inline-block"}}/>
+                  Корпоративная платформа встреч
+                </motion.div>
                 <div style={{fontSize:"clamp(32px,6vw,72px)",fontWeight:800,letterSpacing:"-0.025em",lineHeight:1.02,color:"var(--text)"}}>
                   <motion.div initial={{opacity:0,y:24,filter:"blur(4px)"}} animate={{opacity:1,y:0,filter:"blur(0px)"}}
                     transition={{duration:0.55,ease:[0.16,1,0.3,1],delay:0.10}}>
@@ -613,6 +630,28 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
                     </span>
                   ))}
                 </motion.div>
+
+                {/* CTA buttons */}
+                <motion.div initial={{opacity:0,y:12}} animate={{opacity:1,y:0}}
+                  transition={{duration:0.5,ease:[0.16,1,0.3,1],delay:0.46}}
+                  className="flex flex-wrap justify-center mt-9" style={{gap:13}}>
+                  <button style={{display:"inline-flex",alignItems:"center",gap:9,
+                    fontSize:14.5,fontWeight:700,padding:"14px 28px",borderRadius:12,
+                    cursor:"pointer",border:"none",
+                    background:"linear-gradient(135deg,var(--accent,#43c4f5),var(--primary))",
+                    color:isDark?"#04101f":"#fff",
+                    boxShadow:"0 10px 30px -8px rgba(56,160,240,.45)"}}>
+                    Смотреть возможности
+                    <Ic name="arrow" size={15}/>
+                  </button>
+                  <button style={{display:"inline-flex",alignItems:"center",gap:9,
+                    fontSize:14.5,fontWeight:700,padding:"14px 28px",borderRadius:12,
+                    cursor:"pointer",
+                    background:isDark?"rgba(28,44,72,.5)":"rgba(255,255,255,.8)",
+                    border:"1px solid rgba(120,160,210,.26)",color:"var(--text)"}}>
+                    Как работает видео
+                  </button>
+                </motion.div>
               </div>
             </div>
 
@@ -622,7 +661,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
             <Sec gd={<GlowDot w={420} h={420} top={-120} right={-80}/>} ch={<>
               <R><Eyebrow n="01" label="Зачем это нужно"/>
                 <SH ch="Знакомая боль с переговорными" accent="переговорными"/>
-                <p className="mt-2 text-sm leading-relaxed" style={{color:"var(--text-sec)",maxWidth:580}}>Договорённости в чате, занятая комната «по факту», встречи в трёх разных сервисах. CorpMeet убирает этот хаос.</p>
+                <p className="pp-lede" style={{color:"var(--text-sec)",maxWidth:580}}>Договорённости в чате, занятая комната «по факту», встречи в трёх разных сервисах. CorpMeet убирает этот хаос.</p>
               </R>
               <HoverGrid cols={3}>
                 {[["calendar","Двойные брони","Две команды приходят в одну комнату — потому что расписания нет или оно в чьей-то голове."],
@@ -662,7 +701,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
             {/* ── 03 Login ──────────────────────────────────────────── */}
             <Sec id="sec-03" ch={<>
               <R><Eyebrow n="03" label="Вход в систему"/><SH ch="Три способа войти" accent="Три"/>
-                <p className="mt-2 text-sm leading-relaxed" style={{color:"var(--text-sec)"}}>Авторизация через Telegram — никаких отдельных паролей.</p>
+                <p className="pp-lede" style={{color:"var(--text-sec)"}}>Авторизация через Telegram — никаких отдельных паролей.</p>
               </R>
               <HoverGrid cols={3}>
                 {([["send","Telegram Mini App","Открываете бота @corpmeetbot и входите прямо внутри Telegram. Данные подтверждаются криптографической подписью.","основной"],
@@ -679,7 +718,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
             {/* ── Quickstart ────────────────────────────────────────── */}
             <Sec id="sec-start" ch={<>
               <R><Eyebrow n="→" label="Быстрый старт"/><SH ch="Как начать пользоваться платформой" accent="начать"/>
-                <p className="mt-2 text-sm leading-relaxed" style={{color:"var(--text-sec)",maxWidth:560}}>Пять шагов от первого открытия до первой видеовстречи.</p>
+                <p className="pp-lede" style={{color:"var(--text-sec)",maxWidth:560}}>Пять шагов от первого открытия до первой видеовстречи.</p>
               </R>
               <HoverGrid cols={5}>
                 {([
@@ -705,7 +744,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
             {/* ── 04 Spaces ─────────────────────────────────────────── */}
             <Sec id="sec-04" ch={<>
               <R><Eyebrow n="04" label="Пространства"/><SH ch="При первом входе — развилка" accent="развилка"/>
-                <p className="mt-2 text-sm leading-relaxed" style={{color:"var(--text-sec)",maxWidth:560}}>«Пространство» — ваша компания или команда. Как воркспейсы в Slack: один пользователь, несколько пространств, быстрое переключение.</p>
+                <p className="pp-lede" style={{color:"var(--text-sec)",maxWidth:560}}>«Пространство» — ваша компания или команда. Как воркспейсы в Slack: один пользователь, несколько пространств, быстрое переключение.</p>
               </R>
               <HoverGrid cols={3}>
                 <R delay={60}><Step n={1} title="Создать своё" desc="Вводите название, выбираете часовой пояс — становитесь владельцем и получаете invite-код для коллег."/></R>
@@ -755,7 +794,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
             {/* ── 06 Rooms ──────────────────────────────────────────── */}
             <Sec id="sec-06" ch={<>
               <R><Eyebrow n="06" label="Комнаты"/><SH ch="Переговорная — общий физический ресурс" accent="общий"/>
-                <p className="mt-2 text-sm leading-relaxed" style={{color:"var(--text-sec)",maxWidth:560}}>Одну комнату могут бронировать несколько пространств — типично для общего бизнес-центра.</p>
+                <p className="pp-lede" style={{color:"var(--text-sec)",maxWidth:560}}>Одну комнату могут бронировать несколько пространств — типично для общего бизнес-центра.</p>
               </R>
               <div className="grid gap-8 mt-5 items-start" style={{gridTemplateColumns:"1.1fr 0.9fr"}}>
                 <R dir="left">
@@ -789,7 +828,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
             {/* ── 07 Calendar ───────────────────────────────────────── */}
             <Sec id="sec-07" gd={<GlowDot w={480} h={480} top={0} left={-160} color="rgba(21,101,168,.16)"/>} ch={<>
               <R><Eyebrow n="07" label="Календарь"/><SH ch="Главный экран — недельная сетка" accent="недельная сетка"/></R>
-              <div className="grid gap-8 mt-5 items-center" style={{gridTemplateColumns:"minmax(auto,420px) 1fr"}}>
+              <div style={{display:"grid",gap:"clamp(32px,5vw,64px)",marginTop:38,alignItems:"center",gridTemplateColumns:"minmax(0,440px) 1fr"}}>
                 <R dir="left"><CalMock/></R>
                 <R dir="right"><BList items={[
                   {k:"Слоты по 30 минут",v:"клик по свободному слоту открывает форму с подставленным временем"},
@@ -807,7 +846,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
             {/* ── 08 Booking ────────────────────────────────────────── */}
             <Sec id="sec-08" ch={<>
               <R><Eyebrow n="08" label="Создание встречи"/><SH ch="Одна форма — вся встреча" accent="Одна форма"/></R>
-              <div className="grid gap-8 mt-5 items-center" style={{gridTemplateColumns:"minmax(auto,420px) 1fr"}}>
+              <div style={{display:"grid",gap:"clamp(32px,5vw,64px)",marginTop:38,alignItems:"center",gridTemplateColumns:"minmax(0,440px) 1fr"}}>
                 <R dir="left"><BookMock/></R>
                 <R dir="right"><BList items={[
                   {k:"Тип встречи",v:"Офис (комната), Онлайн (видео) или Гибрид — всё одновременно"},
@@ -826,7 +865,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
             {/* ── 09 Video ──────────────────────────────────────────── */}
             <Sec id="sec-09" gd={<GlowDot w={480} h={480} top={40} right={-180}/>} ch={<>
               <R><Eyebrow n="09" label="Видеовстречи"/><SH ch="Полноценная конференция внутри продукта" accent="внутри продукта"/></R>
-              <div className="grid gap-8 mt-5 items-center" style={{gridTemplateColumns:"minmax(auto,420px) 1fr"}}>
+              <div style={{display:"grid",gap:"clamp(32px,5vw,64px)",marginTop:38,alignItems:"center",gridTemplateColumns:"minmax(0,440px) 1fr"}}>
                 <R dir="left"><VideoMock/></R>
                 <R dir="right"><BList items={[
                   {k:"Камера, микрофон, экран",v:"стандартный набор управления участника"},
@@ -846,7 +885,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
             {/* ── 10 Guest ──────────────────────────────────────────── */}
             <Sec id="sec-10" ch={<>
               <R><Eyebrow n="10" label="Гостевой вход"/><SH ch="Гости подключаются без регистрации" accent="без регистрации"/>
-                <p className="mt-2 text-sm leading-relaxed" style={{color:"var(--text-sec)",maxWidth:540}}>Для внешних участников организатор создаёт ссылку-приглашение — аккаунт не нужен.</p>
+                <p className="pp-lede" style={{color:"var(--text-sec)",maxWidth:540}}>Для внешних участников организатор создаёт ссылку-приглашение — аккаунт не нужен.</p>
               </R>
               <div className="flex flex-wrap mt-5">
                 {[["1","Ссылка","Организатор копирует гостевую ссылку"],
@@ -879,7 +918,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
             {/* ── 11 Telegram ───────────────────────────────────────── */}
             <Sec id="sec-11" ch={<>
               <R><Eyebrow n="11" label="Telegram"/><SH ch="Уведомления туда, где команда уже сидит" accent="где команда"/></R>
-              <div className="grid gap-8 mt-5 items-center" style={{gridTemplateColumns:"minmax(auto,420px) 1fr"}}>
+              <div style={{display:"grid",gap:"clamp(32px,5vw,64px)",marginTop:38,alignItems:"center",gridTemplateColumns:"minmax(0,440px) 1fr"}}>
                 <R dir="left"><TgMock/></R>
                 <R dir="right"><BList items={[
                   {k:"В группу пространства",v:"новые и изменённые встречи с кнопкой «Подключиться»"},
@@ -974,7 +1013,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
             {/* ── 15 Scenario ───────────────────────────────────────── */}
             <Sec id="sec-15" ch={<>
               <R><Eyebrow n="16" label="Сценарий"/><SH ch="Общий бизнес-центр — как это работает" accent="как это работает"/>
-                <p className="mt-2 text-sm leading-relaxed" style={{color:"var(--text-sec)",maxWidth:560}}>Три компании в одном здании: «Альфа», «Бета», «Гамма». Три переговорки на этаже: «Москва», «Лондон», «Токио».</p>
+                <p className="pp-lede" style={{color:"var(--text-sec)",maxWidth:560}}>Три компании в одном здании: «Альфа», «Бета», «Гамма». Три переговорки на этаже: «Москва», «Лондон», «Токио».</p>
               </R>
               <div className="mt-4">
                 <R delay={60}><Scene who="«Альфа»" text="Регистрируется первой, создаёт пространство и все три комнаты — становится их владельцем. Привязывает свою Telegram-группу командой /bind."/></R>
