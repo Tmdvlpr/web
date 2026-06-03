@@ -80,8 +80,8 @@ const Tag = ({ch}:{ch:React.ReactNode}) => (
 );
 
 const Note = ({ch}:{ch:React.ReactNode}) => (
-  <div className="mt-6 px-6 py-5 text-sm leading-relaxed text-center"
-    style={{borderRadius:16,
+  <div className="mt-8 leading-relaxed text-center"
+    style={{borderRadius:16,padding:"22px 28px",fontSize:15.5,
       background:"linear-gradient(135deg,var(--primary-light),transparent)",
       border:"1px solid var(--primary-border)",color:"var(--text-sec)"}}>{ch}</div>
 );
@@ -259,11 +259,11 @@ function Card({icon,title,desc,accent,onClick,children}:{icon:string;title:strin
   const [hov,setHov] = useState(false);
   const active = accent || hov;
   return (
-    <div className="p-5 flex flex-col h-full relative overflow-hidden"
+    <div className="flex flex-col h-full relative overflow-hidden"
       onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
       onClick={onClick}
       style={{
-        borderRadius:16,
+        padding:24,borderRadius:16,
         background:isDark?"rgba(20,32,53,.55)":"rgba(255,255,255,.72)",
         backdropFilter:"blur(10px)",WebkitBackdropFilter:"blur(10px)",
         border:`1px solid ${hov
@@ -332,8 +332,7 @@ function HoverGrid({ children, cols = 4 }: { children: React.ReactNode; cols?: n
   };
   return (
     <div ref={rootRef} onMouseLeave={() => setShifts(null, "out")}
-      className="gap-3 mt-5"
-      style={{ display:"grid", gridTemplateColumns: `repeat(${cols}, 1fr)`, gridAutoRows: "1fr" }}>
+      style={{ display:"grid", gap:18, marginTop:38, gridTemplateColumns: `repeat(${cols}, 1fr)`, gridAutoRows: "1fr" }}>
       {React.Children.map(children, (child, i) => (
         <div key={i} className="t-avatar" onMouseEnter={() => setShifts(i, "in")} style={{height:"100%"}}>
           {child}
@@ -387,7 +386,7 @@ const GlowDot = ({w=440,h=440,top,bottom,left,right,color="rgba(56,160,240,.13)"
 );
 
 const Sec = ({ch,id,gd}:{ch:React.ReactNode;id?:string;gd?:React.ReactNode}) => (
-  <section id={id} style={{padding:"80px 0",position:"relative",overflow:"hidden"}}>
+  <section id={id} style={{padding:"96px 0",position:"relative",overflow:"hidden"}}>
     {gd}
     <div style={{padding:PAD,position:"relative",zIndex:1}}>{ch}</div>
   </section>
@@ -414,7 +413,7 @@ function Eyebrow({n,label}:{n:string;label:string}) {
 }
 
 function SH({ch,accent}:{ch:string;accent?:string}) {
-  const base: React.CSSProperties = {fontSize:"clamp(20px,2.8vw,36px)",fontWeight:800,letterSpacing:"-0.018em",lineHeight:1.1,color:"var(--text)"};
+  const base: React.CSSProperties = {fontSize:"clamp(26px,3.4vw,46px)",fontWeight:800,letterSpacing:"-0.02em",lineHeight:1.08,color:"var(--text)"};
   if (!accent) return <h2 style={base}>{ch}</h2>;
   const idx = ch.indexOf(accent);
   if (idx === -1) return <h2 style={base}>{ch}</h2>;
@@ -509,7 +508,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
             animate={{opacity:1,scale:1,filter:"blur(0px)"}}
             exit={{opacity:0,scale:0.98,filter:"blur(4px)"}}
             transition={{duration:0.5,ease:[0.16,1,0.3,1],filter:{duration:0.35,ease:"easeOut"}}}
-            style={{position:"fixed",inset:0,zIndex:9990,background:"var(--bg)",display:"flex",flexDirection:"column",
+            style={{position:"fixed",inset:0,zIndex:9990,background:isDark?"#070b14":"var(--bg)",display:"flex",flexDirection:"column",
               boxShadow:isDark?"-20px 0 60px rgba(0,0,0,.8)":"-8px 0 40px rgba(15,23,42,.12)"}}>
 
           {/* Topbar */}
@@ -570,8 +569,8 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
                 @keyframes ppb3{from{transform:translate(-50%,-50%) scale(1)}to{transform:translate(-50%,-54%) scale(1.15)}}
               `}</style>
 
-              <div className="relative flex flex-col items-center" style={{zIndex:1,maxWidth:"min(680px,90vw)"}}>
-                <div style={{fontSize:"clamp(28px,4.5vw,52px)",fontWeight:800,letterSpacing:"-0.022em",lineHeight:1.07,color:"var(--text)"}}>
+              <div className="relative flex flex-col items-center" style={{zIndex:1,maxWidth:"min(860px,90vw)"}}>
+                <div style={{fontSize:"clamp(32px,6vw,72px)",fontWeight:800,letterSpacing:"-0.025em",lineHeight:1.02,color:"var(--text)"}}>
                   <motion.div initial={{opacity:0,y:24,filter:"blur(4px)"}} animate={{opacity:1,y:0,filter:"blur(0px)"}}
                     transition={{duration:0.55,ease:[0.16,1,0.3,1],delay:0.10}}>
                     Переговорные, встречи
@@ -579,20 +578,20 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
                   <motion.div initial={{opacity:0,y:24,filter:"blur(4px)"}} animate={{opacity:1,y:0,filter:"blur(0px)"}}
                     transition={{duration:0.55,ease:[0.16,1,0.3,1],delay:0.19}}>
                     и видеосвязь —{" "}
-                    <span style={{background:"linear-gradient(135deg,var(--primary),var(--accent))",
+                    <span style={{background:"linear-gradient(120deg,var(--accent),var(--primary))",
                       WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>в одном месте</span>
                   </motion.div>
                 </div>
 
                 <motion.p initial={{opacity:0,y:16}} animate={{opacity:1,y:0}}
                   transition={{duration:0.5,ease:[0.16,1,0.3,1],delay:0.28}}
-                  style={{marginTop:14,fontSize:"clamp(13px,1.5vw,16px)",color:"var(--text-sec)",lineHeight:1.65,maxWidth:520}}>
+                  style={{marginTop:24,fontSize:"clamp(14px,1.6vw,18px)",color:"var(--text-sec)",lineHeight:1.6,maxWidth:560}}>
                   Корпоративная платформа бронирования переговорных со встроенными видеоконференциями и Telegram-ботом.
                 </motion.p>
 
                 <motion.div initial={{opacity:0,y:12}} animate={{opacity:1,y:0}}
                   transition={{duration:0.5,ease:[0.16,1,0.3,1],delay:0.36}}
-                  className="flex gap-2 flex-wrap justify-center mt-5">
+                  className="flex flex-wrap justify-center mt-8" style={{gap:10}}>
                   {([
                     {icon:"calendar", label:"Бронирование"},
                     {icon:"video",    label:"Видеовстречи"},
@@ -600,19 +599,12 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
                     {icon:"grid",     label:"Пространства команд"},
                     {icon:"globe",    label:"РУ / УЗ"},
                   ] as {icon:string;label:string}[]).map(({icon,label})=>(
-                    <span key={label} className="flex items-center gap-1.5 rounded-md text-xs font-semibold px-3 py-1.5"
-                      style={{
-                        background:isDark
-                          ?"linear-gradient(135deg,rgba(28,28,46,0.9),rgba(40,40,64,0.9))"
-                          :"linear-gradient(135deg,rgba(255,255,255,0.85),rgba(248,250,255,0.85))",
+                    <span key={label} className="flex items-center font-semibold"
+                      style={{gap:8,padding:"9px 15px",borderRadius:999,fontSize:13,
+                        background:isDark?"rgba(28,44,72,.5)":"rgba(255,255,255,.72)",
                         border:"1px solid var(--primary-border)",
-                        color:"var(--text-sec)",
-                        backdropFilter:"blur(8px)",
-                        boxShadow:isDark
-                          ?"0 2px 8px rgba(0,0,0,.25),inset 0 1px 0 rgba(91,163,223,.12)"
-                          :"0 2px 8px rgba(21,101,168,.06),inset 0 1px 0 rgba(255,255,255,.9)"
-                      }}>
-                      <span style={{color:"var(--primary)",opacity:0.9,display:"flex"}}><Ic name={icon} size={13}/></span>
+                        color:"var(--text-sec)",backdropFilter:"blur(8px)"}}>
+                      <span style={{color:"var(--primary)",display:"flex"}}><Ic name={icon} size={14}/></span>
                       {label}
                     </span>
                   ))}
