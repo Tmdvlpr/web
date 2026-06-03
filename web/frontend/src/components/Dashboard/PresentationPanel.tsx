@@ -33,10 +33,12 @@ const ICONS: Record<string, string> = {
   arrow:    "M5 12h14M13 6l6 6-6 6",
 };
 
-function Ic({ name, size = 16 }: { name: string; size?: number }) {
+function Ic({ name, size = 16, filled = false }: { name: string; size?: number; filled?: boolean }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <svg width={size} height={size} viewBox="0 0 24 24"
+      fill={filled ? "currentColor" : "none"}
+      stroke={filled ? "none" : "currentColor"}
+      strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d={ICONS[name] ?? ""} />
     </svg>
   );
@@ -294,7 +296,7 @@ function Card({icon,title,desc,accent,onClick,children}:{icon:string;title:strin
           boxShadow:active?isDark?"0 8px 22px -4px rgba(56,160,240,.45)":"0 4px 14px rgba(21,101,168,.28)":"none",
           transition:"all .22s"
         }}>
-        <Ic name={icon} size={17}/>
+        <Ic name={icon} size={17} filled={icon==="telegram"}/>
       </div>
       <div className="font-bold mb-2 leading-snug" style={{color:"var(--text)",fontSize:"var(--font-sm)",letterSpacing:"-.01em"}}>{title}</div>
       {desc && <div className="leading-relaxed flex-1" style={{color:"var(--text-muted)",fontSize:13.5}}>{desc}</div>}
@@ -627,7 +629,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
                         background:isDark?"rgba(28,44,72,.5)":"rgba(255,255,255,.72)",
                         border:"1px solid var(--primary-border)",
                         color:"var(--text-sec)",backdropFilter:"blur(8px)"}}>
-                      <span style={{color:"var(--primary)",display:"flex"}}><Ic name={icon} size={14}/></span>
+                      <span style={{color:"var(--primary)",display:"flex"}}><Ic name={icon} size={14} filled={icon==="telegram"}/></span>
                       {label}
                     </span>
                   ))}
@@ -684,7 +686,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
                   ["video","Видеовстречи","LiveKit с E2EE, запись, экран, чат, blur фона, Krisp.","sec-09"],
                   ["building","Комнаты","Общие переговорные с режимами видимости и шерингом.","sec-06"],
                   ["grid","Пространства","Несколько компаний на платформе, роли, invite-коды.","sec-04"],
-                  ["send","Telegram","Mini App, бот, уведомления в группу и личные напоминания.","sec-11"],
+                  ["telegram","Telegram","Mini App, бот, уведомления в группу и личные напоминания.","sec-11"],
                   ["bell","Уведомления","Web push, RSVP, центр уведомлений с историей.","sec-12"],
                   ["users","Гости","Приглашение по @username, по должностям, гостевой вход.","sec-10"],
                   ["chart","Аналитика","Статистика встреч, топ организаторов, управление участниками.","sec-14"],
@@ -706,7 +708,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
                 <p className="pp-lede" style={{color:"var(--text-sec)"}}>Авторизация через Telegram — никаких отдельных паролей.</p>
               </R>
               <HoverGrid cols={3}>
-                {([["send","Telegram Mini App","Открываете бота @corpmeetbot и входите прямо внутри Telegram. Данные подтверждаются криптографической подписью.","основной"],
+                {([["telegram","Telegram Mini App","Открываете бота @corpmeetbot и входите прямо внутри Telegram. Данные подтверждаются криптографической подписью.","основной"],
                   ["star","QR-код в браузере","На странице входа — QR. Сканируете телефоном, подтверждаете в боте — браузер авторизуется автоматически.","для десктопа"],
                   ["globe","«Открыть в браузере»","Из Mini App одним нажатием переходите в полную веб-версию. Ссылка одноразовая, действует несколько минут.","бесшовно"],
                 ] as [string,string,string,string][]).map(([ic,t,d,tag],i)=>(
