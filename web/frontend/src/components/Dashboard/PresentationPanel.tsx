@@ -44,7 +44,7 @@ function Ic({ name, size = 16 }: { name: string; size?: number }) {
 // ── Scroll reveal context ──────────────────────────────────────────────────
 const ScrollCtx = createContext<React.RefObject<HTMLDivElement | null>>(createRef());
 
-function R({ children, delay = 0, dir = "up", spring = false }: { children: React.ReactNode; delay?: number; dir?: "up"|"left"|"right"|"scale"; spring?: boolean }) {
+function R({ children, delay = 0, dir = "up" }: { children: React.ReactNode; delay?: number; dir?: "up"|"left"|"right"|"scale" }) {
   const scrollRef = useContext(ScrollCtx);
   const ref = useRef<HTMLDivElement>(null);
   const [on, setOn] = useState(false);
@@ -56,13 +56,17 @@ function R({ children, delay = 0, dir = "up", spring = false }: { children: Reac
     io.observe(el);
     return () => io.disconnect();
   }, [scrollRef]);
-  const ini = dir==="left"  ? {opacity:0,x:-24,y:0,scale:1,filter:"blur(5px)"} :
-              dir==="right" ? {opacity:0,x:24,y:0,scale:1,filter:"blur(5px)"} :
-              dir==="scale" ? {opacity:0,x:0,y:8,scale:0.97,filter:"blur(6px)"} :
-                              {opacity:0,x:0,y:24,scale:0.98,filter:"blur(5px)"};
-  const transition = spring
-    ? {type:"spring" as const,stiffness:180,damping:26,mass:1,delay:delay/1000,filter:{duration:0.28,ease:"easeOut"},opacity:{duration:0.22,ease:"easeOut"}}
-    : {duration:0.55,ease:[0.16,1,0.3,1] as const,delay:delay/1000,filter:{duration:0.28,ease:"easeOut"},opacity:{duration:0.25,ease:"easeOut"}};
+  const ini = dir==="left"  ? {opacity:0,x:-28,y:0,scale:1,filter:"blur(6px)"} :
+              dir==="right" ? {opacity:0,x:28,y:0,scale:1,filter:"blur(6px)"} :
+              dir==="scale" ? {opacity:0,x:0,y:10,scale:0.96,filter:"blur(6px)"} :
+                              {opacity:0,x:0,y:28,scale:1,filter:"blur(6px)"};
+  const ease = [0.16,1,0.3,1] as const;
+  const transition = {
+    duration:0.65, ease,
+    delay:delay/1000,
+    filter:{duration:0.4,ease:"easeOut" as const},
+    opacity:{duration:0.4,ease:"easeOut" as const},
+  };
   return (
     <motion.div ref={ref}
       initial={ini}
@@ -616,7 +620,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
 
             {/* ── 01 Problem ────────────────────────────────────────── */}
             <Sec gd={<GlowDot w={420} h={420} top={-120} right={-80}/>} ch={<>
-              <R spring><Eyebrow n="01" label="Зачем это нужно"/>
+              <R><Eyebrow n="01" label="Зачем это нужно"/>
                 <SH ch="Знакомая боль с переговорными" accent="переговорными"/>
                 <p className="mt-2 text-sm leading-relaxed" style={{color:"var(--text-sec)",maxWidth:580}}>Договорённости в чате, занятая комната «по факту», встречи в трёх разных сервисах. CorpMeet убирает этот хаос.</p>
               </R>
@@ -633,7 +637,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
 
             {/* ── 02 Overview ───────────────────────────────────────── */}
             <Sec ch={<>
-              <R spring><Eyebrow n="02" label="Обзор"/><SH ch="Что умеет CorpMeet" accent="CorpMeet"/></R>
+              <R><Eyebrow n="02" label="Обзор"/><SH ch="Что умеет CorpMeet" accent="CorpMeet"/></R>
               <HoverGrid cols={4}>
                 {([["calendar","Бронирование","Недельная сетка, drag&drop, повторы, статус комнаты.","sec-07"],
                   ["video","Видеовстречи","LiveKit с E2EE, запись, экран, чат, blur фона, Krisp.","sec-09"],
@@ -657,7 +661,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
 
             {/* ── 03 Login ──────────────────────────────────────────── */}
             <Sec id="sec-03" ch={<>
-              <R spring><Eyebrow n="03" label="Вход в систему"/><SH ch="Три способа войти" accent="Три"/>
+              <R><Eyebrow n="03" label="Вход в систему"/><SH ch="Три способа войти" accent="Три"/>
                 <p className="mt-2 text-sm leading-relaxed" style={{color:"var(--text-sec)"}}>Авторизация через Telegram — никаких отдельных паролей.</p>
               </R>
               <HoverGrid cols={3}>
@@ -674,7 +678,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
 
             {/* ── Quickstart ────────────────────────────────────────── */}
             <Sec id="sec-start" ch={<>
-              <R spring><Eyebrow n="→" label="Быстрый старт"/><SH ch="Как начать пользоваться платформой" accent="начать"/>
+              <R><Eyebrow n="→" label="Быстрый старт"/><SH ch="Как начать пользоваться платформой" accent="начать"/>
                 <p className="mt-2 text-sm leading-relaxed" style={{color:"var(--text-sec)",maxWidth:560}}>Пять шагов от первого открытия до первой видеовстречи.</p>
               </R>
               <HoverGrid cols={5}>
@@ -700,7 +704,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
 
             {/* ── 04 Spaces ─────────────────────────────────────────── */}
             <Sec id="sec-04" ch={<>
-              <R spring><Eyebrow n="04" label="Пространства"/><SH ch="При первом входе — развилка" accent="развилка"/>
+              <R><Eyebrow n="04" label="Пространства"/><SH ch="При первом входе — развилка" accent="развилка"/>
                 <p className="mt-2 text-sm leading-relaxed" style={{color:"var(--text-sec)",maxWidth:560}}>«Пространство» — ваша компания или команда. Как воркспейсы в Slack: один пользователь, несколько пространств, быстрое переключение.</p>
               </R>
               <HoverGrid cols={3}>
@@ -726,7 +730,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
 
             {/* ── 05 Roles ──────────────────────────────────────────── */}
             <Sec id="sec-05" ch={<>
-              <R spring><Eyebrow n="05" label="Роли"/><SH ch="Кто что может в пространстве" accent="может"/></R>
+              <R><Eyebrow n="05" label="Роли"/><SH ch="Кто что может в пространстве" accent="может"/></R>
               <HoverGrid cols={4}>
                 <R delay={60}><Card icon="star" title="Owner — владелец" desc="Создатель пространства. Может всё: настройки, удаление, передача владения. Один на пространство."/></R>
                 <R delay={110}><Card icon="shield" title="Admin" desc="Управляет участниками, комнатами и бронями всех. Назначается владельцем."/></R>
@@ -750,7 +754,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
 
             {/* ── 06 Rooms ──────────────────────────────────────────── */}
             <Sec id="sec-06" ch={<>
-              <R spring><Eyebrow n="06" label="Комнаты"/><SH ch="Переговорная — общий физический ресурс" accent="общий"/>
+              <R><Eyebrow n="06" label="Комнаты"/><SH ch="Переговорная — общий физический ресурс" accent="общий"/>
                 <p className="mt-2 text-sm leading-relaxed" style={{color:"var(--text-sec)",maxWidth:560}}>Одну комнату могут бронировать несколько пространств — типично для общего бизнес-центра.</p>
               </R>
               <div className="grid gap-8 mt-5 items-start" style={{gridTemplateColumns:"1.1fr 0.9fr"}}>
@@ -784,7 +788,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
 
             {/* ── 07 Calendar ───────────────────────────────────────── */}
             <Sec id="sec-07" gd={<GlowDot w={480} h={480} top={0} left={-160} color="rgba(21,101,168,.16)"/>} ch={<>
-              <R spring><Eyebrow n="07" label="Календарь"/><SH ch="Главный экран — недельная сетка" accent="недельная сетка"/></R>
+              <R><Eyebrow n="07" label="Календарь"/><SH ch="Главный экран — недельная сетка" accent="недельная сетка"/></R>
               <div className="grid gap-8 mt-5 items-center" style={{gridTemplateColumns:"minmax(auto,420px) 1fr"}}>
                 <R dir="left"><CalMock/></R>
                 <R dir="right"><BList items={[
@@ -802,7 +806,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
 
             {/* ── 08 Booking ────────────────────────────────────────── */}
             <Sec id="sec-08" ch={<>
-              <R spring><Eyebrow n="08" label="Создание встречи"/><SH ch="Одна форма — вся встреча" accent="Одна форма"/></R>
+              <R><Eyebrow n="08" label="Создание встречи"/><SH ch="Одна форма — вся встреча" accent="Одна форма"/></R>
               <div className="grid gap-8 mt-5 items-center" style={{gridTemplateColumns:"minmax(auto,420px) 1fr"}}>
                 <R dir="left"><BookMock/></R>
                 <R dir="right"><BList items={[
@@ -821,7 +825,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
 
             {/* ── 09 Video ──────────────────────────────────────────── */}
             <Sec id="sec-09" gd={<GlowDot w={480} h={480} top={40} right={-180}/>} ch={<>
-              <R spring><Eyebrow n="09" label="Видеовстречи"/><SH ch="Полноценная конференция внутри продукта" accent="внутри продукта"/></R>
+              <R><Eyebrow n="09" label="Видеовстречи"/><SH ch="Полноценная конференция внутри продукта" accent="внутри продукта"/></R>
               <div className="grid gap-8 mt-5 items-center" style={{gridTemplateColumns:"minmax(auto,420px) 1fr"}}>
                 <R dir="left"><VideoMock/></R>
                 <R dir="right"><BList items={[
@@ -841,7 +845,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
 
             {/* ── 10 Guest ──────────────────────────────────────────── */}
             <Sec id="sec-10" ch={<>
-              <R spring><Eyebrow n="10" label="Гостевой вход"/><SH ch="Гости подключаются без регистрации" accent="без регистрации"/>
+              <R><Eyebrow n="10" label="Гостевой вход"/><SH ch="Гости подключаются без регистрации" accent="без регистрации"/>
                 <p className="mt-2 text-sm leading-relaxed" style={{color:"var(--text-sec)",maxWidth:540}}>Для внешних участников организатор создаёт ссылку-приглашение — аккаунт не нужен.</p>
               </R>
               <div className="flex flex-wrap mt-5">
@@ -874,7 +878,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
 
             {/* ── 11 Telegram ───────────────────────────────────────── */}
             <Sec id="sec-11" ch={<>
-              <R spring><Eyebrow n="11" label="Telegram"/><SH ch="Уведомления туда, где команда уже сидит" accent="где команда"/></R>
+              <R><Eyebrow n="11" label="Telegram"/><SH ch="Уведомления туда, где команда уже сидит" accent="где команда"/></R>
               <div className="grid gap-8 mt-5 items-center" style={{gridTemplateColumns:"minmax(auto,420px) 1fr"}}>
                 <R dir="left"><TgMock/></R>
                 <R dir="right"><BList items={[
@@ -892,7 +896,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
 
             {/* ── 12 Notifications ──────────────────────────────────── */}
             <Sec id="sec-12" ch={<>
-              <R spring><Eyebrow n="12" label="Уведомления"/><SH ch="Напоминания и центр уведомлений" accent="центр уведомлений"/></R>
+              <R><Eyebrow n="12" label="Уведомления"/><SH ch="Напоминания и центр уведомлений" accent="центр уведомлений"/></R>
               <HoverGrid cols={3}>
                 <R delay={60}><Card icon="bell" title="Web push" desc="Desktop-уведомления в браузере за 5, 15, 30 или 60 минут до встречи. Разрешение запрашивается один раз."/></R>
                 <R delay={120}><Card icon="star" title="RSVP" desc="Из уведомления можно сразу принять или отклонить приглашение на встречу — без перехода в приложение."/></R>
@@ -905,7 +909,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
 
             {/* ── Feedback & Rights ─────────────────────────────────── */}
             <Sec id="sec-feedback" ch={<>
-              <R spring><Eyebrow n="13" label="Для пользователя"/><SH ch="Обратная связь и права доступа" accent="права доступа"/></R>
+              <R><Eyebrow n="13" label="Для пользователя"/><SH ch="Обратная связь и права доступа" accent="права доступа"/></R>
               <div className="grid gap-6 mt-5 items-start" style={{gridTemplateColumns:"1fr 1fr"}}>
                 <R dir="left">
                   <div className="font-semibold text-sm mb-3" style={{color:"var(--text)"}}>Как отправить обращение</div>
@@ -934,7 +938,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
 
             {/* ── 13 Admin ──────────────────────────────────────────── */}
             <Sec id="sec-13" ch={<>
-              <R spring><Eyebrow n="14" label="Управление"/><SH ch="Админка, аналитика и обратная связь" accent="Аналитика"/></R>
+              <R><Eyebrow n="14" label="Управление"/><SH ch="Админка, аналитика и обратная связь" accent="Аналитика"/></R>
               <HoverGrid cols={3}>
                 {([["chart","Аналитика","Встречи и участники по дням, топ-10 организаторов, период 7/30/90 дней. По пространству или по всей платформе."],
                   ["users","Пользователи","Список, роли, приглашение по @username, одобрение заявок, массовые операции."],
@@ -952,7 +956,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
 
             {/* ── 14 Security ───────────────────────────────────────── */}
             <Sec id="sec-14" ch={<>
-              <R spring><Eyebrow n="15" label="Безопасность"/><SH ch="Надёжность и защита данных" accent="защита"/></R>
+              <R><Eyebrow n="15" label="Безопасность"/><SH ch="Надёжность и защита данных" accent="защита"/></R>
               <div className="flex gap-8 flex-wrap mt-5">
                 {[["E2EE","сквозное шифрование видео"],["PASETO","токены вместо JWT"],["15м–8ч","диапазон встреч"],["90","встреч в серии повторов"],["РУ / УЗ","два языка"]].map(([b,s],i)=>(
                   <AnimStat key={b} big={b} small={s} idx={i}/>
@@ -969,7 +973,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
 
             {/* ── 15 Scenario ───────────────────────────────────────── */}
             <Sec id="sec-15" ch={<>
-              <R spring><Eyebrow n="16" label="Сценарий"/><SH ch="Общий бизнес-центр — как это работает" accent="как это работает"/>
+              <R><Eyebrow n="16" label="Сценарий"/><SH ch="Общий бизнес-центр — как это работает" accent="как это работает"/>
                 <p className="mt-2 text-sm leading-relaxed" style={{color:"var(--text-sec)",maxWidth:560}}>Три компании в одном здании: «Альфа», «Бета», «Гамма». Три переговорки на этаже: «Москва», «Лондон», «Токио».</p>
               </R>
               <div className="mt-4">
