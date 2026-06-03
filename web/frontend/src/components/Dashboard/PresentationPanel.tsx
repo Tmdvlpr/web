@@ -29,7 +29,7 @@ const ICONS: Record<string, string> = {
   telegram: "M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z",
   screen:   "M21 14H3m18 0V5a2 2 0 00-2-2H5a2 2 0 00-2 2v9m18 0a2 2 0 01-2 2H5a2 2 0 01-2-2m5 4h8",
   msg:      "M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z",
-  phone:    "M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.13 19.13 0 013.32 8.94a2 2 0 011.37-2.11 12.84 12.84 0 00.7-2.81 2 2 0 01.45-2.11L7.11 1M23 1L1 23",
+  phone:    "M18 6L6 18M6 6l12 12",
 };
 
 function Ic({ name, size = 16 }: { name: string; size?: number }) {
@@ -372,20 +372,14 @@ const Div = () => (
 );
 
 function Eyebrow({n,label}:{n:string;label:string}) {
-  const {isDark} = useTheme();
   return (
-    <div className="flex items-center gap-2.5 mb-3">
-      <span style={{fontWeight:800,padding:"3px 10px",borderRadius:6,
-        background:"linear-gradient(135deg,var(--primary),var(--accent))",color:"#fff",
-        letterSpacing:"0.06em",fontSize:12,
-        boxShadow:isDark
-          ?"0 2px 10px rgba(91,163,223,.35),inset 0 1px 0 rgba(255,255,255,.15)"
-          :"0 2px 10px rgba(21,101,168,.28),inset 0 1px 0 rgba(255,255,255,.25)"
-      }}>{n}</span>
-      <span style={{fontWeight:700,textTransform:"uppercase",letterSpacing:"0.14em",fontSize:11,
-        background:"linear-gradient(90deg,var(--primary),var(--accent))",
-        WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"
-      }}>{label}</span>
+    <div className="flex items-center gap-2 mb-3">
+      <span style={{fontFamily:"ui-monospace,monospace",fontWeight:700,fontSize:11,
+        color:"var(--primary)",padding:"2px 6px",borderRadius:4,lineHeight:1,
+        border:"1px solid var(--primary-border)",background:"var(--primary-light)",
+        letterSpacing:"0.04em"}}>{n}</span>
+      <span style={{fontWeight:700,textTransform:"uppercase",letterSpacing:"0.13em",
+        fontSize:11,color:"var(--text-muted)"}}>{label}</span>
     </div>
   );
 }
@@ -840,7 +834,11 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
                     <R delay={i*70}>
                       <div className="flex-1 min-w-[110px] rounded-md border p-3 text-center"
                         style={{background:"var(--elevated)",borderColor:"var(--border)"}}>
-                        <div className="font-extrabold" style={{fontSize:26,color:"var(--primary)",lineHeight:1,marginBottom:6}}>{ic}</div>
+                        <div className="inline-flex items-center justify-center rounded-full mb-2"
+                          style={{width:26,height:26,background:"var(--primary-light)",
+                            border:"1px solid var(--primary-border)",
+                            color:"var(--primary)",fontWeight:800,fontSize:11,
+                            fontFamily:"ui-monospace,monospace"}}>{ic}</div>
                         <div className="font-bold text-xs mb-1" style={{color:"var(--text)"}}>{t}</div>
                         <div style={{fontSize:11,color:"var(--text-muted)",lineHeight:1.5}}>{d}</div>
                       </div>
