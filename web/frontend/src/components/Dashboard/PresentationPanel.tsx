@@ -52,13 +52,13 @@ function R({ children, delay = 0, dir = "up", spring = false }: { children: Reac
     io.observe(el);
     return () => io.disconnect();
   }, [scrollRef]);
-  const ini = dir==="left"  ? {opacity:0,x:-20,y:0,scale:1,filter:"blur(4px)"} :
-              dir==="right" ? {opacity:0,x:20,y:0,scale:1,filter:"blur(4px)"} :
-              dir==="scale" ? {opacity:0,x:0,y:6,scale:0.97,filter:"blur(5px)"} :
-                              {opacity:0,x:0,y:18,scale:0.99,filter:"blur(4px)"};
+  const ini = dir==="left"  ? {opacity:0,x:-24,y:0,scale:1,filter:"blur(5px)"} :
+              dir==="right" ? {opacity:0,x:24,y:0,scale:1,filter:"blur(5px)"} :
+              dir==="scale" ? {opacity:0,x:0,y:8,scale:0.97,filter:"blur(6px)"} :
+                              {opacity:0,x:0,y:24,scale:0.98,filter:"blur(5px)"};
   const transition = spring
-    ? {type:"spring" as const,stiffness:200,damping:28,mass:1,delay:delay/1000,filter:{duration:0.25,ease:"easeOut"},opacity:{duration:0.2,ease:"easeOut"}}
-    : {duration:0.5,ease:[0.16,1,0.3,1] as const,delay:delay/1000,filter:{duration:0.22,ease:"easeOut"},opacity:{duration:0.22,ease:"easeOut"}};
+    ? {type:"spring" as const,stiffness:180,damping:26,mass:1,delay:delay/1000,filter:{duration:0.28,ease:"easeOut"},opacity:{duration:0.22,ease:"easeOut"}}
+    : {duration:0.55,ease:[0.16,1,0.3,1] as const,delay:delay/1000,filter:{duration:0.28,ease:"easeOut"},opacity:{duration:0.25,ease:"easeOut"}};
   return (
     <motion.div ref={ref}
       initial={ini}
@@ -121,7 +121,7 @@ function Scene({who,text}:{who:string;text:string}) {
 
 function MockShell({title,children}:{title:string;children:React.ReactNode}) {
   return (
-    <div className="rounded-md overflow-hidden" style={{background:"var(--elevated)",border:"1px solid var(--border)",boxShadow:"var(--card-shadow)"}}>
+    <div className="rounded-md overflow-hidden" style={{background:"var(--elevated)",border:"1px solid var(--border)",boxShadow:"var(--card-shadow)",maxWidth:400,width:"100%"}}>
       <div className="flex items-center gap-1.5 px-3 py-2" style={{borderBottom:"1px solid var(--border)",background:"var(--surface)"}}>
         <span className="w-[8px] h-[8px] rounded-full block bg-red-400/80"/><span className="w-[8px] h-[8px] rounded-full block bg-amber-400/80"/><span className="w-[8px] h-[8px] rounded-full block bg-green-400/80"/>
         <span className="ml-1.5 text-xs font-medium" style={{color:"var(--text-muted)"}}>{title}</span>
@@ -174,7 +174,7 @@ function BookMock() {
   const Lbl = ({t}:{t:string}) => <div className="mb-1 text-[10px] font-bold uppercase" style={{letterSpacing:"0.08em",color:"var(--text-muted)"}}>{t}</div>;
   return (
     <MockShell title="Новое бронирование">
-      <div className="p-3 flex flex-col gap-2.5">
+      <div className="p-2.5 flex flex-col gap-1.5">
         <div><Lbl t="Название"/><div className="rounded-md px-2.5 py-1.5 text-xs" style={{background:"var(--input-bg)",border:"1px solid var(--input-border)",color:"var(--text)"}} >Планёрка команды</div></div>
         <div><Lbl t="Тип"/><div className="flex gap-1 flex-wrap"><Chip l="🏢 Офис"/><Chip l="🌐 Онлайн" on/><Chip l="🔀 Гибрид"/></div></div>
         <div><Lbl t="Длительность"/><div className="flex gap-1 flex-wrap"><Chip l="30м"/><Chip l="1ч" on/><Chip l="1.5ч"/><Chip l="2ч"/></div></div>
@@ -759,7 +759,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
             {/* ── 07 Calendar ───────────────────────────────────────── */}
             <Sec id="sec-07" ch={<>
               <R spring><Eyebrow n="07" label="Календарь"/><SH ch="Главный экран — недельная сетка" accent="недельная сетка"/></R>
-              <div className="grid gap-8 mt-5 items-center" style={{gridTemplateColumns:"1fr 1fr"}}>
+              <div className="grid gap-8 mt-5 items-center" style={{gridTemplateColumns:"minmax(auto,420px) 1fr"}}>
                 <R dir="left"><CalMock/></R>
                 <R dir="right"><BList items={[
                   {k:"Слоты по 30 минут",v:"клик по свободному слоту открывает форму с подставленным временем"},
@@ -777,7 +777,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
             {/* ── 08 Booking ────────────────────────────────────────── */}
             <Sec id="sec-08" ch={<>
               <R spring><Eyebrow n="08" label="Создание встречи"/><SH ch="Одна форма — вся встреча" accent="Одна форма"/></R>
-              <div className="grid gap-8 mt-5 items-center" style={{gridTemplateColumns:"1fr 1fr"}}>
+              <div className="grid gap-8 mt-5 items-center" style={{gridTemplateColumns:"minmax(auto,420px) 1fr"}}>
                 <R dir="left"><BookMock/></R>
                 <R dir="right"><BList items={[
                   {k:"Тип встречи",v:"Офис (комната), Онлайн (видео) или Гибрид — всё одновременно"},
@@ -796,7 +796,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
             {/* ── 09 Video ──────────────────────────────────────────── */}
             <Sec id="sec-09" ch={<>
               <R spring><Eyebrow n="09" label="Видеовстречи"/><SH ch="Полноценная конференция внутри продукта" accent="внутри продукта"/></R>
-              <div className="grid gap-8 mt-5 items-center" style={{gridTemplateColumns:"1fr 1fr"}}>
+              <div className="grid gap-8 mt-5 items-center" style={{gridTemplateColumns:"minmax(auto,420px) 1fr"}}>
                 <R dir="left"><VideoMock/></R>
                 <R dir="right"><BList items={[
                   {k:"Камера, микрофон, экран",v:"стандартный набор управления участника"},
@@ -845,7 +845,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
             {/* ── 11 Telegram ───────────────────────────────────────── */}
             <Sec id="sec-11" ch={<>
               <R spring><Eyebrow n="11" label="Telegram"/><SH ch="Уведомления туда, где команда уже сидит" accent="где команда"/></R>
-              <div className="grid gap-8 mt-5 items-center" style={{gridTemplateColumns:"1fr 1fr"}}>
+              <div className="grid gap-8 mt-5 items-center" style={{gridTemplateColumns:"minmax(auto,420px) 1fr"}}>
                 <R dir="left"><TgMock/></R>
                 <R dir="right"><BList items={[
                   {k:"В группу пространства",v:"новые и изменённые встречи с кнопкой «Подключиться»"},
