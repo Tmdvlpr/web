@@ -1,20 +1,12 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useLocale } from "../../contexts/LocaleContext";
-import { useWorkspaceUsers } from "../../hooks/useBookings";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
 import { useAuth } from "../../hooks/useAuth";
-
-const POSITIONS = ["Начальник департамента/отдела", "PM", "Аналитик", "Программист и др.", "Дизайнер"] as const;
-
-const POSITION_T_KEYS: Record<string, string> = {
-  "Начальник департамента/отдела": "pos.chief",
-  "PM": "pos.pm",
-  "Аналитик": "pos.analyst",
-  "Программист и др.": "pos.programmer",
-  "Дизайнер": "pos.designer",
-};
+import { workspacesApi } from "../../api/workspaces";
+import type { WorkspacePosition } from "../../types";
 
 type GuestMode = null | "position" | "username";
 
@@ -23,10 +15,35 @@ export function GuestInput({
   guests, setGuests,
 }: { guests: string[]; setGuests: React.Dispatch<React.SetStateAction<string[]>> }) {
   const { isDark } = useTheme();
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const { activeWorkspace } = useWorkspace();
   const { user: currentUser } = useAuth();
-  const allUsers = useWorkspaceUsers(activeWorkspace?.id).filter(u => u.id !== currentUser?.id);
+  const wsId = activeWorkspace?.id;
+
+  const { data: rawMembers = [] } = useQuery({
+    queryKey: ["workspace-members", wsId],
+    queryFn: () => workspacesApi.listMembers(wsId!),
+    enabled: !!wsId,
+    staleTime: 10_000,
+  });
+
+  const { data: positions = [] } = useQuery({
+    queryKey: ["workspace-positions", wsId],
+    queryFn: () => workspacesApi.listPositions(wsId!),
+    enabled: !!wsId,
+    staleTime: 30_000,
+  });
+
+  const activeMembers = rawMembers.filter(
+    m => m.status === "active" && m.user != null && m.user.id !== currentUser?.id
+  );
+  const allUsers = activeMembers.map(m => m.user!);
+
+  const userIdToPosition = activeMembers.reduce<Record<number, WorkspacePosition>>((acc, m) => {
+    if (m.position && m.user) acc[m.user.id] = m.position;
+    return acc;
+  }, {});
+
   const [mode, setMode] = useState<GuestMode>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [input, setInput] = useState("");
@@ -56,10 +73,10 @@ export function GuestInput({
   const userKey = (u: { username: string | null; display_name: string }) =>
     u.username ? u.username.trim().toLowerCase() : u.display_name.trim().toLowerCase();
 
-  const byPosition = POSITIONS.reduce<Record<string, typeof allUsers>>((acc, pos) => {
-    acc[pos] = allUsers.filter(u => u.position === pos);
+  const byPosition = positions.reduce<Record<number, typeof allUsers>>((acc, pos) => {
+    acc[pos.id] = activeMembers.filter(m => m.position_id === pos.id).map(m => m.user!);
     return acc;
-  }, {} as Record<string, typeof allUsers>);
+  }, {});
 
   const suggestions = mode === "username" ? allUsers.filter(u =>
     input.length === 0 ||
@@ -157,13 +174,14 @@ export function GuestInput({
                     onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
                     ← {t("booking.guestsBack")}
                   </button>
-                  {POSITIONS.map(pos => {
-                    const members = byPosition[pos] ?? [];
-                    const open = expanded.has(pos);
+                  {positions.map(pos => {
+                    const posLabel = locale === "uz" ? pos.name_uz : pos.name_ru;
+                    const members = byPosition[pos.id] ?? [];
+                    const open = expanded.has(String(pos.id));
                     const allChecked = members.length > 0 && members.every(u => isGuest(u));
                     const someChecked = !allChecked && members.some(u => isGuest(u));
                     return (
-                      <div key={pos}>
+                      <div key={pos.id}>
                         <div className="flex items-center w-full">
                           {/* Position-level checkbox — selects/deselects all members */}
                           <button type="button"
@@ -189,7 +207,7 @@ export function GuestInput({
                           </button>
                           {/* Expand toggle */}
                           <button type="button"
-                            onClick={e => { e.stopPropagation(); toggleExpanded(pos); }}
+                            onClick={e => { e.stopPropagation(); toggleExpanded(String(pos.id)); }}
                             className="flex items-center gap-2 flex-1 pr-3 py-2 text-xs font-semibold transition-all"
                             style={{ color: "var(--text)", transition: "background-color 0.15s ease" }}
                             onMouseEnter={e => { e.currentTarget.style.background = "var(--elevated)"; }}
@@ -197,7 +215,7 @@ export function GuestInput({
                             <span style={{ width: 12, display: "inline-block", opacity: 0.5, fontSize: 11 }}>
                               {open ? "▼" : "▶"}
                             </span>
-                            <span className="flex-1 text-left">{t(POSITION_T_KEYS[pos] as Parameters<typeof t>[0])}</span>
+                            <span className="flex-1 text-left">{posLabel}</span>
                             <span className="opacity-40 font-normal">({members.length})</span>
                           </button>
                         </div>
@@ -281,7 +299,7 @@ export function GuestInput({
                           <div className="font-semibold">{u.display_name}</div>
                           <div style={{ color: "var(--text-muted)" }}>
                             {u.username && <span>@{u.username}</span>}
-                            {u.position && <span style={{ marginLeft: u.username ? 6 : 0, color: "var(--primary)", fontWeight: 600 }}>{POSITION_T_KEYS[u.position] ? t(POSITION_T_KEYS[u.position] as Parameters<typeof t>[0]) : u.position}</span>}
+                            {userIdToPosition[u.id] && <span style={{ marginLeft: u.username ? 6 : 0, color: "var(--primary)", fontWeight: 600 }}>{locale === "uz" ? userIdToPosition[u.id].name_uz : userIdToPosition[u.id].name_ru}</span>}
                           </div>
                         </div>
                         <div className="w-4 h-4 rounded flex items-center justify-center shrink-0"

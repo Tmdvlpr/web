@@ -53,7 +53,7 @@ export function WorkspaceSettingsModal({ open, onClose }: WorkspaceSettingsModal
   };
 
   useEffect(() => {
-    if (open) refetchRooms();
+    if (open) { refetchRooms(); refetchWorkspaces(); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
