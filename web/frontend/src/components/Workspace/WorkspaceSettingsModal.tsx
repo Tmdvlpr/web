@@ -213,8 +213,10 @@ function GeneralTab({
   const { t } = useLocale();
   const [name, setName] = useState(initialName);
   const [tz, setTz] = useState(initialTz);
-  const [code, setCode] = useState(inviteCode);
-  const [tgLink, setTgLink] = useState(tgInviteLink);
+  const [freshCode, setFreshCode] = useState<string | null>(null);
+  const [freshTgLink, setFreshTgLink] = useState<string | null | undefined>(undefined);
+  const displayCode = freshCode ?? inviteCode;
+  const displayTgLink = freshTgLink !== undefined ? freshTgLink : tgInviteLink;
   const [copied, setCopied] = useState(false);
   const [copiedTg, setCopiedTg] = useState(false);
   const [savingName, setSavingName] = useState(false);
@@ -229,10 +231,10 @@ function GeneralTab({
   const [tgBindErr, setTgBindErr] = useState<string | null>(null);
 
   useEffect(() => {
-    setName(initialName); setTz(initialTz); setCode(inviteCode); setTgLink(tgInviteLink);
+    setName(initialName); setTz(initialTz);
     setTgChatInput(initialTgChatId ? String(initialTgChatId) : "");
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialName, initialTz, inviteCode, tgInviteLink, initialTgChatId]);
+  }, [initialName, initialTz, initialTgChatId]);
 
   const errRef = useRef<HTMLParagraphElement>(null);
   useEffect(() => {
@@ -288,7 +290,7 @@ function GeneralTab({
   };
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(code).then(() => {
+    navigator.clipboard.writeText(displayCode).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     });
@@ -298,8 +300,8 @@ function GeneralTab({
     setErr(null); setRegen(true);
     try {
       const ws = await workspacesApi.regenerateCode(workspaceId);
-      setCode(ws.invite_code);
-      setTgLink(ws.tg_invite_link ?? null);
+      setFreshCode(ws.invite_code);
+      setFreshTgLink(ws.tg_invite_link ?? null);
       onChanged();
     } catch (e: unknown) {
       const msg = (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
@@ -367,7 +369,7 @@ function GeneralTab({
         <div className="flex gap-2">
           <div className="flex-1 rounded-md px-3 py-2 text-sm font-mono tracking-wider"
             style={{ background: "var(--input-bg)", border: "1.5px solid var(--input-border)", color: "var(--text)" }}>
-            {code}
+            {displayCode}
           </div>
           <button onClick={handleCopy}
             className="px-3 rounded-md text-xs font-bold transition-all flex items-center gap-1"
@@ -392,7 +394,7 @@ function GeneralTab({
         </div>
       </div>
 
-      {tgLink && (isOwner || isSuperadmin) && (
+      {displayTgLink && (isOwner || isSuperadmin) && (
         <div>
           <Label>{t("ws.tgPublicLink")}</Label>
           <p className="text-xs mb-2" style={{ color: "var(--text-muted)" }}>
@@ -401,10 +403,10 @@ function GeneralTab({
           <div className="flex gap-2">
             <div className="flex-1 rounded-md px-3 py-2 text-xs font-mono truncate"
               style={{ background: "var(--input-bg)", border: "1.5px solid var(--input-border)", color: "var(--text)" }}>
-              {tgLink}
+              {displayTgLink}
             </div>
             <button
-              onClick={() => { navigator.clipboard.writeText(tgLink); setCopiedTg(true); setTimeout(() => setCopiedTg(false), 1500); }}
+              onClick={() => { navigator.clipboard.writeText(displayTgLink ?? ""); setCopiedTg(true); setTimeout(() => setCopiedTg(false), 1500); }}
               className="px-3 rounded-md text-xs font-bold transition-all"
               style={{ background: copiedTg ? "rgba(34,197,94,0.15)" : "var(--elevated)", border: `1.5px solid ${copiedTg ? "rgba(34,197,94,0.5)" : "var(--border)"}`, color: copiedTg ? "#16a34a" : "var(--text-sec)" }}>
               {copiedTg ? t("ws.copied") : t("ws.copy")}
