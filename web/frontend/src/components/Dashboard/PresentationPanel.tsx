@@ -26,6 +26,10 @@ const ICONS: Record<string, string> = {
   mic:      "M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4M12 3a4 4 0 014 4v4a4 4 0 01-8 0V7a4 4 0 014-4z",
   sun:      "M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z",
   star:     "M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z",
+  telegram: "M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z",
+  screen:   "M21 14H3m18 0V5a2 2 0 00-2-2H5a2 2 0 00-2 2v9m18 0a2 2 0 01-2 2H5a2 2 0 01-2-2m5 4h8",
+  msg:      "M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z",
+  phone:    "M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.13 19.13 0 013.32 8.94a2 2 0 011.37-2.11 12.84 12.84 0 00.7-2.81 2 2 0 01.45-2.11L7.11 1M23 1L1 23",
 };
 
 function Ic({ name, size = 16 }: { name: string; size?: number }) {
@@ -195,19 +199,25 @@ function VideoMock() {
       <span className="absolute bottom-1 left-1 rounded px-1.5 text-white" style={{fontSize:9,background:"rgba(0,0,0,.48)"}}>{name}</span>
     </div>
   );
-  const Btn = ({ch,danger,off}:{ch:string;danger?:boolean;off?:boolean}) => (
-    <div className="w-7 h-7 rounded-md flex items-center justify-center text-xs cursor-pointer"
-      style={{background:danger?"var(--danger)":off?"rgba(239,68,68,.1)":"var(--elevated)",border:danger?"none":off?"1px solid rgba(239,68,68,.3)":"1px solid var(--border)",color:off?"var(--danger)":danger?"#fff":"inherit"}}>{ch}</div>
+  const BtnV = ({ic,danger,off}:{ic:string;danger?:boolean;off?:boolean}) => (
+    <div className="w-7 h-7 rounded-md flex items-center justify-center cursor-pointer"
+      style={{background:danger?"var(--danger)":off?"rgba(239,68,68,.1)":"var(--elevated)",
+        border:danger?"none":off?"1px solid rgba(239,68,68,.3)":"1px solid var(--border)",
+        color:off?"var(--danger)":danger?"#fff":"var(--text-sec)"}}>
+      <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+        <path d={ICONS[ic]??ic}/>
+      </svg>
+    </div>
   );
   return (
-    <MockShell title="🔒 Зашифровано · 12:34">
+    <MockShell title="Зашифровано · 12:34">
       <div className="p-2 grid grid-cols-3 gap-1.5">
         <Tile name="Тимур" sp bg="linear-gradient(135deg,var(--primary),var(--accent))"/>
         <Tile name="Анна" bg="linear-gradient(135deg,#7c3aed,#a78bfa)"/>
         <Tile name="Дмитрий" bg="linear-gradient(135deg,#0891b2,#22d3ee)"/>
       </div>
       <div className="flex justify-center gap-1.5 p-2" style={{borderTop:"1px solid var(--border)",background:"var(--surface)"}}>
-        <Btn ch="🎤"/><Btn ch="📷" off/><Btn ch="🖥️"/><Btn ch="💬"/><Btn ch="⏺" off/><Btn ch="📞" danger/>
+        <BtnV ic="mic"/><BtnV ic="video" off/><BtnV ic="screen"/><BtnV ic="msg"/><BtnV ic="bell" off/><BtnV ic="phone" danger/>
       </div>
     </MockShell>
   );
@@ -220,8 +230,9 @@ function TgMock() {
         <div className="rounded-md px-3 py-2" style={{background:"var(--surface)",border:"1px solid var(--border)",borderTopLeftRadius:2,fontSize:12,lineHeight:1.6,color:"var(--text-sec)",maxWidth:"92%",whiteSpace:"pre-line"}}>
           <div className="text-xs font-bold mb-1" style={{color:"var(--primary)"}}>CorpMeet Bot</div>
           {"📅 Новое бронирование\n👤 Тимур\n📌 Планёрка\n🕐 2 июн 10:00 – 11:00"}
-          <div className="mt-2 rounded-md inline-block px-2 py-1 text-xs font-bold"
-            style={{background:"var(--primary-light)",border:"1px solid var(--primary-border)",color:"var(--primary)"}}>🎥 Подключиться</div>
+          <div className="mt-2 rounded-md inline-flex items-center gap-1 px-2 py-1 text-xs font-bold"
+            style={{background:"var(--primary-light)",border:"1px solid var(--primary-border)",color:"var(--primary)"}}>
+            <Ic name="video" size={11}/>Подключиться</div>
         </div>
         <div className="rounded-md px-3 py-2" style={{background:"var(--surface)",border:"1px solid var(--border)",borderLeft:"3px solid #f59e0b",borderTopLeftRadius:2,fontSize:12,lineHeight:1.6,color:"var(--text-sec)",maxWidth:"92%",whiteSpace:"pre-line"}}>
           <div className="text-xs font-bold mb-1" style={{color:"var(--primary)"}}>CorpMeet Bot</div>
@@ -562,7 +573,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
                   {([
                     {icon:"calendar", label:"Бронирование"},
                     {icon:"video",    label:"Видеовстречи"},
-                    {icon:"send",     label:"Telegram"},
+                    {icon:"telegram", label:"Telegram"},
                     {icon:"grid",     label:"Пространства команд"},
                     {icon:"globe",    label:"РУ / УЗ"},
                   ] as {icon:string;label:string}[]).map(({icon,label})=>(
@@ -705,7 +716,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
                 <R delay={60}><Card icon="star" title="Owner — владелец" desc="Создатель пространства. Может всё: настройки, удаление, передача владения. Один на пространство."/></R>
                 <R delay={110}><Card icon="shield" title="Admin" desc="Управляет участниками, комнатами и бронями всех. Назначается владельцем."/></R>
                 <R delay={160}><Card icon="users" title="Member — участник" desc="Бронирует, видит общий календарь пространства и доступные переговорные."/></R>
-                <R delay={210}><Card icon="shield" title="Superadmin платформы" accent desc="Оператор сервиса с доступом ко всему: пользователи, все брони, аналитика, передача владения комнатами."/></R>
+                <R delay={210}><Card icon="shield" title="Superadmin платформы" desc="Оператор сервиса с доступом ко всему: пользователи, все брони, аналитика, передача владения комнатами."/></R>
               </HoverGrid>
               <R delay={260}>
                 <div className="mt-4 rounded-md p-4" style={{background:"var(--elevated)",border:"1px solid var(--border)"}}>
