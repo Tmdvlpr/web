@@ -82,8 +82,8 @@ const Tag = ({ch}:{ch:React.ReactNode}) => (
 const Note = ({ch}:{ch:React.ReactNode}) => (
   <div className="mt-6 px-6 py-5 text-sm leading-relaxed text-center"
     style={{borderRadius:16,
-      background:"linear-gradient(135deg,rgba(56,160,240,.10),rgba(21,101,168,.04))",
-      border:"1px solid rgba(120,160,210,.26)",color:"var(--text-sec)"}}>{ch}</div>
+      background:"linear-gradient(135deg,var(--primary-light),transparent)",
+      border:"1px solid var(--primary-border)",color:"var(--text-sec)"}}>{ch}</div>
 );
 
 const BList = ({items}:{items:{k:string;v:React.ReactNode}[]}) => (
@@ -93,8 +93,8 @@ const BList = ({items}:{items:{k:string;v:React.ReactNode}[]}) => (
         style={{fontSize:14.5,lineHeight:1.6,color:"var(--text-sec)",
           borderBottom:i<items.length-1?"1px solid rgba(120,160,210,.14)":"none"}}>
         <span className="absolute left-0 rounded-full"
-          style={{top:22,width:8,height:8,background:"var(--accent,var(--primary))",
-            boxShadow:"0 0 10px var(--primary)",display:"block"}}/>
+          style={{top:22,width:8,height:8,background:"var(--primary)",
+            boxShadow:"0 0 8px var(--primary-border)",display:"block"}}/>
         <b style={{color:"var(--text)",fontWeight:700}}>{it.k}</b>{" — "}{it.v}
       </li>
     ))}
@@ -404,9 +404,9 @@ function Eyebrow({n,label}:{n:string;label:string}) {
   return (
     <div className="inline-flex items-center gap-2.5 mb-4"
       style={{padding:"5px 14px",borderRadius:999,
-        background:"rgba(56,160,240,.08)",border:"1px solid rgba(120,160,210,.26)"}}>
+        background:"var(--primary-light)",border:"1px solid var(--primary-border)"}}>
       <span style={{fontFamily:"ui-monospace,monospace",fontWeight:700,fontSize:11,
-        color:"var(--accent,var(--primary))",letterSpacing:"0.04em"}}>{n}</span>
+        color:"var(--primary)",letterSpacing:"0.04em"}}>{n}</span>
       <span style={{fontWeight:700,textTransform:"uppercase",letterSpacing:"0.16em",
         fontSize:11,color:"var(--text-muted)"}}>{label}</span>
     </div>
