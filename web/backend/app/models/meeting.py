@@ -50,7 +50,7 @@ class MeetingParticipantLog(Base):
         ForeignKey("meeting_sessions.id", ondelete="CASCADE"), index=True
     )
     user_id: Mapped[int | None] = mapped_column(
-        ForeignKey("users.id"), nullable=True, index=True
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
     )
     participant_identity: Mapped[str] = mapped_column(String(128))
     joined_at: Mapped[datetime] = mapped_column(
@@ -66,7 +66,7 @@ class MeetingChatFile(Base):
     booking_id: Mapped[int] = mapped_column(
         ForeignKey("bookings.id", ondelete="CASCADE"), index=True
     )
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
     filename: Mapped[str] = mapped_column(String(255))
     mime_type: Mapped[str] = mapped_column(String(128))
     size: Mapped[int] = mapped_column(Integer)
@@ -83,7 +83,7 @@ class MeetingChatMessage(Base):
     booking_id: Mapped[int] = mapped_column(
         ForeignKey("bookings.id", ondelete="CASCADE"), index=True
     )
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
     body: Mapped[str] = mapped_column(Text, nullable=False, server_default="")
     file_id: Mapped[int | None] = mapped_column(
         ForeignKey("meeting_chat_files.id"), nullable=True
