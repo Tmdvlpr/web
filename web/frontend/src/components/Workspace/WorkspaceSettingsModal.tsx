@@ -56,7 +56,7 @@ export function WorkspaceSettingsModal({ open, onClose }: WorkspaceSettingsModal
     if (!open) return;
     refetchRooms();
     refetchWorkspaces();
-    const id = setInterval(refetchWorkspaces, 8_000);
+    const id = setInterval(refetchWorkspaces, 2_000);
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
