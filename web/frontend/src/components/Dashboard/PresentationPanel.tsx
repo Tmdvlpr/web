@@ -26,7 +26,7 @@ const ICONS: Record<string, string> = {
   mic:      "M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4M12 3a4 4 0 014 4v4a4 4 0 01-8 0V7a4 4 0 014-4z",
   sun:      "M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z",
   star:     "M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z",
-  telegram: "M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z",
+  telegram: "M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5",
   screen:   "M21 14H3m18 0V5a2 2 0 00-2-2H5a2 2 0 00-2 2v9m18 0a2 2 0 01-2 2H5a2 2 0 01-2-2m5 4h8",
   msg:      "M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z",
   phone:    "M18 6L6 18M6 6l12 12",
@@ -409,13 +409,15 @@ const Div = () => (
 
 function Eyebrow({n,label}:{n:string;label:string}) {
   return (
-    <div className="inline-flex items-center gap-2.5 mb-4"
-      style={{padding:"5px 14px",borderRadius:999,
-        background:"var(--primary-light)",border:"1px solid var(--primary-border)"}}>
-      <span style={{fontFamily:"ui-monospace,monospace",fontWeight:700,fontSize:11,
-        color:"var(--accent,var(--primary))",letterSpacing:"0.04em"}}>{n}</span>
-      <span style={{fontWeight:700,textTransform:"uppercase",letterSpacing:"0.16em",
-        fontSize:11,color:"var(--text-muted)"}}>{label}</span>
+    <div className="inline-flex items-center gap-3 mb-6"
+      style={{padding:"10px 22px",borderRadius:999,
+        background:"rgba(56,160,240,.1)",border:"1.5px solid var(--primary-border)",
+        boxShadow:"0 0 24px rgba(56,160,240,.12)"}}>
+      <span style={{fontFamily:"ui-monospace,monospace",fontWeight:800,fontSize:15,
+        color:"var(--accent,var(--primary))",letterSpacing:"0.02em"}}>{n}</span>
+      <span style={{width:1,height:14,background:"var(--primary-border)",display:"inline-block"}}/>
+      <span style={{fontWeight:700,textTransform:"uppercase",letterSpacing:"0.18em",
+        fontSize:12.5,color:"var(--text-sec)"}}>{label}</span>
     </div>
   );
 }
