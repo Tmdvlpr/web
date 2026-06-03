@@ -183,6 +183,8 @@ function useMeetingChat(
             onRecordingStartedRef.current?.(msg.user_name ?? "");
             return;
           }
+          // Any unrecognised typed message (e.g. future server events) must not leak into chat
+          if (msg.type) return;
           setMessages((prev) => prev.some(m => m.id === msg.id) ? prev : [...prev, msg]);
           if (!chatVisibleRef.current) setUnread((n) => n + 1);
         } catch (err) { console.warn("Chat WS parse error:", err, e.data); }
