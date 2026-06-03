@@ -80,19 +80,22 @@ const Tag = ({ch}:{ch:React.ReactNode}) => (
 );
 
 const Note = ({ch}:{ch:React.ReactNode}) => (
-  <div className="mt-4 rounded-md px-4 py-3 text-sm leading-relaxed text-center"
-    style={{background:"var(--primary-light)",borderLeft:"3px solid var(--primary)",border:"1px solid var(--primary-border)",color:"var(--text-sec)"}}>{ch}</div>
+  <div className="mt-6 px-6 py-5 text-sm leading-relaxed text-center"
+    style={{borderRadius:16,
+      background:"linear-gradient(135deg,rgba(56,160,240,.10),rgba(21,101,168,.04))",
+      border:"1px solid rgba(120,160,210,.26)",color:"var(--text-sec)"}}>{ch}</div>
 );
 
 const BList = ({items}:{items:{k:string;v:React.ReactNode}[]}) => (
   <ul style={{listStyle:"none",padding:0,margin:0}}>
     {items.map((it,i) => (
-      <li key={i} className="relative py-2 pl-5"
-        style={{fontSize:"var(--font-sm)",lineHeight:1.6,color:"var(--text-sec)",
-          borderBottom:i<items.length-1?"1px solid var(--border-light)":"none"}}>
-        <span className="absolute left-[3px] top-[16px] w-[5px] h-[5px] rounded-sm"
-          style={{background:"var(--primary)",opacity:.75,display:"block"}}/>
-        <b style={{color:"var(--text)",fontWeight:600}}>{it.k}</b>{" — "}{it.v}
+      <li key={i} className="relative py-3.5 pl-6"
+        style={{fontSize:14.5,lineHeight:1.6,color:"var(--text-sec)",
+          borderBottom:i<items.length-1?"1px solid rgba(120,160,210,.14)":"none"}}>
+        <span className="absolute left-0 rounded-full"
+          style={{top:22,width:8,height:8,background:"var(--accent,var(--primary))",
+            boxShadow:"0 0 10px var(--primary)",display:"block"}}/>
+        <b style={{color:"var(--text)",fontWeight:700}}>{it.k}</b>{" — "}{it.v}
       </li>
     ))}
   </ul>
@@ -124,11 +127,18 @@ function Scene({who,text}:{who:string;text:string}) {
 }
 
 function MockShell({title,children}:{title:string;children:React.ReactNode}) {
+  const {isDark} = useTheme();
   return (
-    <div className="rounded-md overflow-hidden" style={{background:"var(--elevated)",border:"1px solid var(--border)",boxShadow:"var(--card-shadow)",maxWidth:400,width:"100%"}}>
-      <div className="flex items-center gap-1.5 px-3 py-2" style={{borderBottom:"1px solid var(--border)",background:"var(--surface)"}}>
-        <span className="w-[8px] h-[8px] rounded-full block bg-red-400/80"/><span className="w-[8px] h-[8px] rounded-full block bg-amber-400/80"/><span className="w-[8px] h-[8px] rounded-full block bg-green-400/80"/>
-        <span className="ml-1.5 text-xs font-medium" style={{color:"var(--text-muted)"}}>{title}</span>
+    <div style={{borderRadius:18,overflow:"hidden",background:"var(--elevated)",
+      border:"1px solid rgba(120,160,210,.22)",maxWidth:400,width:"100%",
+      boxShadow:isDark
+        ?"0 30px 70px -20px rgba(0,0,0,.7),0 0 40px -10px rgba(56,160,240,.18)"
+        :"0 12px 40px -8px rgba(21,101,168,.18),0 2px 8px rgba(17,24,39,.06)"}}>
+      <div className="flex items-center gap-1.5 px-3 py-2.5" style={{borderBottom:"1px solid rgba(120,160,210,.14)",background:"rgba(255,255,255,.02)"}}>
+        <span className="w-[8px] h-[8px] rounded-full block bg-red-400/70"/>
+        <span className="w-[8px] h-[8px] rounded-full block bg-amber-400/70"/>
+        <span className="w-[8px] h-[8px] rounded-full block bg-green-400/70"/>
+        <span className="ml-1.5 text-xs font-semibold" style={{color:"var(--text-muted)"}}>{title}</span>
       </div>
       {children}
     </div>
@@ -245,31 +255,42 @@ function TgMock() {
 
 // ── Card component ─────────────────────────────────────────────────────────
 function Card({icon,title,desc,accent,onClick,children}:{icon:string;title:string;desc?:string;accent?:boolean;onClick?:()=>void;children?:React.ReactNode}) {
+  const {isDark} = useTheme();
   const [hov,setHov] = useState(false);
   const active = accent || hov;
   return (
-    <div className="rounded-md p-4 flex flex-col h-full"
+    <div className="p-5 flex flex-col h-full relative overflow-hidden"
       onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
       onClick={onClick}
       style={{
-        background:"var(--elevated)",
-        border:`1px solid ${active?"var(--primary-border)":"var(--border)"}`,
-        boxShadow:hov?"var(--card-shadow),0 4px 16px rgba(21,101,168,.07)":"var(--card-shadow)",
-        transition:"border-color .15s,transform .2s,box-shadow .2s",
-        transform:hov?"translateY(-2px)":"none",
+        borderRadius:16,
+        background:isDark?"rgba(20,32,53,.55)":"rgba(255,255,255,.72)",
+        backdropFilter:"blur(10px)",WebkitBackdropFilter:"blur(10px)",
+        border:`1px solid ${hov
+          ? isDark?"rgba(120,160,210,.35)":"rgba(21,101,168,.28)"
+          : isDark?"rgba(120,160,210,.14)":"rgba(200,208,226,.5)"}`,
+        boxShadow:hov
+          ? isDark?"0 18px 50px -12px rgba(56,160,240,.35)":"0 8px 30px -8px rgba(21,101,168,.14)"
+          : "var(--card-shadow)",
+        transition:"border-color .22s,transform .22s,box-shadow .22s",
+        transform:hov?"translateY(-4px)":"none",
         cursor:onClick?"pointer":"default"
       }}>
-      <div className="w-8 h-8 rounded-md flex items-center justify-center mb-3 shrink-0"
+      <div className="flex items-center justify-center mb-4 shrink-0"
         style={{
-          background:active?"linear-gradient(135deg,var(--primary),var(--accent))":"var(--primary-light)",
-          border:active?"none":"1px solid var(--primary-border)",
-          color:active?"#fff":"var(--primary)",
-          transition:"all .15s"
+          width:40,height:40,borderRadius:12,
+          background:active
+            ?"linear-gradient(135deg,var(--accent),var(--primary))"
+            :isDark?"linear-gradient(135deg,rgba(56,160,240,.16),rgba(21,101,168,.1))":"var(--primary-light)",
+          border:active?"none":isDark?"1px solid rgba(120,160,210,.26)":"1px solid var(--primary-border)",
+          color:active?(isDark?"#04101f":"#fff"):"var(--primary)",
+          boxShadow:active?isDark?"0 8px 22px -4px rgba(56,160,240,.45)":"0 4px 14px rgba(21,101,168,.28)":"none",
+          transition:"all .22s"
         }}>
-        <Ic name={icon} size={15}/>
+        <Ic name={icon} size={17}/>
       </div>
-      <div className="font-bold mb-2 leading-snug" style={{color:"var(--text)",fontSize:"var(--font-sm)"}}>{title}</div>
-      {desc && <div className="leading-relaxed flex-1" style={{color:"var(--text-muted)",fontSize:"var(--font-sm)"}}>{desc}</div>}
+      <div className="font-bold mb-2 leading-snug" style={{color:"var(--text)",fontSize:"var(--font-sm)",letterSpacing:"-.01em"}}>{title}</div>
+      {desc && <div className="leading-relaxed flex-1" style={{color:"var(--text-muted)",fontSize:13.5}}>{desc}</div>}
       {children}
     </div>
   );
@@ -358,9 +379,17 @@ function AnimStat({ big, small, idx = 0 }: { big: string; small: string; idx?: n
 // ── Layout helpers ─────────────────────────────────────────────────────────
 const PAD = "0 clamp(32px,5vw,72px)";
 
-const Sec = ({ch,id}:{ch:React.ReactNode;id?:string}) => (
-  <section id={id} style={{padding:"60px 0"}}>
-    <div style={{padding:PAD}}>{ch}</div>
+const GlowDot = ({w=440,h=440,top,bottom,left,right,color="rgba(56,160,240,.13)"}:
+  {w?:number;h?:number;top?:number|string;bottom?:number|string;left?:number|string;right?:number|string;color?:string}) => (
+  <div style={{position:"absolute",width:w,height:h,top,bottom,left,right,
+    borderRadius:"50%",background:`radial-gradient(circle,${color},transparent 65%)`,
+    filter:"blur(1px)",pointerEvents:"none",zIndex:0}}/>
+);
+
+const Sec = ({ch,id,gd}:{ch:React.ReactNode;id?:string;gd?:React.ReactNode}) => (
+  <section id={id} style={{padding:"80px 0",position:"relative",overflow:"hidden"}}>
+    {gd}
+    <div style={{padding:PAD,position:"relative",zIndex:1}}>{ch}</div>
   </section>
 );
 
@@ -373,12 +402,12 @@ const Div = () => (
 
 function Eyebrow({n,label}:{n:string;label:string}) {
   return (
-    <div className="flex items-center gap-2 mb-3">
+    <div className="inline-flex items-center gap-2.5 mb-4"
+      style={{padding:"5px 14px",borderRadius:999,
+        background:"rgba(56,160,240,.08)",border:"1px solid rgba(120,160,210,.26)"}}>
       <span style={{fontFamily:"ui-monospace,monospace",fontWeight:700,fontSize:11,
-        color:"var(--primary)",padding:"2px 6px",borderRadius:4,lineHeight:1,
-        border:"1px solid var(--primary-border)",background:"var(--primary-light)",
-        letterSpacing:"0.04em"}}>{n}</span>
-      <span style={{fontWeight:700,textTransform:"uppercase",letterSpacing:"0.13em",
+        color:"var(--accent,var(--primary))",letterSpacing:"0.04em"}}>{n}</span>
+      <span style={{fontWeight:700,textTransform:"uppercase",letterSpacing:"0.16em",
         fontSize:11,color:"var(--text-muted)"}}>{label}</span>
     </div>
   );
@@ -594,7 +623,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
             <Div/>
 
             {/* ── 01 Problem ────────────────────────────────────────── */}
-            <Sec ch={<>
+            <Sec gd={<GlowDot w={420} h={420} top={-120} right={-80}/>} ch={<>
               <R spring><Eyebrow n="01" label="Зачем это нужно"/>
                 <SH ch="Знакомая боль с переговорными" accent="переговорными"/>
                 <p className="mt-2 text-sm leading-relaxed" style={{color:"var(--text-sec)",maxWidth:580}}>Договорённости в чате, занятая комната «по факту», встречи в трёх разных сервисах. CorpMeet убирает этот хаос.</p>
@@ -762,7 +791,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
             <Div/>
 
             {/* ── 07 Calendar ───────────────────────────────────────── */}
-            <Sec id="sec-07" ch={<>
+            <Sec id="sec-07" gd={<GlowDot w={480} h={480} top={0} left={-160} color="rgba(21,101,168,.16)"/>} ch={<>
               <R spring><Eyebrow n="07" label="Календарь"/><SH ch="Главный экран — недельная сетка" accent="недельная сетка"/></R>
               <div className="grid gap-8 mt-5 items-center" style={{gridTemplateColumns:"minmax(auto,420px) 1fr"}}>
                 <R dir="left"><CalMock/></R>
@@ -799,7 +828,7 @@ export function PresentationPanel({isOpen,onClose}:{isOpen:boolean;onClose:()=>v
             <Div/>
 
             {/* ── 09 Video ──────────────────────────────────────────── */}
-            <Sec id="sec-09" ch={<>
+            <Sec id="sec-09" gd={<GlowDot w={480} h={480} top={40} right={-180}/>} ch={<>
               <R spring><Eyebrow n="09" label="Видеовстречи"/><SH ch="Полноценная конференция внутри продукта" accent="внутри продукта"/></R>
               <div className="grid gap-8 mt-5 items-center" style={{gridTemplateColumns:"minmax(auto,420px) 1fr"}}>
                 <R dir="left"><VideoMock/></R>
