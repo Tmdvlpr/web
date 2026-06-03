@@ -799,10 +799,9 @@ function ParticipantsPanel({
                   <button
                     onClick={() => onGrantRecord?.(p.identity)}
                     title="Передать право записи"
-                    style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, padding: "0 2px", lineHeight: 1, transition: "opacity 0.15s ease" }}
-                    onMouseEnter={(e) => { e.currentTarget.style.opacity = "0.7"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.opacity = "1"; }}
-                  >🎬</button>
+                    className="prow__ico prow__ico--btn"
+                    style={{ background: "none", border: "none", cursor: "pointer", padding: "0 2px", lineHeight: 1 }}
+                  ><Ic.Record sz={13} /></button>
                 )}
                 {isOrganizer && !isLocal ? (
                   <button
